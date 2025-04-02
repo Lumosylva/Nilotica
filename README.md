@@ -58,8 +58,6 @@ uv build . -v  # 使用 -v 查看详细日志
 
 ### **4. 项目结构**
 
-`Nilotica` - 根目录
-
 		- demo - 示例代码
 		- vnpy - vnpy 官方核心库，版本3.9.4
 		- vnpy_ctp - vnpy官方 vnpy-ctp 库，使用pybind11包装CTP C++接口为Python可调用的接口。
