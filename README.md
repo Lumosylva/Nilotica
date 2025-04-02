@@ -23,16 +23,24 @@ uv venv --python 3.12.9 .venv
 
 #### **(1) 清理旧构建**
 
-PowerShell 删除dist、*.egg-info目录
+删除dist、*.egg-info目录
+
+PowerShell 
 
 ```bash
 Remove-Item -Path ".\dist", ".\*.egg-info" -Recurse -Force -ErrorAction SilentlyContinue
 ```
 
-CMD 删除dist、*.egg-info目录
+CMD
 
 ```bash
 rmdir /s /q ".\dist" ".\*.egg-info"
+```
+
+bash
+
+```bash
+rm -rf .\dist .\*.egg-info
 ```
 
 #### **(2) 执行构建**
