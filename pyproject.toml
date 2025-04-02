@@ -6,7 +6,7 @@ authors = [
     { name = "Donny", email = "donnymoving@gmail.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "deap==1.4.1",
     "importlib-metadata>=8.6.1",
@@ -43,7 +43,7 @@ docs = ["sphinx", "sphinx-rtd-theme"]
 
 [tool.black]
 line-length = 88
-target-version = ['py312']
+target-version = ["py310", "py311", "py312"]
 
 [tool.isort]
 profile = "black"
