@@ -11,13 +11,13 @@ from setuptools.command.build_ext import build_ext
 # 包名列表
 pkgs = ['vnpy_ctp.api.vnctp.vnctpmd', 'vnpy_ctp.api.vnctp.vnctptd',
         'vnpy_ctp.api.generator', 'vnpy_ctp.api.include.ctp',
-        'vnpy_ctp.api.include.pybind11', 'vnpy_ctp.api.include.pybind11.detail',
-        'vnpy_ctp.api.include.pybind11.eigen', 'vnpy_ctp.api.include.pybind11.stl',
         'vnpy_ctp.api.libs', 'vnpy_ctp.api.vnctp']
 
 # 获取setup.py所在的目录路径
 target_dir = Path("D:/Project/PycharmProjects/Nilotica/vnpy_ctp/api")
+pybind11_include = "D:/Project/PycharmProjects/Nilotica/.venv/Lib/site-packages/pybind11/include"
 print("定义pyd目标目录:", target_dir)
+print("pybind11_include:", pybind11_include)
 
 # 自定义构建命令：编译扩展后生成存根
 class CustomBuildExt(build_ext):
@@ -87,7 +87,7 @@ def get_ext_modules() -> list:
 
     # Linux
     if platform.system() == "Linux":
-        include_dirs = ["vnpy_ctp/api/include", "vnpy_ctp/api/vnctp"]
+        include_dirs = ["vnpy_ctp/api/include", pybind11_include, "vnpy_ctp/api/vnctp"]
         library_dirs = ["vnpy_ctp/api"]
         extra_compile_flags = [
             "-std=c++17",
@@ -99,7 +99,7 @@ def get_ext_modules() -> list:
         runtime_library_dirs = ["$ORIGIN"]
     # Windows
     elif platform.system() == "Windows":
-        include_dirs = ["vnpy_ctp/api/include", "vnpy_ctp/api/vnctp"]
+        include_dirs = ["vnpy_ctp/api/include", pybind11_include, "vnpy_ctp/api/vnctp"]
         library_dirs = ["vnpy_ctp/api/libs", "vnpy_ctp/api"]
         extra_compile_flags = ["-O2", "-MT"]
         extra_link_args = []

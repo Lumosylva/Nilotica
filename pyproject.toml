@@ -1,16 +1,29 @@
 [project]
 name = "nilotica"
 version = "0.1.0"
-description = "Add your description here"
+description = "一个基于vnpy的量化系统"
+authors = [
+    { name = "Donny", email = "donnymoving@gmail.com" }
+]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "deap==1.4.1",
     "importlib-metadata>=8.6.1",
+    "numpy==1.26.4",
     "pathlib>=1.0.1",
     "pip>=25.0.1",
+    "plotly==5.20.0",
     "pybind11>=2.13.6",
     "pybind11-stubgen>=2.5.3",
+    "pyqtgraph==0.13.4",
+    "pyside6==6.3.0",
+    "pyzmq==25.1.2",
+    "qdarkstyle==3.2.3",
+    "seaborn==0.13.2",
     "setuptools>=78.1.0",
+    "tqdm==4.66.3",
+    "tzlocal==5.2",
     "wheel>=0.45.1",
 ]
 [build-system]
@@ -23,3 +36,18 @@ requires = [
 build-backend = "setuptools.build_meta"
 [tool.setuptools]
 script-files = ["setup.py"]
+
+[project.optional-dependencies]
+dev = ["pytest", "black", "mypy"]
+docs = ["sphinx", "sphinx-rtd-theme"]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
