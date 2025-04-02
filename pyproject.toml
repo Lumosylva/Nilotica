@@ -1,6 +1,6 @@
 [project]
 name = "nilotica"
-dynamic = ["version"]
+dynamic = ["0.1.0"]
 description = "一个基于vnpy的量化系统(Based vnpy quant trading system.)"
 license = {text = "Apache"}
 authors = [
@@ -27,6 +27,7 @@ dependencies = [
     "importlib-metadata>=8.6.1",
     "numpy==1.26.4",
     "pathlib>=1.0.1",
+    "peewee>=3.17.9",
     "pip>=25.0.1",
     "plotly==5.20.0",
     "pybind11>=2.13.6",
