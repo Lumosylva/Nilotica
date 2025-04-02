@@ -29,7 +29,7 @@ uv venv --python 3.12.9 .venv
 
 #### **(1) 清理旧的构建**
 
-删除dist、*.egg-info目录
+打开终端进入项目根目录，删除dist、*.egg-info目录
 
 PowerShell 
 
