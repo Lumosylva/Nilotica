@@ -1,11 +1,26 @@
 [project]
 name = "nilotica"
-version = "0.1.0"
-description = "一个基于vnpy的量化系统"
+dynamic = ["version"]
+description = "一个基于vnpy的量化系统(Based vnpy quant trading system.)"
+license = {text = "Apache"}
 authors = [
     { name = "Donny", email = "donnymoving@gmail.com" }
 ]
 readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: Apache License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Natural Language :: Chinese (Simplified)",
+    "Typing :: Typed",
+]
 requires-python = ">=3.10"
 dependencies = [
     "deap==1.4.1",
@@ -26,6 +41,16 @@ dependencies = [
     "tzlocal==5.2",
     "wheel>=0.45.1",
 ]
+
+keywords = ["quant", "quantitative", "trading", "nilotica"]
+
+[project.urls]
+"Homepage" = "https://github.com/Nilotica/Nilotica"
+"Documentation" = "https://github.com/Nilotica/Nilotica/README.md"
+"Changes" = "https://github.com/Nilotica/Nilotica/CHANGELOG.md"
+"Source" = "https://github.com/Nilotica/Nilotica"
+"Forum" = "https://github.com/Nilotica/Nilotica/issues"
+
 [build-system]
 requires = [
     "setuptools",
@@ -34,6 +59,7 @@ requires = [
     "pybind11-stubgen"
 ]
 build-backend = "setuptools.build_meta"
+
 [tool.setuptools]
 script-files = ["setup.py"]
 
