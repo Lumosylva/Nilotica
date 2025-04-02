@@ -29,7 +29,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 pip install uv
 ```
 
-使用 `uv sync `命令可以让uv 工具根据pyproject.toml 文件中的配置进行虚拟环境的创建和依赖的下载，当我们从github 上下载一个别人开发的基于uv的python 项目时，这个命令可以很方便的创建好虚拟环境和安装好依赖。
+使用 `uv sync `命令可以让uv 工具根据pyproject.toml 文件中的配置进行虚拟环境的创建和依赖的下载，当从github 上下载一个基于uv的python 项目时，这个命令可以很方便的创建好虚拟环境和安装好依赖。
 
 ```
 uv sync
