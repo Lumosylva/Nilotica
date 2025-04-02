@@ -23,7 +23,7 @@ uv venv --python 3.12.9 .venv
 .venv\Scripts\activate
 ```
 
-### **3. 构建流程**
+### **3. 构建流程**(编译出Python可调用的行情和交易pyd文件)
 
 #### **(1) 清理旧构建**
 
