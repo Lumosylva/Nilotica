@@ -2,7 +2,7 @@
 
 ### **1. 前言**
 
-本项目基于[vnpy](https://github.com/vnpy/vnpy)及[vnpy_ctp](https://github.com/vnpy/vnpy_ctp)，目的是简化量化交易的上手程度，让手动交易者更容易转向量化交易，让交易者更加专注于量化策略的开发。
+项目基于[vnpy](https://github.com/vnpy/vnpy)及[vnpy_ctp](https://github.com/vnpy/vnpy_ctp)，目的是简化量化交易的上手程度，让手动交易者更容易转向量化交易，让交易者更加专注于量化策略的开发。
 
 ### **2. 基础环境**
 
@@ -14,7 +14,7 @@
 
 ### **3. 环境配置**
 
-在工程根目录创建Python虚拟环境，本项目使用uv管理Python环境及软件包。
+项目使用uv管理Python虚拟环境及软件包，在工程根目录创建Python虚拟环境。
 
 ```bash
 # 环境指定Python版本3.12.9
@@ -25,7 +25,7 @@ uv venv --python 3.12.9 .venv
 
 ### **4. 构建流程**
 
-利用`setup.py`在`vnpy_ctp\api\`路径下编译出Python可调用的行情和交易文件`.pyd`以及利用`pybind11-stubgen`生成它们对应的存根文件`.pyi`。
+项目利用`setup.py`在`vnpy_ctp\api\`路径下编译出Python可调用的行情和交易文件`.pyd`以及利用`pybind11-stubgen`生成它们对应的存根文件`.pyi`。
 
 #### **(1) 清理旧的构建**
 
