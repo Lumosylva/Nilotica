@@ -23,9 +23,11 @@ uv venv --python 3.12.9 .venv
 .venv\Scripts\activate
 ```
 
-### **3. 构建流程**(编译出Python可调用的行情和交易pyd文件)
+### **3. 构建流程**
 
-#### **(1) 清理旧构建**
+利用`setup.py`在`vnpy_ctp\api\`路径下编译出Python可调用的行情和交易文件`.pyd`以及利用`pybind11-stubgen`生成它们对应的存根文件`.pyi`。
+
+#### **(1) 清理旧的构建**
 
 删除dist、*.egg-info目录
 
