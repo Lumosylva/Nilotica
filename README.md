@@ -37,7 +37,7 @@ CMD
 rmdir /s /q ".\dist" ".\*.egg-info"
 ```
 
-bash
+Bash
 
 ```bash
 rm -rf .\dist .\*.egg-info
