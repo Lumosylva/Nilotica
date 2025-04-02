@@ -14,7 +14,28 @@
 
 ### **3. 环境配置**
 
-项目使用uv管理Python虚拟环境及软件包，在工程根目录创建Python虚拟环境。
+项目使用uv来管理Python虚拟环境及软件包，以及软件包分发。
+
+uv的安装
+
+```bash
+# On macOS and Linux.
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# On Windows.
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# With pip.
+pip install uv
+```
+
+使用 `uv sync `命令可以让uv 工具根据pyproject.toml 文件中的配置进行虚拟环境的创建和依赖的下载，当我们从github 上下载一个别人开发的基于uv的python 项目时，这个命令可以很方便的创建好虚拟环境和安装好依赖。
+
+```
+uv sync
+```
+
+或者不使用sync 命令，手动的去创建虚拟环境， 使用 `uv venv `命令创建虚拟环境。
 
 ```bash
 # 环境指定Python版本3.12.9
@@ -71,11 +92,11 @@ LICENSE.txt - license文件。
 
 MANIFEST.in - Python 包管理工具（setuptools）用来指定哪些文件应该包含在生成的分发包（如 .tar.gz 或 .whl文件）中的配置文件，recursive-include表示递归的包含目录下匹配的文件。
 
-pyproject.toml -  Python 项目配置文件，用于定义项目的元数据、构建系统、依赖管理等信息。
+pyproject.toml -  Python 项目配置文件，用于定义项目的主要依赖、元数据、构建系统等信息。
 
 setup.py - 自动化编译文件
 
-uv.lock - uv自动管理的文件
+uv.lock - 记录项目的所有依赖，包括依赖的依赖，且跨平台，确保在不同环境下安装的一致性。这个文件由 uv 自动管理，不要手动编辑
 ```
 
 
