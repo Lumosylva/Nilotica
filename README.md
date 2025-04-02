@@ -2,12 +2,11 @@
 
 ### **1. 前言**
 
-- 使用`whl` 格式和 `pyproject.toml` 配置。
-- **工具链**：uv + `setuptools` + `wheel`。
+- **工具链**：`uv` + `setuptools` + `wheel`。
 
 ### **2. 环境配置**
 
-在工程根目录创建Python虚拟环境
+在工程根目录创建Python虚拟环境，本项目使用uv管理Python环境及软件包。
 
 ```bash
 # 环境指定Python版本3.12.9
