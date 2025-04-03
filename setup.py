@@ -4,14 +4,9 @@ import platform
 import shutil
 import subprocess
 from pathlib import Path
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 
-
-# 包名列表
-pkgs = ['vnpy_ctp.api.vnctp.vnctpmd', 'vnpy_ctp.api.vnctp.vnctptd',
-        'vnpy_ctp.api.generator', 'vnpy_ctp.api.include.ctp',
-        'vnpy_ctp.api.libs', 'vnpy_ctp.api.vnctp']
 
 # 获取setup.py所在的目录路径
 target_dir = Path("D:/Project/PycharmProjects/Nilotica/vnpy_ctp/api")
@@ -153,7 +148,7 @@ package_data = {
 
 
 setup(
-    packages=pkgs,
+    packages=find_packages(include=['vnpy_ctp.api', 'vnpy_ctp.api.*']),
     package_dir={'vnpy_ctp': 'vnpy_ctp'},
     ext_modules=get_ext_modules(),
     cmdclass = {'build_ext': CustomBuildExt},  # 注册自定义构建命令

@@ -65,7 +65,7 @@ def _get_trader_dir(temp_name: str) -> Tuple[Path, Path]:
     return home_path, temp_path
 
 
-TRADER_DIR, TEMP_DIR = _get_trader_dir(".vntrader")
+TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
 sys.path.append(str(TRADER_DIR))
 
 

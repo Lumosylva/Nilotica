@@ -1,5 +1,5 @@
-""""""
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 TYPE_CPP2PY = {
     "int": "int",
     "char": "char",

@@ -1,16 +1,15 @@
 [project]
 name = "nilotica"
-dynamic = ["0.1.0"]
+version = "0.1.0"
 description = "一个基于vnpy的量化系统(Based vnpy quant trading system.)"
-license = {text = "Apache"}
-authors = [
-    { name = "Donny", email = "donnymoving@gmail.com" }
-]
+license = "Apache-2.0"
+license-files = ["LICEN[CS]E.*"]
+authors = [{ name = "Donny", email = "donnymoving@gmail.com" }]
 readme = "README.md"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: Apache License",
-    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -43,14 +42,15 @@ dependencies = [
     "wheel>=0.45.1",
 ]
 
-keywords = ["quant", "quantitative", "trading", "nilotica"]
+keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
 
 [project.urls]
 "Homepage" = "https://github.com/Nilotica/Nilotica"
 "Documentation" = "https://github.com/Nilotica/Nilotica/README.md"
-"Changes" = "https://github.com/Nilotica/Nilotica/CHANGELOG.md"
+"Repository" = "https://github.com/Nilotica/Nilotica.git"
+"Issues" = "https://github.com/Nilotica/Nilotica/issues"
+"Changelog" = "https://github.com/Nilotica/Nilotica/CHANGELOG.md"
 "Source" = "https://github.com/Nilotica/Nilotica"
-"Forum" = "https://github.com/Nilotica/Nilotica/issues"
 
 [build-system]
 requires = [
