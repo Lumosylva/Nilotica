@@ -8,8 +8,9 @@ from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 
 
-# 获取setup.py所在的目录路径
+# 设置pyd和pyi文件存放路径，前面是项目绝对路径，改成自己的
 target_dir = Path("D:/Project/PycharmProjects/Nilotica/vnpy_ctp/api")
+# 设置pybind11头文件目录，前面是项目绝对路径，改成自己的
 pybind11_include = "D:/Project/PycharmProjects/Nilotica/.venv/Lib/site-packages/pybind11/include"
 print("定义pyd目标目录:", target_dir)
 print("pybind11_include:", pybind11_include)
