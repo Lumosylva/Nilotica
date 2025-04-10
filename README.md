@@ -2,22 +2,22 @@
 
 ### **1. 前言**
 
-本项目基于 [vnpy](https://github.com/vnpy/vnpy) 及 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) ，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向期货量化交易，让交易者更加专注于量化策略的开发。
+本项目基于 [vnpy](https://github.com/vnpy/vnpy) 和 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) 之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，让交易者更加专注于策略的开发。
 
 ### **2. 基础环境**
 
-- **Python** ：`3.12.9`
+- **Python** ：`3.12.9`版本
 - **工具链**：`uv` + `setuptools` + `wheel`
-- **vnpy** ：`3.9.4`
-- **vnpy_ctp**： `6.7.2.1`（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
+- **vnpy** ：`3.9.4`版本
+- **vnpy_ctp**： `6.7.2.1`版本（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
 - 需要进行`C++`编译，因此在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
-- 目前项目所有代码仅在`Windows`环境下测试，`Linux`未测试
+- 目前项目所有代码仅在`Windows`环境下测试，`Linux`下并未测试
 
 ### **3. 环境配置**
 
-本项目使用`uv`来管理Python虚拟环境及软件包，以及软件包分发。
+本项目使用`uv`管理Python虚拟环境及依赖的软件包
 
-uv的安装
+uv安装
 
 ```bash
 # On macOS and Linux.
@@ -30,16 +30,16 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 pip install uv
 ```
 
-使用 `uv sync `命令可以让`uv`根据`pyproject.toml`文件中的配置，自动进行虚拟环境的创建和依赖的下载。
+使用 `uv sync `命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载。
 
 ```
 uv sync
 ```
 
-或不使用sync 命令，手动创建虚拟环境。
+或不使用`uv sync`命令，手动创建虚拟环境。
 
 ```bash
-# 指定虚拟环境Python版本
+# 指定虚拟环境 Python 版本
 uv venv --python 3.12.9 .venv
 # 激活虚拟环境
 .venv\Scripts\activate
