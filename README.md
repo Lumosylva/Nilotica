@@ -10,12 +10,12 @@
 - **工具链**：`uv` + `setuptools` + `wheel`
 - **vnpy** ：`3.9.4`
 - **vnpy_ctp**： `6.7.2.1`（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
-- 需要进行C++编译，因此在执行下述命令之前请确保已经安装了Visual Studio（Windows）、GCC（Linux）
-- 目前仅在Windows环境开发测试，Linux未测试
+- 需要进行`C++`编译，因此在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
+- 目前仅在`Windows`环境开发测试，`Linux`未测试
 
 ### **3. 环境配置**
 
-项目使用uv来管理Python虚拟环境及软件包，以及软件包分发。
+项目使用`uv`来管理Python虚拟环境及软件包，以及软件包分发。
 
 uv的安装
 
@@ -30,16 +30,16 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 pip install uv
 ```
 
-使用 `uv sync `命令可以让uv 工具根据pyproject.toml 文件中的配置进行虚拟环境的创建和依赖的下载，这个命令可以很方便的创建好虚拟环境和安装好依赖。
+使用 `uv sync `命令可以让`uv`根据`pyproject.toml`文件中的配置，自动进行虚拟环境的创建和依赖的下载。
 
 ```
 uv sync
 ```
 
-或者不使用sync 命令，手动的去创建虚拟环境， 使用 `uv venv `命令创建虚拟环境。
+或不使用sync 命令，手动创建虚拟环境。
 
 ```bash
-# 环境指定Python版本3.12.9
+# 指定虚拟环境Python版本
 uv venv --python 3.12.9 .venv
 # 激活虚拟环境
 .venv\Scripts\activate
@@ -51,7 +51,7 @@ uv venv --python 3.12.9 .venv
 
 #### **(1) 清理旧的构建**
 
-打开终端进入项目根目录，删除dist、*.egg-info目录
+打开终端进入项目根目录，删除`dist`、`*.egg-info`目录
 
 PowerShell 
 
@@ -74,7 +74,8 @@ rm -rf .\dist .\*.egg-info
 #### **(2) 执行构建**
 
 ```bash
-uv build . 或者
+uv build .
+或
 uv build . -v  # 使用 -v 查看详细日志
 ```
 
