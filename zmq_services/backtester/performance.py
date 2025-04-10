@@ -1,236 +1,233 @@
-from datetime import datetime, date, timedelta
-from typing import List, Dict, Optional
-import math
-import numpy as np # <--- 导入 numpy
+import pandas as pd
+import numpy as np
+from datetime import datetime
+from typing import List, Dict, Any
 
-# 尝试导入 vnpy 常量，如果失败则使用字符串比较（需要确保传入的 trades 字典中值为字符串）
+# Assuming vnpy constants are needed for Direction/Offset comparison
 try:
     from vnpy.trader.constant import Direction, Offset
 except ImportError:
-    print("Warning: vnpy.trader.constant not found in performance.py. Using string comparison for Direction/Offset.")
-    class Direction: LONG = "多"; SHORT = "空"
-    class Offset: OPEN = "开"; CLOSE = "平"; CLOSETODAY="平今"; CLOSEYESTERDAY="平昨"
+    # Provide dummy values if vnpy is not installed in this exact context
+    # This is mainly for standalone testing of this module
+    class DummyEnum:
+        def __init__(self, value):
+            self.value = value
+    class Direction:
+        LONG = DummyEnum("多")
+        SHORT = DummyEnum("空")
+    class Offset:
+        OPEN = DummyEnum("开")
+        CLOSE = DummyEnum("平")
+        CLOSETODAY = DummyEnum("平今")
+        CLOSEYESTERDAY = DummyEnum("平昨")
 
-def calculate_performance(
-    trades: List[Dict],
-    contract_multipliers: Dict[str, float],
-    initial_capital: float = 1_000_000.0, # 默认初始资金 100 万
-    risk_free_rate: float = 0.02, # 默认无风险利率 2% (用于后续夏普比率计算)
-    trading_days_per_year: int = 252 # 年化因子
-) -> Optional[Dict]:
+
+INITIAL_CAPITAL = 1_000_000  # 初始资金
+RISK_FREE_RATE = 0.02  # 无风险利率 (年化)
+ANNUAL_DAYS = 240      # 年化交易日数量 (根据市场调整)
+
+def calculate_performance(trades: List[Dict[str, Any]], contract_multipliers: Dict[str, int]) -> Dict[str, Any]:
     """
-    Calculates performance metrics from a list of trade records.
+    Calculates key performance indicators based on a list of trades.
 
     Args:
-        trades: List of trade dictionaries, each containing keys like
-                'datetime', 'symbol', 'direction', 'offset', 'price',
-                'volume', 'commission', etc.
-        contract_multipliers: Dictionary mapping symbol to its contract multiplier.
-        initial_capital: Starting capital for calculating returns.
-        risk_free_rate: Annual risk-free rate for Sharpe ratio calculation.
-        trading_days_per_year: Number of trading days in a year for annualization.
+        trades: A list of dictionaries, where each dictionary represents a trade.
+                Required keys: 'datetime', 'symbol', 'direction', 'offset',
+                               'price', 'volume', 'commission'.
+        contract_multipliers: A dictionary mapping symbol to its contract multiplier.
 
     Returns:
-        A dictionary containing calculated performance metrics, or None if no trades.
+        A dictionary containing calculated performance metrics:
+        - total_trades: Total number of completed trade pairs (open-close).
+        - total_commission: Total commission paid.
+        - total_pnl: Total realized profit and loss from closed trades.
+        - final_equity: Equity at the end of the backtest.
+        - total_return: Total return percentage based on initial capital.
+        - max_drawdown: Maximum drawdown percentage during the backtest.
+        - sharpe_ratio: Annualized Sharpe ratio (simple calculation based on daily returns).
+        - win_rate: Percentage of winning trade pairs.
+        - profit_loss_ratio: Ratio of average profit of winning trades to average loss of losing trades.
+        - equity_curve: Pandas Series with datetime index and equity values after each event (commission or PnL realization).
+        - pnl_curve: Pandas Series with datetime index and realized PnL values for each closed trade pair.
     """
     if not trades:
-        return None
+        print("警告: 没有成交记录，无法计算性能指标。")
+        # Use current time as a fallback placeholder if no trades exist
+        placeholder_start_time = datetime.now()
 
-    # --- 0. Sort trades by datetime ---
-    trades.sort(key=lambda x: x['datetime'])
+        return {
+            "total_trades": 0,
+            "total_commission": 0.0,
+            "total_pnl": 0.0,
+            "final_equity": INITIAL_CAPITAL,
+            "total_return": 0.0,
+            "max_drawdown": 0.0,
+            "sharpe_ratio": 0.0,
+            "win_rate": 0.0,
+            "profit_loss_ratio": 0.0,
+            "equity_curve": pd.Series([INITIAL_CAPITAL], index=[placeholder_start_time]),
+            "pnl_curve": pd.Series([], dtype=float)
+        }
 
-    # --- 1. Basic Metrics ---
-    total_trades = len(trades)
-    total_commission = sum(trade.get('commission', 0.0) for trade in trades)
+    # --- Data Preparation ---
+    trades.sort(key=lambda x: x['datetime']) # Ensure trades are time-sorted
 
-    # --- 2. Calculate Realized PnL & Track Positions ---
-    realized_pnl = 0.0
-    positions = {} # {symbol: {'volume': float, 'cost': float, 'pnl': float}}
+    equity = INITIAL_CAPITAL
+    max_equity = INITIAL_CAPITAL
+    max_drawdown_pct = 0.0
+    total_commission = 0.0
+    total_pnl = 0.0
+    win_trades = 0
+    loss_trades = 0
+    total_profit = 0.0
+    total_loss = 0.0
 
-    # --- Equity Curve Calculation ---
-    equity = initial_capital
-    equity_curve = [(trades[0]['datetime'].replace(hour=0, minute=0, second=0, microsecond=0), initial_capital)] # Start of first trade day
-    daily_equity = {equity_curve[0][0].date(): initial_capital} # Track closing equity per day
+    # Use first trade time minus a small delta as the start for equity curve
+    # Ensure datetime is timezone-naive or consistent
+    start_time = trades[0]['datetime']
+    if hasattr(start_time, 'tzinfo') and start_time.tzinfo is not None:
+        start_time = start_time.tz_localize(None) # Make timezone naive if needed
+    start_time -= pd.Timedelta(seconds=1)
 
-    # --- Lists to store round trip results ---
-    # Moved initialization outside the loop
-    if 'round_trip_pnls' not in locals(): round_trip_pnls = []
+    equity_history = {start_time: INITIAL_CAPITAL} # Use dict for easier updates
+    pnl_history = {} # Use dict for PnL realization time
+
+    open_trades = {} # key: symbol, value: list of open trade details (FIFO queue)
 
     for trade in trades:
         symbol = trade['symbol']
-        direction = trade['direction']
-        offset = trade['offset']
+        dt = trade['datetime']
+        # Ensure datetime is timezone-naive or consistent
+        if hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
+             dt = dt.tz_localize(None)
+
+        direction_val = trade['direction'] # vnpy Direction enum value e.g., "多"
+        offset_val = trade['offset']     # vnpy Offset enum value e.g., "开"
         price = trade['price']
         volume = trade['volume']
-        commission = trade.get('commission', 0.0)
-        multiplier = contract_multipliers.get(symbol, 1.0) # Default to 1 if not found
+        commission = trade['commission']
+        multiplier = contract_multipliers.get(symbol, 1)
 
-        # Initialize position if first time seeing this symbol
-        if symbol not in positions:
-            positions[symbol] = {'volume': 0.0, 'cost': 0.0, 'entry_price_avg': 0.0} # Add avg entry price tracking
+        # Apply commission cost immediately
+        total_commission += commission
+        equity -= commission
+        equity_history[dt] = equity # Record equity change due to commission
 
-        pos = positions[symbol]
-        trade_value = price * volume * multiplier
-        position_change = 0.0
+        if offset_val == Offset.OPEN.value:
+            # Record open trade details
+            trade_details = {
+                'datetime': dt,
+                'price': price,
+                'volume': volume,
+                'direction': direction_val # Store the value directly
+            }
+            if symbol not in open_trades:
+                open_trades[symbol] = []
+            open_trades[symbol].append(trade_details)
 
-        # Update PnL based on trade type
-        if offset == Offset.OPEN.value:
-            # --- Opening logic (update cost and average price) ---
-            current_total_cost = pos['volume'] * pos['entry_price_avg'] * multiplier # Cost before this trade
-            if direction == Direction.LONG.value:
-                position_change = volume
-                new_total_volume = pos['volume'] + volume
-                new_total_cost = current_total_cost + trade_value
-            else: # Short open
-                position_change = -volume
-                new_total_volume = pos['volume'] - volume
-                new_total_cost = current_total_cost - trade_value # Cost is negative for shorts
-
-            pos['volume'] = new_total_volume
-            # Update average entry price (weighted average)
-            if abs(pos['volume']) > 1e-9:
-                pos['entry_price_avg'] = (new_total_cost / pos['volume']) / multiplier
-            else: # Should not happen on open, but safeguard
-                 pos['entry_price_avg'] = 0.0
-
-            realized_pnl -= commission
-            equity -= commission
-
-        elif offset in [Offset.CLOSE.value, Offset.CLOSETODAY.value, Offset.CLOSEYESTERDAY.value]:
-            if abs(pos['volume']) < 1e-9: # Check if position exists
-                 print(f"警告: 尝试平仓 {symbol} 时无持仓...")
-                 realized_pnl -= commission
-                 equity -= commission
-                 continue
-
-            close_volume = min(volume, abs(pos['volume']))
-            if volume > abs(pos['volume']) + 1e-9: # Allow for small float errors
-                print(f"警告: 平仓量 {volume} 大于持仓量 {abs(pos['volume']):.2f} for {symbol}...")
-
-            # Determine if closing long or short position
-            close_long = (direction == Direction.SHORT.value and pos['volume'] > 0)
-            close_short = (direction == Direction.LONG.value and pos['volume'] < 0)
-
-            if close_long or close_short:
-                # --- Closing logic (calculate PnL based on average entry) ---
-                entry_price = pos['entry_price_avg']
-                pnl_per_share_gross = 0.0
-                if close_long: # Closing a long position (sell)
-                    pnl_per_share_gross = price - entry_price
-                    position_change = -close_volume
-                else: # Closing a short position (buy)
-                    pnl_per_share_gross = entry_price - price
-                    position_change = close_volume
-
-                round_trip_pnl = pnl_per_share_gross * close_volume * multiplier - commission # PnL for this round trip portion
-                round_trip_pnls.append(round_trip_pnl) # Store PnL for win rate/profit factor
-
-                realized_pnl += round_trip_pnl # Accumulate total realized PnL
-                equity += round_trip_pnl # Update equity
-
-                # Update position volume (cost basis update is implicitly handled by avg price)
-                pos['volume'] += position_change
-                if abs(pos['volume']) < 1e-9: # Reset average price if flat
-                    pos['volume'] = 0.0
-                    pos['entry_price_avg'] = 0.0
-
-            else: # Mismatched direction/offset
-                print(f"警告: 平仓方向与持仓不符...")
-                realized_pnl -= commission
-                equity -= commission
+        elif offset_val in [Offset.CLOSE.value, Offset.CLOSETODAY.value, Offset.CLOSEYESTERDAY.value]:
+            # Process close trade
+            if symbol not in open_trades or not open_trades[symbol]:
+                print(f"警告: 在 {dt} 收到 {symbol} 的平仓成交，但没有找到对应的开仓记录。跳过此平仓的盈亏计算。")
                 continue
 
-        # --- Update Equity Curve & Daily Equity ---
-        trade_dt = trade['datetime']
-        equity_curve.append((trade_dt, equity))
-        daily_equity[trade_dt.date()] = equity # Update closing equity for the day
+            # Match closing trade with the earliest open trade (FIFO)
+            open_trade = open_trades[symbol].pop(0)
+            open_price = open_trade['price']
+            open_direction_val = open_trade['direction']
 
-    # --- Calculate Max Drawdown ---
-    max_drawdown = 0.0
-    peak_equity = initial_capital
-    for dt, current_equity in equity_curve:
-        peak_equity = max(peak_equity, current_equity)
-        drawdown = (peak_equity - current_equity) / peak_equity if peak_equity > 0 else 0
-        max_drawdown = max(max_drawdown, drawdown)
+            # Calculate PnL for this closed pair
+            trade_pnl = 0.0
+            if open_direction_val == Direction.LONG.value: # Closing a long position
+                trade_pnl = (price - open_price) * volume * multiplier
+            elif open_direction_val == Direction.SHORT.value: # Closing a short position
+                trade_pnl = (open_price - price) * volume * multiplier
 
-    # --- Calculate Sharpe Ratio (based on daily returns) ---
+            # Update total PnL and equity
+            total_pnl += trade_pnl
+            equity += trade_pnl
+            # Ensure the timestamp for PnL and equity update is unique or handled
+            # If multiple events happen at the exact same ms, dict will overwrite.
+            equity_history[dt] = equity # Record equity change due to PnL realization
+            pnl_history[dt] = trade_pnl # Record PnL at this time
+
+            # Update win/loss statistics
+            if trade_pnl > 0:
+                win_trades += 1
+                total_profit += trade_pnl
+            elif trade_pnl < 0:
+                loss_trades += 1
+                total_loss += abs(trade_pnl)
+
+        # Update maximum drawdown after every equity change event
+        if equity > max_equity:
+            max_equity = equity
+        drawdown = max_equity - equity
+        drawdown_pct = (drawdown / max_equity) * 100 if max_equity > 0 else 0
+        if drawdown_pct > max_drawdown_pct:
+            max_drawdown_pct = drawdown_pct
+
+    # --- Convert history to Pandas Series ---
+    equity_curve = pd.Series(equity_history).sort_index()
+    pnl_curve = pd.Series(pnl_history).sort_index()
+
+
+    # --- Calculate final metrics ---
+    total_trades_closed = win_trades + loss_trades
+    final_equity = equity_curve.iloc[-1] if not equity_curve.empty else INITIAL_CAPITAL
+    total_return_pct = ((final_equity / INITIAL_CAPITAL) - 1) * 100 if INITIAL_CAPITAL > 0 else 0.0
+    win_rate_pct = (win_trades / total_trades_closed) * 100 if total_trades_closed > 0 else 0.0
+
+    avg_profit = total_profit / win_trades if win_trades > 0 else 0.0
+    avg_loss = total_loss / loss_trades if loss_trades > 0 else 0.0
+    profit_loss_ratio = avg_profit / avg_loss if avg_loss > 0 else float('inf') if avg_profit > 0 else 0.0 # Handle zero loss
+
+    # --- Calculate Sharpe Ratio ---
+    resample_freq = 'D' # Default to daily
+    daily_equity = equity_curve.resample(resample_freq).last().ffill()
+    daily_returns = daily_equity.pct_change().dropna()
+
+
     sharpe_ratio = 0.0
-    annualized_sharpe = 0.0
+    if len(daily_returns) >= 3 :
+        std_dev_daily_return = daily_returns.std()
+        if std_dev_daily_return is not None and std_dev_daily_return != 0:
+            excess_daily_returns = daily_returns - (RISK_FREE_RATE / ANNUAL_DAYS)
+            avg_excess_return = excess_daily_returns.mean()
+            sharpe_ratio = (avg_excess_return / std_dev_daily_return) * np.sqrt(ANNUAL_DAYS)
 
-    # Sort daily equity by date
-    sorted_dates = sorted(daily_equity.keys())
-    daily_equity_values = [daily_equity[d] for d in sorted_dates]
 
-    if len(daily_equity_values) > 1:
-        daily_returns = np.diff(daily_equity_values) / daily_equity_values[:-1]
-        # Handle potential division by zero if equity drops to 0
-        daily_returns = np.nan_to_num(daily_returns)
-
-        if len(daily_returns) > 0 and np.std(daily_returns) != 0:
-            # Calculate daily statistics
-            mean_daily_return = np.mean(daily_returns)
-            std_daily_return = np.std(daily_returns)
-
-            # Calculate daily risk-free rate
-            daily_risk_free = (1 + risk_free_rate)**(1/trading_days_per_year) - 1
-
-            # Calculate Sharpe Ratio
-            sharpe_ratio = (mean_daily_return - daily_risk_free) / std_daily_return
-
-            # Annualize Sharpe Ratio
-            annualized_sharpe = sharpe_ratio * math.sqrt(trading_days_per_year)
-
-    # --- TODO: 4. Calculate Win Rate & Profit Factor ---
-    # Moved calculation logic here from the loop
-    winning_trades = sum(1 for pnl in round_trip_pnls if pnl > 0)
-    losing_trades = sum(1 for pnl in round_trip_pnls if pnl < 0)
-    total_round_trips = winning_trades + losing_trades
-
-    win_rate = winning_trades / total_round_trips if total_round_trips > 0 else 0.0
-
-    gross_profit = sum(pnl for pnl in round_trip_pnls if pnl > 0)
-    gross_loss = abs(sum(pnl for pnl in round_trip_pnls if pnl < 0))
-
-    profit_factor = gross_profit / gross_loss if gross_loss > 0 else math.inf # Handle division by zero
-
-    # --- 5. Assemble Results ---
-    results = {
-        "total_trades": total_trades,
-        "total_commission": round(total_commission, 2),
-        "realized_pnl": round(realized_pnl, 2),
-        # --- New metrics ---
-        "end_equity": round(equity, 2),
-        "total_return": (equity - initial_capital) / initial_capital if initial_capital else 0,
-        "max_drawdown": round(max_drawdown, 4),
-        "sharpe_ratio": round(annualized_sharpe, 3),
-        # --- New metrics ---
-        "win_rate": round(win_rate, 3),
-        "profit_factor": round(profit_factor, 3),
+    return {
+        "total_trades": total_trades_closed,
+        "total_commission": total_commission,
+        "total_pnl": total_pnl,
+        "final_equity": final_equity,
+        "total_return": total_return_pct,
+        "max_drawdown": max_drawdown_pct,
+        "sharpe_ratio": sharpe_ratio,
+        "win_rate": win_rate_pct,
+        "profit_loss_ratio": profit_loss_ratio,
+        "equity_curve": equity_curve,
+        "pnl_curve": pnl_curve
     }
 
-    return results
-
-def print_performance_report(results: Optional[Dict]):
-    """Prints the performance report in a readable format."""
+def print_performance_report(results: Dict[str, Any]):
+    """Prints the performance report in a formatted way."""
     print("\n--- 回测性能报告 ---")
-    if not results:
-        print("没有计算任何性能指标 (无成交记录)。")
-        print("--------------------")
-        return
-
-    print(f"总成交次数:     {results.get('total_trades', 'N/A')}")
-    print(f"总手续费:       {results.get('total_commission', 'N/A'):.2f}")
-    print(f"已实现盈亏:     {results.get('realized_pnl', 'N/A'):.2f}")
-    print(f"期末权益:       {results.get('end_equity', 'N/A'):.2f}")
-    print(f"总回报率:       {results.get('total_return', 'N/A'):.2%}") # Format as percentage
-    print("---")
-    print(f"最大回撤:       {results.get('max_drawdown', 'N/A'):.2%}") # Format as percentage
-    print(f"夏普比率:       {results.get('sharpe_ratio', 'N/A'):.3f}")
-    print("---")
-    # --- Print new metrics ---
-    print(f"胜率:           {results.get('win_rate', 'N/A'):.1%}") # Format as percentage
-    print(f"盈亏比:         {results.get('profit_factor', 'N/A'):.2f}")
-    # --- End print ---
+    if results["total_trades"] == 0:
+        print("没有计算任何性能指标 (无完整交易记录)。")
+    else:
+        print(f"总成交次数(对): {results['total_trades']:<d}")
+        print(f"总手续费:       {results['total_commission']:.2f}")
+        print(f"已实现盈亏:     {results['total_pnl']:.2f}")
+        print(f"期末权益:       {results['final_equity']:.2f}")
+        print(f"总回报率:       {results['total_return']:.2f}%")
+        print("---")
+        print(f"最大回撤:       {results['max_drawdown']:.2f}%")
+        print(f"夏普比率:       {results['sharpe_ratio']:.3f}")
+        print("---")
+        print(f"胜率:           {results['win_rate']:.1f}%")
+        print(f"盈亏比:         {results['profit_loss_ratio']:.2f}")
     print("--------------------")
 
 # Example Usage (for testing inside this file)
@@ -240,9 +237,9 @@ if __name__ == '__main__':
         {'datetime': datetime(2025, 4, 9, 21, 30, 0), 'symbol': 'SA505', 'direction': '空', 'offset': '平', 'price': 1320.0, 'volume': 1, 'commission': 5.20},
         {'datetime': datetime(2025, 4, 9, 22, 0, 5), 'symbol': 'rb2510', 'direction': '空', 'offset': '开', 'price': 3080.0, 'volume': 1, 'commission': 3.08},
         {'datetime': datetime(2025, 4, 9, 22, 15, 10), 'symbol': 'rb2510', 'direction': '多', 'offset': '平', 'price': 3070.0, 'volume': 1, 'commission': 3.07},
-         {'datetime': datetime(2025, 4, 9, 22, 30, 0), 'symbol': 'SA505', 'direction': '多', 'offset': '开', 'price': 1315.0, 'volume': 2, 'commission': 10.40}, # Open more
-         {'datetime': datetime(2025, 4, 9, 22, 45, 0), 'symbol': 'SA505', 'direction': '空', 'offset': '平', 'price': 1310.0, 'volume': 1, 'commission': 5.20}, # Close partial
-         {'datetime': datetime(2025, 4, 9, 22, 50, 0), 'symbol': 'SA505', 'direction': '空', 'offset': '平', 'price': 1308.0, 'volume': 1, 'commission': 5.20}, # Close remaining
+         {'datetime': datetime(2025, 4, 9, 22, 30, 0), 'symbol': 'SA505', 'direction': '多', 'offset': '开', 'price': 1315.0, 'volume': 2, 'commission': 10.40},
+         {'datetime': datetime(2025, 4, 9, 22, 45, 0), 'symbol': 'SA505', 'direction': '空', 'offset': '平', 'price': 1310.0, 'volume': 1, 'commission': 5.20},
+         {'datetime': datetime(2025, 4, 9, 22, 50, 0), 'symbol': 'SA505', 'direction': '空', 'offset': '平', 'price': 1308.0, 'volume': 1, 'commission': 5.20},
     ]
     example_multipliers = {'SA505': 20, 'rb2510': 10}
     performance = calculate_performance(example_trades, example_multipliers)

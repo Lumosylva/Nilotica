@@ -18,9 +18,9 @@ try:
     from zmq_services.strategy_subscriber import StrategySubscriber
     from zmq_services import config
     from vnpy.trader.constant import Direction, Offset, Status
-    # +++ 导入性能计算函数 +++
-    from zmq_services.backtester.performance import calculate_performance, print_performance_report
-    # +++ 结束导入 +++
+    # --- 修改导入，移除 plot_performance --- 
+    from zmq_services.backtester.performance import calculate_performance, print_performance_report # 移除 plot_performance
+    # --- 结束修改 ---
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print(f"Project root added to path: {project_root}")
@@ -187,7 +187,9 @@ def main():
         # --- 调用详细性能计算和打印函数 ---
         performance_results = calculate_performance(all_trades, contract_multipliers) # 传递成交列表和合约乘数
         print_performance_report(performance_results)
-        # ------------------------------------
+        # --- 移除调用绘图函数 ---
+        # plot_performance(performance_results, args.date)
+        # -------------------
     else:
         print("错误：无法获取策略实例以计算性能。")
 
