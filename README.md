@@ -2,7 +2,7 @@
 
 ### **1. 前言**
 
-项目基于 [vnpy](https://github.com/vnpy/vnpy) 及 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) ，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向期货量化交易，让交易者更加专注于量化策略的开发。
+本项目基于 [vnpy](https://github.com/vnpy/vnpy) 及 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) ，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向期货量化交易，让交易者更加专注于量化策略的开发。
 
 ### **2. 基础环境**
 
@@ -11,11 +11,11 @@
 - **vnpy** ：`3.9.4`
 - **vnpy_ctp**： `6.7.2.1`（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
 - 需要进行`C++`编译，因此在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
-- 目前仅在`Windows`环境开发测试，`Linux`未测试
+- 目前项目所有代码仅在`Windows`环境下测试，`Linux`未测试
 
 ### **3. 环境配置**
 
-项目使用`uv`来管理Python虚拟环境及软件包，以及软件包分发。
+本项目使用`uv`来管理Python虚拟环境及软件包，以及软件包分发。
 
 uv的安装
 
@@ -47,7 +47,7 @@ uv venv --python 3.12.9 .venv
 
 ### **4. 构建流程**
 
-项目利用`setup.py`在`vnpy_ctp\api\`路径下编译出Python可调用的行情和交易文件`.pyd`以及利用`pybind11-stubgen`生成它们对应的存根文件`.pyi`。
+本项目利用`setup.py`在`vnpy_ctp\api\`路径下编译出Python可调用的行情和交易文件`.pyd`以及利用`pybind11-stubgen`生成它们对应的存根文件`.pyi`。
 
 #### **(1) 清理旧的构建**
 
@@ -90,9 +90,21 @@ vnpy_rpcservice - vnpy官方的RPC库，实现了RPC服务。
 
 zmq_services - 本系统的核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测。实现了行情转发、报单、策略执行、简单的风控监控、数据记录、策略回测等功能。
 
-.python-version - 包含Python版本号，uv 自动生成的文件，不用手动编辑。
+.python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
 
-CHANGELOG.md - 本系统版本更新日志。
+1_run_market_gateway.bat - 行情网关启动脚本
+
+2_run_order_gateway.bat - 订单执行网关启动脚本
+
+3_run_strategy_subscriber.bat - 策略订阅器启动脚本
+
+4_run_risk_manager.bat - 风控管理启动脚本
+
+5_run_data_recorder.bat - 数据记录启动脚本
+
+6_run_backtest.bat - 策略回测demo脚本
+
+CHANGELOG.md - 系统版本更新日志。
 
 LICENSE.txt - license文件。
 
@@ -100,7 +112,9 @@ README.md - 项目说明。
 
 main.py - 项目入口，暂时无定义
 
-pyproject.toml -  项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
+pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
+
+run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
 
 setup.py - 自动化编译脚本，实现在vnpy_ctp\api\路径下自动编译出行情和交易pyd文件及对应pyi存根文件。
 
