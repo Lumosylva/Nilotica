@@ -85,6 +85,8 @@ vnpy - vnpy 官方核心库，版本3.9.4
 
 vnpy_ctp - vnpy官方 vnpy-ctp 库，使用pybind11包装CTP C++接口为Python可调用的接口。
 
+vnpy_rpcservice - vnpy的rpc服务
+
 zmq_services - 系统的核心，包括行情、交易、回测、行情记录
 
 .python-version - 使用的Python版本，uv自动管理的文件
