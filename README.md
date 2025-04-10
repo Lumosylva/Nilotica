@@ -80,23 +80,27 @@ uv build . -v  # 使用 -v 查看详细日志
 ### **5. 项目结构**
 
 ```reStructuredText
-demo - 示例代码
-
 vnpy - vnpy 官方核心库，版本3.9.4
 
 vnpy_ctp - vnpy官方 vnpy-ctp 库，使用pybind11包装CTP C++接口为Python可调用的接口。
 
+zmq_services - 系统的核心，包括行情、交易、回测、行情记录
+
 .python-version - 使用的Python版本，uv自动管理的文件
+
+CHANGELOG.md - 版本更新日志
 
 LICENSE.txt - license文件。
 
-MANIFEST.in - Python 包管理工具（setuptools）用来指定哪些文件应该包含在生成的分发包（如 .tar.gz 或 .whl文件）中的配置文件，recursive-include表示递归的包含目录下匹配的文件。
+README.md - 项目说明
+
+main.py - 项目入口，暂时无定义
 
 pyproject.toml -  Python 项目配置文件，用于定义项目的主要依赖、元数据、构建系统等信息。
 
-setup.py - 自动化编译文件
+setup.py - 自动化编译文件，在vnpy_ctp\api\下自动编译出pyd文件和pyi文件。
 
-uv.lock - 记录项目的所有依赖，包括依赖的依赖，且跨平台，确保在不同环境下安装的一致性。这个文件由 uv 自动管理，不要手动编辑
+uv.lock - 记录项目的所有依赖，这个文件由 uv 自动管理，不要手动编辑
 ```
 
 
