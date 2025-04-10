@@ -82,43 +82,44 @@ uv build . -v  # 使用 -v 查看详细日志
 ### **5. 项目结构**
 
 ```reStructuredText
-vnpy - vnpy官方的核心库，主要功能是实现事件驱动引擎，版本3.9.4。
-
-vnpy_ctp - vnpy官方的ctp库，使用pybind11包装CTP C++接口为Python可调用的接口，主要功能是与交易所行情和交易服务器打交道。
-
-vnpy_rpcservice - vnpy官方的RPC库，实现了RPC服务。
-
-zmq_services - 本系统的核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测。实现了行情转发、报单、策略执行、简单的风控监控、数据记录、策略回测等功能。
-
-.python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
-
-1_run_market_gateway.bat - 行情网关启动脚本
-
-2_run_order_gateway.bat - 订单执行网关启动脚本
-
-3_run_strategy_subscriber.bat - 策略订阅器启动脚本
-
-4_run_risk_manager.bat - 风控管理启动脚本
-
-5_run_data_recorder.bat - 数据记录启动脚本
-
-6_run_backtest.bat - 策略回测demo脚本
-
-CHANGELOG.md - 系统版本更新日志。
-
-LICENSE.txt - license文件。
-
-README.md - 项目说明。
-
-main.py - 项目入口，暂时无定义
-
-pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
-
-run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
-
-setup.py - 自动化编译脚本，实现在vnpy_ctp\api\路径下自动编译出行情和交易pyd文件及对应pyi存根文件。
-
-uv.lock - 记录项目的所有依赖，由uv自动管理，不用手动编辑。
+.
+├── vnpy - vnpy官方的核心库，主要功能是实现事件驱动引擎，版本3.9.4。
+├── vnpy_ctp - vnpy官方的ctp库，主要功能是与交易所行情和交易服务器打交道。
+├──vnpy_rpcservice - vnpy官方的RPC库，实现了RPC服务。
+├──zmq_services - 系统核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测。
+│   ├── backtester - 回测相关
+│   │   ├── data_player.py - 数据回放
+│   │   ├── performance.py - 计算性能指标，回测性能报告
+│   │   ├── run_backtest.py - 运行回测脚本
+│   │   ├── run_data_player.py - 运行数据回放脚本
+│   │   └── simulation_engine.py - 模拟引擎
+│   ├── recorded_data - tick、order、trader数据本地存储目录。
+│   ├── config.py - 项目配置
+│   ├── data_recorder.py - 数据记录
+│   ├── market_data_gateway.py - 行情网关
+│   ├── order_execution_gateway.py - 订单执行网关
+│   ├── risk_manager.py - 风控管理
+│   ├── run_data_recorder.py - 运行数据记录脚本
+│   ├── run_market_gateway.py - 运行行情网关脚本
+│   ├── run_order_gateway.py - 运行订单执行网关脚本
+│   ├── run_risk_manager.py - 运行风控管理脚本
+│   ├── run_strategy_subscriber.py - 运行策略订阅器脚本
+│   └── strategy_subscriber.py - 策略订阅器
+├── .python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
+├── 1_run_market_gateway.bat - 行情网关启动脚本
+├── 2_run_order_gateway.bat - 订单执行网关启动脚本
+├── 3_run_strategy_subscriber.bat - 策略订阅器启动脚本
+├── 4_run_risk_manager.bat - 风控管理启动脚本
+├── 5_run_data_recorder.bat - 数据记录启动脚本
+├── 6_run_backtest.bat - 策略回测demo脚本
+├── CHANGELOG.md - 系统版本更新日志。
+├── LICENSE.txt - license文件。
+├── README.md - 项目说明。
+├── main.py - 项目入口，暂时无定义
+├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
+├── run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
+├── setup.py - 自动化编译脚本，实现在vnpy_ctp\api\路径下自动编译出行情和交易pyd文件及对应pyi存根文件。
+└── uv.lock - 记录项目的所有依赖，由uv自动管理，不用手动编辑。
 ```
 
 
