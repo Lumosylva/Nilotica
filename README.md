@@ -1,8 +1,8 @@
-# 基于vnpy的量化交易系统——Nilotica
+# 基于vnpy的期货量化交易系统——Nilotica
 
 ### **1. 前言**
 
-项目基于[vnpy](https://github.com/vnpy/vnpy)及[vnpy_ctp](https://github.com/vnpy/vnpy_ctp)，目的是简化量化交易的上手程度，让手动交易者更容易转向量化交易，让交易者更加专注于量化策略的开发。
+项目基于[vnpy](https://github.com/vnpy/vnpy)及[vnpy_ctp](https://github.com/vnpy/vnpy_ctp)，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向期货量化交易，让交易者更加专注于量化策略的开发。
 
 ### **2. 基础环境**
 
