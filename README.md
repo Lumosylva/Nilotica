@@ -81,29 +81,29 @@ uv build . -v  # 使用 -v 查看详细日志
 ### **5. 项目结构**
 
 ```reStructuredText
-vnpy - vnpy 官方核心库，版本3.9.4
+vnpy - vnpy官方的核心库，主要功能是实现事件驱动引擎，版本3.9.4。
 
-vnpy_ctp - vnpy官方 vnpy-ctp 库，使用pybind11包装CTP C++接口为Python可调用的接口。
+vnpy_ctp - vnpy官方的ctp库，使用pybind11包装CTP C++接口为Python可调用的接口，主要功能是与交易所行情和交易服务器打交道。
 
-vnpy_rpcservice - vnpy的rpc服务
+vnpy_rpcservice - vnpy官方的RPC库，实现了RPC服务。
 
-zmq_services - 系统的核心，包括行情、交易、回测、行情记录
+zmq_services - 本系统的核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测。实现了行情转发、报单、策略执行、简单的风控监控、数据记录、策略回测等功能。
 
-.python-version - 使用的Python版本，uv自动管理的文件
+.python-version - 包含Python版本号，uv 自动生成的文件，不用手动编辑。
 
-CHANGELOG.md - 版本更新日志
+CHANGELOG.md - 本系统版本更新日志。
 
 LICENSE.txt - license文件。
 
-README.md - 项目说明
+README.md - 项目说明。
 
 main.py - 项目入口，暂时无定义
 
-pyproject.toml -  Python 项目配置文件，用于定义项目的主要依赖、元数据、构建系统等信息。
+pyproject.toml -  项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
 
-setup.py - 自动化编译文件，在vnpy_ctp\api\下自动编译出pyd文件和pyi文件。
+setup.py - 自动化编译脚本，实现在vnpy_ctp\api\路径下自动编译出行情和交易pyd文件及对应pyi存根文件。
 
-uv.lock - 记录项目的所有依赖，这个文件由 uv 自动管理，不要手动编辑
+uv.lock - 记录项目的所有依赖，由uv自动管理，不用手动编辑。
 ```
 
 
