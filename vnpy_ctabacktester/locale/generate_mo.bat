@@ -1,1 +1,0 @@
-python C:\veighna_studio\Tools\i18n\msgfmt.py -o vnpy_ctabacktester\locale\en\LC_MESSAGES\vnpy_ctabacktester.mo vnpy_ctabacktester\locale\en\LC_MESSAGES\vnpy_ctabacktester

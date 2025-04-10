@@ -1,1 +1,0 @@
-python C:\veighna_studio\Tools\i18n\pygettext.py -o vnpy_ctabacktester\locale\vnpy_ctabacktester.pot  vnpy_ctabacktester\*.py vnpy_ctabacktester\ui\*.py
