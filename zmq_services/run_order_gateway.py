@@ -14,7 +14,7 @@ except ImportError as e:
     print(f"Error importing OrderExecutionGatewayService: {e}")
     print(f"Project root added to path: {project_root}")
     print(f"Current sys.path: {sys.path}")
-    print("Ensure zmq_services directory and its files exist.")
+    print("Ensure zmq_services directory and its project_files exist.")
     sys.exit(1)
 
 def main():

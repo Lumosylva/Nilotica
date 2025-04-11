@@ -7,5 +7,8 @@
 @Author     : Donny
 @Email      : donnymoving@gmail.com
 @Software   : PyCharm
-@Description: description
+@Description: 路径工具类的初始化
 """
+from utils.path.get_path import GetPath
+
+get_path_ins = GetPath()

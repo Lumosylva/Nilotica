@@ -216,7 +216,7 @@ class AccountData(BaseData):
 @dataclass
 class LogData(BaseData):
     """
-    Log data is used for recording log messages on GUI or in log files.
+    Log data is used for recording log messages on GUI or in log project_files.
     """
 
     msg: str

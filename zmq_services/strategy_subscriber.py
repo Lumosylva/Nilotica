@@ -197,6 +197,17 @@ class StrategySubscriber:
         poll_timeout_ms = 100 # 轮询超时（毫秒）
         # +++ 结束使用 +++
 
+        # +++ 在循环开始前重置策略状态 +++
+        print("重置策略内部状态...")
+        self.sa505_long_pending_or_open = False
+        self.sa505_entry_price = 0.0
+        self.sa505_target_price = 0.0
+        self.sa505_stop_price = 0.0
+        self.sa505_close_pending = False
+        self.trades = [] # 清空已记录的成交
+        self.last_order_time = {} # 清空上次下单时间记录
+        # +++ 结束重置 +++
+
         while self.running:
             try:
                 # +++ 使用 Poller 检查消息 +++
@@ -335,14 +346,17 @@ class StrategySubscriber:
                 elif msg_type == "TRADE":
                     trade_id = msg_data.get('vt_tradeid', 'N/A')
                     order_id = msg_data.get('vt_orderid', 'N/A')
-                    trade_price = msg_data.get('price', 0.0) # Default to float
-                    trade_vol = msg_data.get('volume', 0.0) # Default to float
+                    trade_price = msg_data.get('price', 0.0)
+                    trade_vol = msg_data.get('volume', 0.0)
                     direction = msg_data.get('direction', 'N/A')
-                    offset = msg_data.get('offset', 'N/A') # Get offset info
-                    commission = msg_data.get('commission', 0.0) # Get commission
-                    symbol = msg_data.get('symbol', 'N/A') # Get symbol
-                    exchange = msg_data.get('exchange', 'N/A') # Get exchange
-                    trade_time_str = msg_data.get('datetime', None) # Get trade datetime str
+                    offset = msg_data.get('offset', 'N/A') 
+                    symbol = msg_data.get('symbol', 'N/A')
+                    exchange = msg_data.get('exchange', 'N/A')
+                    trade_time_str = msg_data.get('datetime', None)
+                    # --- 读取计算出的手续费 --- 
+                    # 尝试读取 calculated_commission，如果不存在则读取原始 commission (可能为None或0)，最后默认为0
+                    commission = msg_data.get('calculated_commission', msg_data.get('commission', 0.0)) 
+                    # --- 结束读取 ---
 
                     print(f"[{pretty_time}] 成交回报 [{topic_str}] - TradeID: {trade_id}, OrderID: {order_id}, 方向: {direction}, 开平: {offset}, 价格: {trade_price}, 数量: {trade_vol}, 手续费: {commission:.2f}")
 

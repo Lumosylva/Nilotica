@@ -5,6 +5,8 @@ import threading
 import sys
 import os
 from datetime import datetime
+from typing import Dict, Tuple
+import configparser
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -30,6 +32,56 @@ except ImportError as e:
 
 # Import local config
 from . import config
+
+# --- 移除硬编码规则 ---
+# COMMISSION_RULES = { ... }
+# --- 结束移除 ---
+
+# +++ 添加函数：加载产品信息 +++
+def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
+    """Loads commission rules and multipliers from an INI file."""
+    parser = configparser.ConfigParser()
+    if not os.path.exists(filepath):
+        print(f"错误：产品信息文件未找到 {filepath}")
+        return {}, {}
+
+    try:
+        parser.read(filepath, encoding='utf-8')
+    except Exception as e:
+        print(f"错误：读取产品信息文件 {filepath} 时出错: {e}")
+        return {}, {}
+
+    commission_rules = {}
+    contract_multipliers = {}
+
+    for symbol in parser.sections():
+        if not parser.has_option(symbol, 'multiplier'):
+            print(f"警告：文件 {filepath} 中的 [{symbol}] 缺少 'multiplier'，跳过此合约。")
+            continue
+        
+        try:
+            multiplier = parser.getfloat(symbol, 'multiplier')
+            contract_multipliers[symbol] = multiplier
+
+            # 解析手续费规则 (允许部分缺失，使用 getfloat/getint 并提供默认值 0)
+            rule = {
+                "open_rate": parser.getfloat(symbol, 'open_rate', fallback=0.0),
+                "close_rate": parser.getfloat(symbol, 'close_rate', fallback=0.0),
+                "open_fixed": parser.getfloat(symbol, 'open_fixed', fallback=0.0),
+                "close_fixed": parser.getfloat(symbol, 'close_fixed', fallback=0.0),
+                "min_commission": parser.getfloat(symbol, 'min_commission', fallback=0.0)
+                # 可以添加 closetoday_rate/fixed 等如果你的INI文件包含它们
+            }
+            commission_rules[symbol] = rule
+            # print(f"加载 {symbol}: Multiplier={multiplier}, Rules={rule}") # Debug
+        except ValueError as e:
+            print(f"警告：解析文件 {filepath} 中 [{symbol}] 的数值时出错: {e}，跳过此合约。")
+        except Exception as e:
+            print(f"警告：处理文件 {filepath} 中 [{symbol}] 时发生未知错误: {e}，跳过此合约。")
+            
+    print(f"从 {filepath} 加载了 {len(contract_multipliers)} 个合约的乘数和 {len(commission_rules)} 个合约的手续费规则。")
+    return commission_rules, contract_multipliers
+# +++ 结束添加 +++
 
 # --- Helper Functions for Serialization/Deserialization ---
 
@@ -128,46 +180,98 @@ class OrderExecutionGatewayService:
 
         self.running = False
         self.req_thread = None # Thread for receiving ZMQ requests
+        self.contracts: Dict[str, ContractData] = {}
+
+        # +++ 加载产品信息 +++
+        # 修正路径：从 zmq_services 目录出发，向上一级到项目根目录，再进入 config
+        config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config'))
+        info_filepath = os.path.join(config_dir, 'project_files', 'product_info.ini')
+        print(f"尝试从 {info_filepath} 加载产品信息...")
+        self.commission_rules, self.contract_multipliers = load_product_info(info_filepath)
+        if not self.commission_rules or not self.contract_multipliers:
+             print("警告：未能成功加载手续费规则或合约乘数，手续费计算可能不准确！")
+        # +++ 结束加载 +++
 
         print("订单执行网关服务初始化完成。")
 
     def process_vnpy_event(self, event: Event):
-        """Processes ORDER and TRADE events from the vnpy EventEngine."""
+        """Processes ORDER, TRADE, LOG, and CONTRACT events."""
         event_type = event.type
 
         if event_type == EVENT_ORDER:
             order: OrderData = event.data
-            # print(f"收到订单回报: {order.vt_orderid} - Status: {order.status}") # Debug
             self.publish_report(order, "ORDER_STATUS")
         elif event_type == EVENT_TRADE:
             trade: TradeData = event.data
-            # print(f"收到成交回报: {trade.vt_orderid} - Price: {trade.price}, Vol: {trade.volume}") # Debug
-            self.publish_report(trade, "TRADE")
+            calculated_commission = 0.0
+            
+            # +++ 使用加载的规则计算手续费 +++
+            contract = self.contracts.get(trade.vt_symbol)
+            # 注意：手续费规则使用 symbol (e.g., "SA505"), 合约信息使用 vt_symbol
+            rules = self.commission_rules.get(trade.symbol)
+
+            if contract and rules:
+                # 获取乘数 (这里不再需要，因为计算时直接用 contract.size)
+                # multiplier = self.contract_multipliers.get(trade.symbol, 1) # 确保乘数存在
+                
+                turnover = trade.price * trade.volume * contract.size
+                rate = 0.0
+                fixed = 0.0
+                min_comm = rules.get('min_commission', 0.0)
+                
+                if trade.offset == Offset.OPEN:
+                    rate = rules.get('open_rate', 0.0)
+                    fixed = rules.get('open_fixed', 0.0)
+                elif trade.offset in [Offset.CLOSE, Offset.CLOSETODAY, Offset.CLOSEYESTERDAY]: 
+                    rate = rules.get('close_rate', 0.0)
+                    fixed = rules.get('close_fixed', 0.0)
+                else:
+                    print(f"警告: 未知的开平仓方向 {trade.offset} 用于手续费计算，按开仓处理。")
+                    rate = rules.get('open_rate', 0.0)
+                    fixed = rules.get('open_fixed', 0.0)
+
+                if fixed > 0:
+                    calculated_commission = trade.volume * fixed
+                elif rate > 0:
+                    calculated_commission = turnover * rate
+                
+                calculated_commission = max(calculated_commission, min_comm)
+                print(f"收到成交回报: {trade.vt_tradeid}, 使用加载规则计算手续费: {calculated_commission:.2f}") # 更新日志
+            
+            elif not contract:
+                print(f"警告: 未找到成交 {trade.vt_tradeid} 对应的合约信息 ({trade.vt_symbol})，手续费计为 0。")
+            elif not rules:
+                 print(f"警告: 未找到成交 {trade.vt_tradeid} 对应的手续费规则 ({trade.symbol})，手续费计为 0。")
+            # +++ 结束计算 +++
+
+            self.publish_report(trade, "TRADE", calculated_commission=calculated_commission)
         elif event_type == EVENT_LOG:
             log: LogData = event.data
             level_str = log.level.name if hasattr(log.level, 'name') else str(log.level)
             print(f"[VNPY LOG - ExecGW] {level_str}: {log.msg}")
         elif event_type == EVENT_CONTRACT:
-             # Contract info might be useful, e.g., for order validation
              contract: ContractData = event.data
+             self.contracts[contract.vt_symbol] = contract # Store contract details
              # print(f"收到合约信息: {contract.vt_symbol}") # Debug
-             pass # Store contract details if needed
 
-    def publish_report(self, data_object, report_type: str):
-        """Serializes and publishes order/trade reports via ZeroMQ."""
+    def publish_report(self, data_object, report_type: str, calculated_commission: float = None):
+        """Serializes and publishes reports via ZeroMQ, adding calculated commission if provided."""
         if isinstance(data_object, OrderData):
             topic_str = f"ORDER_STATUS.{data_object.vt_symbol}"
-            # Add order ID to topic for finer filtering?
-            # topic_str = f"ORDER_STATUS.{data_object.vt_symbol}.{data_object.vt_orderid}"
         elif isinstance(data_object, TradeData):
             topic_str = f"TRADE.{data_object.vt_symbol}"
-            # topic_str = f"TRADE.{data_object.vt_symbol}.{data_object.vt_orderid}"
         else:
             print(f"收到未知类型回报，无法发布: {type(data_object)}")
             return
 
         topic = topic_str.encode('utf-8')
         serializable_data = vnpy_data_to_dict(data_object)
+
+        # +++ 添加计算出的手续费 +++
+        if report_type == "TRADE" and calculated_commission is not None:
+            serializable_data['calculated_commission'] = calculated_commission
+            # print(f"  添加 calculated_commission: {calculated_commission} 到回报数据") # Debug
+        # +++ 结束添加 +++
 
         message = {
             "topic": topic_str,
@@ -180,10 +284,8 @@ class OrderExecutionGatewayService:
         try:
             packed_message = msgpack.packb(message, default=vnpy_data_to_dict, use_bin_type=True)
             self.report_publisher.send_multipart([topic, packed_message])
-            # print(f"发布回报: {topic_str}") # Debug
         except Exception as e:
             print(f"序列化或发布回报时出错 ({topic_str}): {e}")
-            # Avoid printing large data in production
             print(f"原始回报结构 (部分): {{'topic': '{topic_str}', 'type': '{report_type}', ...}}")
 
     def process_order_requests(self):
@@ -208,7 +310,29 @@ class OrderExecutionGatewayService:
                 order_request = dict_to_order_request(request_data)
 
                 if order_request:
-                    # Send order via vnpy gateway
+                    # +++ 检查合约是否存在 (带重试) +++
+                    vt_symbol = f"{order_request.symbol}.{order_request.exchange.value}"
+                    contract = self.contracts.get(vt_symbol)
+                    if not contract:
+                        # 如果合约不存在，稍等片刻重试几次
+                        max_retries = 5
+                        retry_delay = 0.2 # 秒
+                        for i in range(max_retries):
+                            print(f"警告: 合约 {vt_symbol} 尚未缓存，等待 {retry_delay} 秒后重试 ({i+1}/{max_retries})...")
+                            time.sleep(retry_delay)
+                            contract = self.contracts.get(vt_symbol)
+                            if contract:
+                                print(f"信息: 重试成功，找到合约 {vt_symbol}。")
+                                break # 找到合约，跳出重试循环
+                        
+                        # 如果重试后仍然找不到
+                        if not contract:
+                            print(f"错误: 尝试下单的合约 {vt_symbol} 信息不存在 (已重试 {max_retries} 次)。订单无法发送。")
+                            # 可以选择性地发送拒绝回报给策略
+                            # self.send_rejection_report(order_request, "合约不存在")
+                            continue # 跳过此订单
+                    # +++ 结束检查 +++
+
                     vt_orderid = self.gateway.send_order(order_request)
                     if vt_orderid:
                         print(f"  订单请求已发送至 CTP 网关: {order_request.symbol}, 本地ID: {vt_orderid}")

@@ -5,6 +5,8 @@ import argparse
 import threading
 from datetime import datetime
 import zmq
+import configparser
+from typing import Dict, Tuple
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')) # Go up two levels
@@ -43,6 +45,40 @@ def run_strategy_in_thread(strategy_instance):
     print("策略线程: 已结束。")
 
 
+# +++ 添加函数：加载产品信息 (与 order_gateway 中类似) +++
+def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
+    """Loads commission rules and multipliers from an INI file."""
+    parser = configparser.ConfigParser()
+    if not os.path.exists(filepath):
+        print(f"错误：产品信息文件未找到 {filepath}")
+        return {}, {}
+    try:
+        parser.read(filepath, encoding='utf-8')
+    except Exception as e:
+        print(f"错误：读取产品信息文件 {filepath} 时出错: {e}")
+        return {}, {}
+
+    commission_rules = {}
+    contract_multipliers = {}
+    for symbol in parser.sections():
+        if not parser.has_option(symbol, 'multiplier'): continue
+        try:
+            multiplier = parser.getfloat(symbol, 'multiplier')
+            contract_multipliers[symbol] = multiplier
+            rule = {
+                "open_rate": parser.getfloat(symbol, 'open_rate', fallback=0.0),
+                "close_rate": parser.getfloat(symbol, 'close_rate', fallback=0.0),
+                "open_fixed": parser.getfloat(symbol, 'open_fixed', fallback=0.0),
+                "close_fixed": parser.getfloat(symbol, 'close_fixed', fallback=0.0),
+                "min_commission": parser.getfloat(symbol, 'min_commission', fallback=0.0)
+            }
+            commission_rules[symbol] = rule
+        except Exception as e: print(f"警告：处理文件 {filepath} 中 [{symbol}] 时出错: {e}")
+    print(f"从 {filepath} 加载了 {len(contract_multipliers)} 个合约的乘数和 {len(commission_rules)} 个合约的手续费规则。")
+    return commission_rules, contract_multipliers
+# +++ 结束添加 +++
+
+
 # --- Main Backtest Execution ---
 def main():
     parser = argparse.ArgumentParser(description="Run Backtest Simulation")
@@ -71,32 +107,18 @@ def main():
     print(f"  Order Request PULL: {config.BACKTEST_ORDER_REQUEST_PULL_URL}")
     print(f"----------------------------")
 
-    # --- 在这里定义手续费和合约乘数 ---
-    commission_rules = {
-        "SA505": {
-            "open_rate": 0.0,       # 开仓费率 (万分之几, 0表示不按费率)
-            "close_rate": 0.0,      # 平仓费率
-            "open_fixed": 5.2,      # 开仓固定金额 (每手)
-            "close_fixed": 5.2,     # 平仓固定金额
-            "min_commission": 0.0   # 最低手续费 (通常期货为0)
-        },
-        "rb2510": {
-            "open_rate": 0.0001,    # 开仓费率 (万分之一)
-            "close_rate": 0.0001,   # 平仓费率 (万分之一)
-            "open_fixed": 0.0,
-            "close_fixed": 0.0,
-            "min_commission": 0.0
-        }
-        # ... 其他需要回测的合约 ...
-    }
+    # +++ 加载产品信息 +++
+    # 修正路径：从 backtester 目录出发，向上两级到项目根目录，再进入 config
+    config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'config')) # <--- 这里需要向上两级
+    info_filepath = os.path.join(config_dir, 'project_files', 'product_info.ini')
+    print(f"尝试从 {info_filepath} 加载产品信息...")
+    commission_rules, contract_multipliers = load_product_info(info_filepath)
+    if not commission_rules or not contract_multipliers:
+        print("错误：未能加载手续费规则或合约乘数，无法继续回测。")
+        return
+    # +++ 结束加载 +++
 
-    contract_multipliers = {
-        "SA505": 20,  # 假设纯碱每手10吨
-        "rb2510": 10   # 假设螺纹钢每手10吨
-        # ... 其他合约乘数 ...
-    }
-
-    # 1. Initialize Simulation Engine
+    # 1. Initialize Simulation Engine (传入加载的配置)
     print("初始化模拟引擎...")
     engine = SimulationEngineService(
         data_source_path=config.BACKTEST_DATA_SOURCE_PATH,
@@ -104,9 +126,9 @@ def main():
         backtest_report_pub_url=config.BACKTEST_ORDER_REPORT_PUB_URL,
         backtest_order_pull_url=config.BACKTEST_ORDER_REQUEST_PULL_URL,
         date_str=args.date,
-        commission_rules=commission_rules,
-        contract_multipliers=contract_multipliers,
-        slippage=2.0  # <--- 添加滑点参数
+        commission_rules=commission_rules,         # <--- 传入加载的规则
+        contract_multipliers=contract_multipliers, # <--- 传入加载的乘数
+        slippage=2.0 
     )
     print("加载回测数据...")
     if not engine.load_data():
@@ -178,18 +200,13 @@ def main():
             print(f"终止策略 ZMQ Context 时出错: {e}")
     # +++ 结束终止 +++
 
-    # 7. Calculate and Display Backtest Results
-    print("\n--- 回测完成 ---") # 添加换行符
-
-    # --- 计算并显示回测性能 ---
-    if strategy: # 检查 strategy 实例是否存在
-        all_trades = strategy.trades # 获取收集到的成交列表
-        # --- 调用详细性能计算和打印函数 ---
-        performance_results = calculate_performance(all_trades, contract_multipliers) # 传递成交列表和合约乘数
+    # 7. Calculate and Display Backtest Results (传入加载的乘数)
+    print("\n--- 回测完成 ---") 
+    if strategy:
+        all_trades = strategy.trades 
+        # --- 调用详细性能计算和打印函数 (传入加载的乘数) ---
+        performance_results = calculate_performance(all_trades, contract_multipliers) # <--- 传入加载的乘数
         print_performance_report(performance_results)
-        # --- 移除调用绘图函数 ---
-        # plot_performance(performance_results, args.date)
-        # -------------------
     else:
         print("错误：无法获取策略实例以计算性能。")
 

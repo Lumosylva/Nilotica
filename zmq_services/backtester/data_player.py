@@ -6,7 +6,7 @@ import os
 import json
 import glob
 from datetime import datetime
-import heapq # For efficient sorting/merging if loading multiple files
+import heapq # For efficient sorting/merging if loading multiple project_files
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')) # Go up two levels
@@ -29,7 +29,7 @@ class DataPlayerService:
     def __init__(self, data_source_path: str, backtest_pub_url: str, date_str: str):
         """
         Initializes the Data Player service.
-        :param data_source_path: Path to the directory containing recorded data files.
+        :param data_source_path: Path to the directory containing recorded data project_files.
         :param backtest_pub_url: ZMQ URL to publish backtest market data.
         :param date_str: The date string (YYYYMMDD) for which to play back data.
         """
