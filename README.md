@@ -176,6 +176,20 @@ uv build . -v  # 使用 -v 查看详细日志
 
 - [x] 策略回测
 
+  1. 对今天的数据运行回测
+
+  ```bash
+  python zmq_services/backtester/run_backtest.py
+  ```
+
+  2. 对指定日期 20250409 运行回测
+
+  ```bash
+  python zmq_services/backtester/run_backtest.py --date 20250409
+  ```
+
+- [x] 行情回放
+
   1. 回放今天的数据，以最大速度。
 
      ```bash
