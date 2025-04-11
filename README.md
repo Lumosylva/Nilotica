@@ -4,6 +4,16 @@
 
 本项目基于 [vnpy](https://github.com/vnpy/vnpy) 和 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) 之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，让交易者更加专注于策略的开发。
 
+目前系统已实现以下的功能：
+
+- 行情网关
+- 订单执行网关
+- 策略订阅器
+- 风控管理
+- 数据记录
+- 策略回测
+- 行情回放
+
 ### **2. 基础环境**
 
 - **Python** ：`3.12.9`版本
@@ -83,18 +93,25 @@ uv build . -v  # 使用 -v 查看详细日志
 
 ```reStructuredText
 .
+├── config - 项目配置目录
+│   ├── constants - 常量目录
+│   │   ├── params.py - 常量
+│   │   └── path.py - 路径常量
+│   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录
+├── run_image - 服务运行截图目录
+├── utils - 工具类包
 ├── vnpy - vnpy官方的核心库，主要功能是实现事件驱动引擎，版本3.9.4。
 ├── vnpy_ctp - vnpy官方的ctp库，主要功能是与交易所行情和交易服务器打交道。
-├──vnpy_rpcservice - vnpy官方的RPC库，实现了RPC服务。
-├──zmq_services - 系统核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测。
-│   ├── backtester - 回测相关
+├── vnpy_rpcservice - vnpy官方的RPC库，实现了RPC服务。
+├── zmq_services - 系统核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测、行情回放。
+│   ├── backtester - 回测目录
 │   │   ├── data_player.py - 数据回放
 │   │   ├── performance.py - 计算性能指标，回测性能报告
 │   │   ├── run_backtest.py - 运行回测脚本
 │   │   ├── run_data_player.py - 运行数据回放脚本
 │   │   └── simulation_engine.py - 模拟引擎
-│   ├── recorded_data - tick、order、trader数据本地存储目录。
-│   ├── config.py - 项目配置
+│   ├── recorded_data - tick、order、trader数据本地存储目录
+│   ├── config.py - 项目配置文件
 │   ├── data_recorder.py - 数据记录
 │   ├── market_data_gateway.py - 行情网关
 │   ├── order_execution_gateway.py - 订单执行网关
