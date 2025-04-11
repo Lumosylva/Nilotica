@@ -6,14 +6,13 @@ import subprocess
 from pathlib import Path
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
+import pybind11
 
+# 获取 setup.py 所在的目录
+SETUP_DIR = Path(__file__).parent.resolve()
 
-# 设置pyd和pyi文件存放路径，前面是项目绝对路径，改成自己的
-target_dir = Path("D:/Project/PycharmProjects/Nilotica/vnpy_ctp/api")
-# 设置pybind11头文件目录，前面是项目绝对路径，改成自己的
-pybind11_include = "D:/Project/PycharmProjects/Nilotica/.venv/Lib/site-packages/pybind11/include"
-print("定义pyd目标目录:", target_dir)
-print("pybind11_include:", pybind11_include)
+# 设置pyd和pyi文件存放路径，相对于 setup.py
+target_dir = SETUP_DIR / "vnpy_ctp" / "api"
 
 # 自定义构建命令：编译扩展后生成存根
 class CustomBuildExt(build_ext):
@@ -79,12 +78,22 @@ def get_ext_modules() -> list:
         print(f"当前系统 {system} 不支持编译，跳过扩展模块。")
         return []
 
+    # 在函数内部获取 pybind11 路径
+    pybind11_path = pybind11.get_include()
+    print(f"动态获取 pybind11 include 路径: {pybind11_path}")
+
     libraries = ["thostmduserapi_se", "thosttraderapi_se"]
 
-    # Linux
-    if platform.system() == "Linux":
-        include_dirs = ["vnpy_ctp/api/include", pybind11_include, "vnpy_ctp/api/vnctp"]
-        library_dirs = ["vnpy_ctp/api"]
+    # Linux (路径也使用相对于 SETUP_DIR)
+    if system == "Linux":
+        include_dirs = [
+            str(SETUP_DIR / "vnpy_ctp" / "api" / "include"),
+            pybind11_path,
+            str(SETUP_DIR / "vnpy_ctp" / "api" / "vnctp"),
+            str(SETUP_DIR / "vnpy_ctp" / "api" / "vnctp" / "vnctpmd"),
+            str(SETUP_DIR / "vnpy_ctp" / "api" / "vnctp" / "vnctptd")
+        ]
+        library_dirs = [str(SETUP_DIR / "vnpy_ctp" / "api")]
         extra_compile_flags = [
             "-std=c++17",
             "-O3",
@@ -93,21 +102,27 @@ def get_ext_modules() -> list:
         ]
         extra_link_args = ["-lstdc++"]
         runtime_library_dirs = ["$ORIGIN"]
-    # Windows
-    elif platform.system() == "Windows":
-        include_dirs = ["vnpy_ctp/api/include", pybind11_include, "vnpy_ctp/api/vnctp"]
-        library_dirs = ["vnpy_ctp/api/libs", "vnpy_ctp/api"]
-        extra_compile_flags = ["-O2", "-MT"]
+    # Windows (路径也使用相对于 SETUP_DIR)
+    elif system == "Windows":
+        include_dirs = [
+            str(SETUP_DIR / "vnpy_ctp" / "api" / "include"),
+            pybind11_path,
+            str(SETUP_DIR / "vnpy_ctp" / "api" / "vnctp"),
+            str(SETUP_DIR / "vnpy_ctp" / "api" / "vnctp" / "vnctpmd"),
+            str(SETUP_DIR / "vnpy_ctp" / "api" / "vnctp" / "vnctptd")
+        ]
+        library_dirs = [str(SETUP_DIR / "vnpy_ctp" / "api" / "libs"), str(SETUP_DIR / "vnpy_ctp" / "api")]
+        extra_compile_flags = ["-O2", "-MD"]
         extra_link_args = []
         runtime_library_dirs = []
     else: # 去掉了Mac支持
         return []
 
-    # 定义扩展模块
+    # 定义扩展模块 (源文件路径也使用相对于 SETUP_DIR)
     extensions = [
         Extension(
             name="vnpy_ctp.api.vnctpmd",
-            sources=["vnpy_ctp/api/vnctp/vnctpmd/vnctpmd.cpp"],
+            sources=[str(SETUP_DIR / "vnpy_ctp" / "api" / "vnctp" / "vnctpmd" / "vnctpmd.cpp")],
             include_dirs=include_dirs,
             library_dirs=library_dirs,
             libraries=libraries,
@@ -116,10 +131,9 @@ def get_ext_modules() -> list:
             runtime_library_dirs=runtime_library_dirs,
             language="cpp",
         ),
-
         Extension(
             name="vnpy_ctp.api.vnctptd",
-            sources=["vnpy_ctp/api/vnctp/vnctptd/vnctptd.cpp"],
+            sources=[str(SETUP_DIR / "vnpy_ctp" / "api" / "vnctp" / "vnctptd" / "vnctptd.cpp")],
             include_dirs=include_dirs,
             library_dirs=library_dirs,
             libraries=libraries,
@@ -149,8 +163,9 @@ package_data = {
 
 
 setup(
-    packages=find_packages(include=['vnpy_ctp.api', 'vnpy_ctp.api.*']),
-    package_dir={'vnpy_ctp': 'vnpy_ctp'},
+    packages=find_packages(include=['utils.*', 'vnpy.*', 'vnpy_ctp.api', 'vnpy_ctp.api.*', 'vnpy_ctp.*', 'vnpy_rpcservice.*', 'zmq_services.*']),
+    package_dir={'utils': 'utils', 'vnpy': 'vnpy', 'vnpy_ctp': 'vnpy_ctp', 'vnpy_rpcservice': 'vnpy_rpcservice',
+                 'zmq_services': 'zmq_services'},
     ext_modules=get_ext_modules(),
     cmdclass = {'build_ext': CustomBuildExt},  # 注册自定义构建命令
     package_data = package_data,  # 包含存根和二进制文件

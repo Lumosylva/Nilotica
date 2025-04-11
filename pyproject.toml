@@ -1,5 +1,5 @@
 [project]
-name = "nilotica"
+name = "nilotica_dev"
 version = "0.1.0"
 description = "一个基于vnpy的量化系统(Based vnpy quant trading system.)"
 license = "Apache-2.0"
@@ -47,12 +47,12 @@ dependencies = [
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
 
 [project.urls]
-"Homepage" = "https://github.com/Nilotica/Nilotica"
-"Documentation" = "https://github.com/Nilotica/Nilotica/README.md"
-"Repository" = "https://github.com/Nilotica/Nilotica.git"
-"Issues" = "https://github.com/Nilotica/Nilotica/issues"
-"Changelog" = "https://github.com/Nilotica/Nilotica/CHANGELOG.md"
-"Source" = "https://github.com/Nilotica/Nilotica"
+"Homepage" = "https://github.com/Nilotica/nilotica_dev"
+"Documentation" = "https://github.com/Nilotica/nilotica_dev/README.md"
+"Repository" = "https://github.com/Nilotica/nilotica_dev.git"
+"Issues" = "https://github.com/Nilotica/nilotica_dev/issues"
+"Changelog" = "https://github.com/Nilotica/nilotica_dev/CHANGELOG.md"
+"Source" = "https://github.com/Nilotica/nilotica_dev"
 
 [build-system]
 requires = [
