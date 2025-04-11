@@ -126,23 +126,31 @@ uv build . -v  # 使用 -v 查看详细日志
 
 1. 运行行情网关：
 
-   ![](run_image/run_market_gateway.png)
+   <img src="run_image/run_market_gateway.png" style="zoom:67%;" />
 
 2. 运行订单执行网关：
 
-   ![](run_image/run_order_gateway.png)
+   <img src="run_image/run_order_gateway.png" style="zoom:67%;" />
 
 3. 运行策略订阅器：
 
-   ![](run_image/run_strategy_subscriber.png)
+   <img src="run_image/run_strategy_subscriber.png" style="zoom:67%;" />
 
 4. 运行风控管理：
 
-   ![](run_image/run_risk_manager.png)
+   <img src="run_image/run_risk_manager.png" style="zoom:67%;" />
 
 5. 运行数据记录：
 
-   ![](run_image/run_data_recorder.png)
+   <img src="run_image/run_data_recorder.png" style="zoom:67%;" />
+
+6. 运行回测
+
+   <img src="run_image/run_backtest1.png" style="zoom:67%;" />
+
+   <img src="run_image/run_backtest2.png" style="zoom:67%;" />
+
+   <img src="run_image/run_backtest3.png" style="zoom:67%;" />
 
 ### **7. 项目进度**
 
