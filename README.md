@@ -2,9 +2,9 @@
 
 ### **1. 前言**
 
-本项目基于 [vnpy](https://github.com/vnpy/vnpy) 和 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) 之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，让交易者更加专注于策略的开发。
+本项目基于 [vnpy](https://github.com/vnpy/vnpy) 和 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) 之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，更加专注于策略的开发。
 
-目前系统已实现以下的功能：
+目前系统已实现的功能：
 
 - 行情网关
 - 订单执行网关
@@ -21,43 +21,45 @@
 - **vnpy** ：`3.9.4`版本
 - **vnpy_ctp**： `6.7.2.1`版本（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
 - 需要进行`C++`编译，因此在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
-- 目前项目所有代码仅在`Windows`环境下测试，`Linux`下并未测试
+- 注意：目前所有代码仅在`Windows`环境下测试，`Linux`下并未测试
 
 ### **3. 环境配置**
 
-本项目使用`uv`管理Python虚拟环境及依赖的软件包
+本项目使用`uv`管理Python虚拟环境及依赖的软件包，`hatch`作为构建工具
 
 uv安装
 
+On Linux.
+
 ```bash
-# On macOS and Linux.
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# On Windows.
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# With pip.
-pip install uv
 ```
 
-使用 `uv sync `命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载。
+On Windows.
+
+```bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+使用 `uv sync `命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载
 
 ```
 uv sync
 ```
 
-或不使用`uv sync`命令，手动创建虚拟环境。
+或不使用`uv sync`命令，手动创建虚拟环境，激活虚拟环境。
 
 ```bash
-# 指定虚拟环境 Python 版本
 uv venv --python 3.12.9 .venv
-# 激活虚拟环境
+```
+
+```bash
 .venv\Scripts\activate
 ```
 
 ### **4. 构建流程**
 
-本项目利用`setup.py`在`vnpy_ctp\api\`路径下编译出Python可调用的行情和交易文件`.pyd`以及利用`pybind11-stubgen`生成它们对应的存根文件`.pyi`。
+本项目利用`hatch`在`vnpy_ctp\api\`路径下编译出`.pyd`行情和交易文件及利用`pybind11-stubgen`生成它们对应的`.pyi`存根文件。
 
 #### **(1) 清理旧的构建**
 
@@ -66,19 +68,24 @@ uv venv --python 3.12.9 .venv
 PowerShell 
 
 ```bash
-Remove-Item -Path ".\dist", ".\*.egg-info" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force .pytest_cache, .mypy_cache, .ruff_cache, dist, build, *.egg-info -ErrorAction SilentlyContinue
 ```
 
 CMD
 
 ```bash
-rmdir /s /q ".\dist" ".\*.egg-info"
+rmdir /s /q .pytest_cache
+rmdir /s /q .mypy_cache
+rmdir /s /q .ruff_cache
+rmdir /s /q dist
+rmdir /s /q build
+for /d %i in (*.egg-info) do rmdir /s /q "%i"
 ```
 
 Bash
 
 ```bash
-rm -rf .\dist .\*.egg-info
+rm -rf .pytest_cache .mypy_cache .ruff_cache dist build *.egg-info
 ```
 
 #### **(2) 执行构建**
@@ -91,15 +98,23 @@ hatch build
 
 ```reStructuredText
 .
+├── bat - Windows BAT服务启动脚本
+│   ├── 1_run_market_gateway.bat - 行情网关启动脚本
+│   ├── 2_run_order_gateway.bat - 订单执行网关启动脚本
+│   ├── 3_run_strategy_subscriber.bat - 策略订阅器启动脚本
+│   ├── 4_run_risk_manager.bat - 风控管理启动脚本
+│   ├── 5_run_data_recorder.bat - 数据记录启动脚本
+│   ├── 6_run_backtest.bat - 策略回测demo脚本
 ├── config - 项目配置目录
 │   ├── constants - 常量目录
 │   │   ├── params.py - 常量
 │   │   └── path.py - 路径常量
-│   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录
+│   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录。
 ├── run_image - 服务运行截图目录
+├── ta-lib - ta-lib库源文件
 ├── utils - 工具类包
-├── vnpy - vnpy官方的核心库，主要功能是实现事件驱动引擎，版本3.9.4。
-├── vnpy_ctp - vnpy官方的ctp库，主要功能是与交易所行情和交易服务器打交道。
+├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎，版本3.9.4。
+├── vnpy_ctp - vnpy官方的ctp库，主要功能是与交易所行情和交易服务器交互。
 ├── vnpy_rpcservice - vnpy官方的RPC库，实现了RPC服务。
 ├── zmq_services - 系统核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测、行情回放。
 │   ├── backtester - 回测目录
@@ -121,19 +136,14 @@ hatch build
 │   ├── run_strategy_subscriber.py - 运行策略订阅器脚本
 │   └── strategy_subscriber.py - 策略订阅器
 ├── .python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
-├── 1_run_market_gateway.bat - 行情网关启动脚本
-├── 2_run_order_gateway.bat - 订单执行网关启动脚本
-├── 3_run_strategy_subscriber.bat - 策略订阅器启动脚本
-├── 4_run_risk_manager.bat - 风控管理启动脚本
-├── 5_run_data_recorder.bat - 数据记录启动脚本
-├── 6_run_backtest.bat - 策略回测demo脚本
-├── CHANGELOG.md - 系统版本更新日志。
-├── LICENSE.txt - license文件。
-├── README.md - 项目说明。
-├── main.py - 项目入口，暂时无定义
+├── CHANGELOG.md - 系统版本更新日志
+├── LICENSE.txt - license文件
+├── README.md - 项目说明
+├── __init__.py - 项目的版本号
+├── hatch_build.py - 自动化编译脚本，编译CTP C++接口文件为Python可调用的pyd文件及pyi文件。
+├── main.py - 项目主文件，暂时无定义
 ├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
 ├── run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
-
 └── uv.lock - 记录项目的所有依赖，由uv自动管理，不用手动编辑。
 ```
 
