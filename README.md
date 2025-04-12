@@ -1,6 +1,6 @@
 # 基于vnpy的期货量化交易系统——Nilotica
 
-[ENGLISH](README_EN.md)
+Language: [ENGLISH](README_EN.md)
 
 ------
 
@@ -21,7 +21,7 @@
 ### **2. 基础环境**
 
 - **Python** ：`3.12.9`版本
-- **工具链**：`uv` + `hatch` + `setuptools`
+- **工具链**：`uv` + `hatch` + `setuptools`，使用 Hatchling 作为构建后端
 - **vnpy** ：`3.9.4`版本
 - **vnpy_ctp**： `6.7.2.1`版本（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
 - 需要进行`C++`编译，因此在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
@@ -65,7 +65,7 @@
 
 ### **4. 构建流程**
 
-项目利用`hatch`在`vnpy_ctp\api\`路径下编译出`.pyd`行情和交易文件及利用`pybind11-stubgen`生成它们对应的`.pyi`存根文件。
+运行 `hatch build` 会在 `vnpy_ctp\api\` 下编译出行情和交易的动态链接库 `.pyd` 文件，`hatch_build.py` 负责编译 C++ 扩展，构建钩子(`hatch_build.py`)会使用 `pybind11-stubgen` 为编译好的模块生成  `.pyi  `存根文件，编译后的  `.pyd` 文件和  `.pyi ` 文件会被包含在最终的 Wheel 包中， `hatch build`  将会生成最终的发布包。
 
 #### **(1) 清理旧的构建**
 
@@ -146,7 +146,7 @@ hatch build
 ├── LICENSE.txt - license文件
 ├── README.md - 项目说明
 ├── __init__.py - 项目的版本号
-├── hatch_build.py - 自动化编译脚本，编译CTP C++接口文件为Python可调用的pyd文件及pyi文件。
+├── hatch_build.py - 自定义构建钩子负责编译 C++ 扩展
 ├── main.py - 项目主文件，暂时无定义
 ├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
 ├── run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
