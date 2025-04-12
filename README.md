@@ -27,7 +27,7 @@
 
 本项目使用`uv`管理Python虚拟环境及依赖的软件包，`hatch`作为构建工具
 
-uv安装
+1. uv安装
 
 On Linux.
 
@@ -41,7 +41,7 @@ On Windows.
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-使用 `uv sync `命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载
+2. 使用 `uv sync `命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载
 
 ```
 uv sync
