@@ -21,7 +21,7 @@ Language: [ENGLISH](README_EN.md)
 ### **2. 基础环境**
 
 - **Python** ：`3.12.9`版本
-- **工具链**：`uv` + `hatch` + `setuptools`，使用 Hatchling 作为构建后端
+- **工具链**：`uv` + `hatch` + `setuptools`
 - **vnpy** ：`3.9.4`版本
 - **vnpy_ctp**： `6.7.2.1`版本（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
 - 需要进行`C++`编译，因此在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
@@ -144,7 +144,8 @@ hatch build
 ├── .python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
 ├── CHANGELOG.md - 系统版本更新日志
 ├── LICENSE.txt - license文件
-├── README.md - 项目说明
+├── README.md - 项目中文说明
+├── README_EN.md - 项目英文说明
 ├── __init__.py - 项目的版本号
 ├── hatch_build.py - 自定义构建钩子负责编译 C++ 扩展
 ├── main.py - 项目主文件，暂时无定义
