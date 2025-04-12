@@ -65,7 +65,7 @@ Language: [ENGLISH](README_EN.md)
 
 ### **4. 构建流程**
 
-运行 `hatch build` 会在 `vnpy_ctp\api\` 下编译出行情和交易的动态链接库 `.pyd` 文件，`hatch_build.py` 负责编译 C++ 扩展，构建钩子(`hatch_build.py`)会使用 `pybind11-stubgen` 为编译好的模块生成  `.pyi  `存根文件，编译后的  `.pyd` 文件和  `.pyi ` 文件会被包含在最终的 Wheel 包中， `hatch build`  将会生成最终的发布包。
+运行 `hatch build` 会在 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，hatch_build.py 负责编译 C++ 扩展，构建钩子（hatch_build.py）会使用 pybind11-stubgen 为编译好的模块生成  `.pyi `存根文件，编译后的  `.pyd` 文件和  `.pyi` 文件会被包含在最终的 Wheel 包中，`hatch build`  将会生成最终的发布包。
 
 #### **(1) 清理旧的构建**
 
