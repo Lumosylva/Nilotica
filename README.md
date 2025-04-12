@@ -29,31 +29,31 @@
 
 1. uv安装
 
-On Linux.
+   On Linux.
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-On Windows.
+​		On Windows.
 
 ```bash
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-2. 使用 `uv sync `命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载
+2. 使用 `uv sync`命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载
 
 ```
 uv sync
 ```
 
-或不使用`uv sync`命令，手动创建虚拟环境
+​		或不使用`uv sync`命令，手动创建虚拟环境
 
 ```bash
 uv venv --python 3.12.9 .venv
 ```
 
-激活虚拟环境
+​		激活虚拟环境
 
 ```bash
 .venv\Scripts\activate
@@ -61,7 +61,7 @@ uv venv --python 3.12.9 .venv
 
 ### **4. 构建流程**
 
-本项目利用`hatch`在`vnpy_ctp\api\`路径下编译出`.pyd`行情和交易文件及利用`pybind11-stubgen`生成它们对应的`.pyi`存根文件。
+项目利用`hatch`在`vnpy_ctp\api\`路径下编译出`.pyd`行情和交易文件及利用`pybind11-stubgen`生成它们对应的`.pyi`存根文件。
 
 #### **(1) 清理旧的构建**
 
