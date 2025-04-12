@@ -38,7 +38,7 @@ dependencies = [
     "pandas>=2.2.3",
     "hatch>=1.14.1",
     "setuptools>=78.1.0",
-    "TA-Lib",
+    "ta-lib>=0.6.3",
     "tzdata>=2025.2",
     "pathlib>=1.0.1",
     "pip>=25.0.1",
@@ -62,7 +62,7 @@ requires = [
     "pybind11-stubgen>=2.5.3",
     "setuptools",
     "numpy",
-    "TA-Lib",
+    "ta-lib>=0.6.3",
     "tzdata>=2025.2",
 ]
 build-backend = "hatchling.build"
