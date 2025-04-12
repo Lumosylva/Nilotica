@@ -21,12 +21,33 @@
 # SOFTWARE.
 
 
-import importlib_metadata
+import os
+from pathlib import Path
 
 from .gateway import CtpGateway
 
 
+# CTP DLL 文件位于 vnpy_ctp.api 目录下
+
+# 添加 API 路径到环境变量，方便 CTP 接口动态载入底层 DLL
+api_path: Path = Path(__file__).parent.joinpath("api")
+os.add_dll_directory(str(api_path))
+os.add_dll_directory(str(api_path.joinpath("libs")))
+
+# 尝试导入 metadata 模块
 try:
-    __version__ = importlib_metadata.version("vnpy_ctp")
+    # For Python 3.8 and later
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    # For Python 3.7 and earlier
+    import importlib_metadata # type: ignore
+
+# 从入口加载模块版本号
+# Get the version of the package
+# Note: Add fallback logic for cases where the package isn't installed,
+# like during development or CI/CD builds without full installation.
+try:
+    __version__: str = importlib_metadata.version("vnpy_ctp")
 except importlib_metadata.PackageNotFoundError:
-    __version__ = "dev"
+    # Fallback version if the package is not installed
+    __version__ = "0.0.0-dev"
