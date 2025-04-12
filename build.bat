@@ -1,7 +1,12 @@
 @echo off
+title build
+:: activate Python
+call .venv\Scripts\activate
 echo Setting TA-Lib environment variables for build...
-set TA_INCLUDE_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\include
-set TA_LIBRARY_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\lib
+set current_path=%~dp0
+echo Current path: %current_path%
+set TA_INCLUDE_PATH=%current_path%\ta-lib\include
+set TA_LIBRARY_PATH=%current_path%\ta-lib\lib
 
 echo Running hatch build...
 hatch build %*
@@ -11,3 +16,4 @@ set TA_INCLUDE_PATH=
 set TA_LIBRARY_PATH=
 
 echo Build process finished.
+pause
