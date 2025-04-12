@@ -6,8 +6,8 @@ ORDER_REPORT_PUB_URL = "tcp://*:5557"   # 订单/成交回报发布地址 (PUB)
 # CTP Gateway Configuration (与 vnpy 配置文件类似，需要您填写实际信息)
 CTP_TD_ADDRESS = "tcp://180.168.146.187:10130"  # CTP 交易服务器地址
 CTP_MD_ADDRESS = "tcp://180.168.146.187:10131"  # CTP 行情服务器地址
-CTP_USER_ID = "160219"             # CTP 用户ID
-CTP_PASSWORD = "Mdd103010$"           # CTP 密码
+CTP_USER_ID = ""             # CTP 用户ID
+CTP_PASSWORD = ""           # CTP 密码
 CTP_BROKER_ID = "9999"         # CTP Broker ID
 CTP_PRODUCT_INFO = "simnow_client_test"       # 产品信息 (可选)
 CTP_AUTH_CODE = "0000000000000000"           # 认证码 (可选)
