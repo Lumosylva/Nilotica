@@ -26,6 +26,7 @@ dependencies = [
     "peewee==3.17.9",
     "plotly==5.20.0",
     "pybind11>=2.13.6",
+    "pybind11-stubgen>=2.5.3",
     "pyqtgraph==0.13.4",
     "pyside6==6.3.0",
     "pyzmq==25.1.2",
@@ -39,9 +40,9 @@ dependencies = [
     "setuptools>=78.1.0",
     "TA-Lib",
     "tzdata>=2025.2",
-    "pybind11-stubgen>=2.5.3",
     "pathlib>=1.0.1",
     "pip>=25.0.1",
+    "hatchling>=1.27.0",
 ]
 
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]

@@ -1024,6 +1024,7 @@ source = { editable = "." }
 dependencies = [
     { name = "deap" },
     { name = "hatch" },
+    { name = "hatchling" },
     { name = "msgpack" },
     { name = "numpy" },
     { name = "pandas" },
@@ -1070,6 +1071,7 @@ requires-dist = [
     { name = "deap", specifier = "==1.4.1" },
     { name = "flake8", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "hatch", specifier = ">=1.14.1" },
+    { name = "hatchling", specifier = ">=1.27.0" },
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.0" },
     { name = "msgpack", specifier = "==1.1.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
