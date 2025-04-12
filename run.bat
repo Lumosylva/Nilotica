@@ -1,5 +1,5 @@
 @echo off
-title Start all server
+title Start all services
 :: activate Python
 call .venv\Scripts\activate
 echo Start all services......
