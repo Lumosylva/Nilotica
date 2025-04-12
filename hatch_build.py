@@ -118,7 +118,7 @@ class CustomBuildHook(BuildHookInterface):
         elif system == "Windows":
             specific_settings = {
                 "library_dirs": [str(root_path / d) for d in library_dirs_rel_base + library_dirs_rel_win],
-                "extra_compile_args": ["/O2", "/MD", "/EHsc", "/W4", "/DNDEBUG", "/std:c++17"],
+                "extra_compile_args": ["/O2", "/MD", "/EHsc", "/W4", "/DNDEBUG", "/std:c++17", "/wd4100"],
                 "extra_link_args": [],
                 "runtime_library_dirs": [],
             }
