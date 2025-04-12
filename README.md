@@ -267,7 +267,7 @@ hatch build
 
 ### **8. 更新日志**
 
-[CHANGELOG.md](CHANGELOG)
+[CHANGELOG.md](CHANGELOG.md)
 
 ### 9. 交流**
 
