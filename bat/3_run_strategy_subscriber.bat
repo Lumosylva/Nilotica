@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 title run_strategy_subscriber
 :: ¥Ú”°–≈œ¢
 call .venv\Scripts\activate

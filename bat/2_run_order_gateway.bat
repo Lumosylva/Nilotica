@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 title run_order_gateway
 :: ¥Ú”°–≈œ¢
 call .venv\Scripts\activate

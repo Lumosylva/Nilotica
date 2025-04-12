@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 title run_risk_manager
 :: ¥Ú”°–≈œ¢
 call .venv\Scripts\activate
