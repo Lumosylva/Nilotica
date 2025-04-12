@@ -223,12 +223,6 @@ hatch build
      python zmq_services/backtester/run_data_player.py
      ```
 
-  2. 对指定日期 20250409 运行回测
-
-     ```bash
-     python zmq_services/backtester/run_backtest.py --date 20250409
-     ```
-
   3. 回放指定日期 (例如 20250409) 的数据，以接近实时的速度 (1x)
 
      ```bash
