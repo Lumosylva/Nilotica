@@ -96,13 +96,15 @@ rm -rf .pytest_cache .mypy_cache .ruff_cache dist build *.egg-info
 
 #### **(2) Execute the build**
 
+Method 1:
+
 ```bash
 build.bat
 ```
 
-or
+Method 2:
 
-Set the ta-lib source file as an environment variable (set it to your actual path)
+Set the ta-lib source file as an environment variable (set it to your actual path), and then execute hatch build
 
 ```bash
 set TA_INCLUDE_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\include
