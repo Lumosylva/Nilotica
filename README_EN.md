@@ -65,7 +65,7 @@ Activate the virtual environment
 
 ### **4. Build Process**
 
-Running `hatch build` will compile the dynamic link library `.pyd` file of quotation and transaction under vnpy_ctp\api\. hatch_build.py is responsible for compiling C++ extensions. The build hook (hatch_build.py) will use pybind11-stubgen to generate `.pyi` stub files for the compiled modules. The compiled `.pyd` and `.pyi` files will be included in the final Wheel package. `hatch build` will generate the final release package.
+`hatch build` will compile the dynamic link library `.pyd` file of quotation and transaction under vnpy_ctp\api\. hatch_build.py is responsible for compiling C++ extensions. The build hook (hatch_build.py) will use pybind11-stubgen to generate `.pyi` stub files for the compiled modules. The compiled `.pyd` and `.pyi` files will be included in the final Wheel package. `hatch build` will generate the final release package.
 
 #### **(1) Clean up old builds**
 
@@ -95,6 +95,19 @@ rm -rf .pytest_cache .mypy_cache .ruff_cache dist build *.egg-info
 ```
 
 #### **(2) Execute the build**
+
+```bash
+build.bat
+```
+
+or
+
+Set the ta-lib source file as an environment variable (set it to your actual path)
+
+```bash
+set TA_INCLUDE_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\include
+set TA_LIBRARY_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\lib
+```
 
 ```bash
 hatch build
