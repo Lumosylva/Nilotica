@@ -40,6 +40,8 @@ dependencies = [
     "TA-Lib",
     "tzdata>=2025.2",
     "pybind11-stubgen>=2.5.3",
+    "pathlib>=1.0.1",
+    "pip>=25.0.1",
 ]
 
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
