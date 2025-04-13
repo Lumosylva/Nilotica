@@ -25,10 +25,19 @@ The functions currently implemented by the system are:
 ### **2. Basic Environment**
 
 - **Python** : `3.12.9` version
+
 - **Toolchain**: `uv` + `hatch` + `setuptools`
+
 - **vnpy** : version 3.9.4
+
 - **vnpy_ctp**: `6.7.2.1` version (based on **CTP 6.7.2** interface encapsulation, the interface comes with the dll file of the penetrating environment)
-- `C++` compilation is required, so make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
+
+- If you need to compile other versions of CTP `C++`, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
+
+- If you use the CTP version of this system directly, you do not need to follow the build process in step 4 below. You can directly download the `whl` uv pip install in the release package and install it.
+
+  https://github.com/Nilotica/Nilotica_dev/releases
+
 - Note: Currently all codes are only tested under `Windows` environment, not under `Linux`
 
 ### **3. Environment Configuration**
@@ -69,7 +78,7 @@ Activate the virtual environment
 
 ### **4. Build Process**
 
-`hatch build` will compile the dynamic link library `.pyd` file of quotation and transaction under vnpy_ctp\api\. hatch_build.py is responsible for compiling C++ extensions. The build hook (hatch_build.py) will use pybind11-stubgen to generate `.pyi` stub files for the compiled modules. The compiled `.pyd` and `.pyi` files will be included in the final Wheel package. `hatch build` will generate the final release package.
+The `hatch build` command will compile the dynamic link library `.pyd` file of the market and transaction under vnpy_ctp\api\. hatch_build.py is responsible for compiling C++ extensions. The build hook (hatch_build.py) will use pybind11-stubgen to generate `.pyi` stub files for the compiled modules. The compiled `.pyd` and `.pyi` files will be included in the final Wheel package. `hatch build` will generate the final release package. If you need to perform CTP compilation, you can perform this build process, otherwise you do not need to do it.
 
 #### **(1) Clean up old builds**
 

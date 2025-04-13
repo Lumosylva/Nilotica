@@ -25,10 +25,19 @@ Language: [ENGLISH](README_EN.md)
 ### **2. 基础环境**
 
 - **Python** ：`3.12.9`版本
+
 - **工具链**：`uv` + `hatch` + `setuptools`
+
 - **vnpy** ：`3.9.4`版本
+
 - **vnpy_ctp**： `6.7.2.1`版本（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
-- 需要进行`C++`编译，因此在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
+
+- 若需要其他版本CTP `C++` 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
+
+- 若直接使用本系统的CTP版本，则不需要进行下方第4步的构建流程，直接下载releases包中 `whl` uv pip install 安装即可
+
+  https://github.com/Nilotica/Nilotica_dev/releases
+
 - 注意：目前所有代码仅在`Windows`环境下测试，`Linux`下并未测试
 
 ### **3. 环境配置**
@@ -69,7 +78,7 @@ Language: [ENGLISH](README_EN.md)
 
 ### **4. 构建流程**
 
-`hatch build` 命令会在 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，hatch_build.py 负责编译 C++ 扩展，构建钩子（hatch_build.py）会使用 pybind11-stubgen 为编译好的模块生成  `.pyi`存根文件，编译后的  `.pyd` 文件和  `.pyi` 文件会被包含在最终的 Wheel 包中，`hatch build`  将会生成最终的发布包。
+`hatch build` 命令会在 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，hatch_build.py 负责编译 C++ 扩展，构建钩子（hatch_build.py）会使用 pybind11-stubgen 为编译好的模块生成  `.pyi`存根文件，编译后的  `.pyd` 文件和  `.pyi` 文件会被包含在最终的 Wheel 包中，`hatch build`  将会生成最终的发布包。若您需要进行CTP编译，可进行此构建流程，否则无需进行。
 
 #### **(1) 清理旧的构建**
 
