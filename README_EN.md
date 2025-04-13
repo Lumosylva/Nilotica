@@ -124,13 +124,13 @@ hatch build
 ```reStructuredText
 .
 ├── bat - Windows BAT service startup script
-├── config - project configuration directory
 │ ├── 1_run_market_gateway.bat - Market gateway startup script
 │ ├── 2_run_order_gateway.bat - Order execution gateway startup script
 │ ├── 3_run_strategy_subscriber.bat - Strategy subscriber startup script
 │ ├── 4_run_risk_manager.bat - Risk management startup script
 │ ├── 5_run_data_recorder.bat - Data recording startup script
-│ ├── 6_run_backtest.bat - Strategy backtest demo script
+│ └── 6_run_backtest.bat - Strategy backtest demo script
+├── config - project configuration directory
 ├── logger - logging module
 ├── logs - log storage directory
 │ ├── constants - constants directory

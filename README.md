@@ -124,13 +124,13 @@ hatch build
 ```reStructuredText
 .
 ├── bat - Windows BAT服务启动脚本
-├── config - 项目配置目录
 │   ├── 1_run_market_gateway.bat - 行情网关启动脚本
 │   ├── 2_run_order_gateway.bat - 订单执行网关启动脚本
 │   ├── 3_run_strategy_subscriber.bat - 策略订阅器启动脚本
 │   ├── 4_run_risk_manager.bat - 风控管理启动脚本
 │   ├── 5_run_data_recorder.bat - 数据记录启动脚本
-│   ├── 6_run_backtest.bat - 策略回测demo脚本
+│   └── 6_run_backtest.bat - 策略回测demo脚本
+├── config - 项目配置目录
 ├── logger - 日志模块
 ├── logs - 日志存放目录
 │   ├── constants - 常量目录
