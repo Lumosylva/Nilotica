@@ -1,6 +1,8 @@
 # 										 Nilotica
 
-Language: [ENGLISH](README_EN.md)																	![](logo.jpeg)
+Language: [ENGLISH](README_EN.md)
+
+<img src="logo.png" alt="Nilotica" style="zoom:80%;" />
 
 ​																						**基于vnpy的期货量化交易系统**
 
