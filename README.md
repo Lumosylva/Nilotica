@@ -124,13 +124,15 @@ hatch build
 ```reStructuredText
 .
 ├── bat - Windows BAT服务启动脚本
+├── config - 项目配置目录
 │   ├── 1_run_market_gateway.bat - 行情网关启动脚本
 │   ├── 2_run_order_gateway.bat - 订单执行网关启动脚本
 │   ├── 3_run_strategy_subscriber.bat - 策略订阅器启动脚本
 │   ├── 4_run_risk_manager.bat - 风控管理启动脚本
 │   ├── 5_run_data_recorder.bat - 数据记录启动脚本
 │   ├── 6_run_backtest.bat - 策略回测demo脚本
-├── config - 项目配置目录
+├── logger - 日志模块
+├── logs - 日志存放目录
 │   ├── constants - 常量目录
 │   │   ├── params.py - 常量
 │   │   └── path.py - 路径常量
@@ -167,6 +169,7 @@ hatch build
 ├── README_EN.md - 项目英文说明
 ├── __init__.py - 项目的版本号
 ├── hatch_build.py - 自定义构建钩子负责编译 C++ 扩展
+├── logo.png - 项目logo
 ├── main.py - 项目主文件，暂时无定义
 ├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
 ├── run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
@@ -287,11 +290,11 @@ hatch build
 
 [CHANGELOG.md](CHANGELOG.md)
 
-### 9. 交流**
+### **9. 交流**
 
 QQ交流群：`446042777`(澄明期货研究)
 
-### 10. 免责声明**
+### **10. 免责声明**
 
 1. **信息仅供参考**
    本系统所提供的信息、数据、分析、建议或其他内容（以下统称为“信息”）仅供参考，不构成任何投资建议或交易指导。用户在使用本系统时，应充分认识到期货交易的高风险性，并自行承担由此产生的任何风险和后果。
