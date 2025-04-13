@@ -1,6 +1,8 @@
-# 基于vnpy的期货量化交易系统——Nilotica
+# 										 Nilotica
 
-Language: [ENGLISH](README_EN.md)
+Language: [ENGLISH](README_EN.md)																	![](logo.jpeg)
+
+​																						**基于vnpy的期货量化交易系统**
 
 ------
 
