@@ -18,6 +18,12 @@ from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status
 
 from logger import setup_logging, getLogger # Now safe to import
 
+# Constants for Health Checks
+from datetime import datetime, time as dt_time # For trading hours check
+MARKET_DATA_TIMEOUT = 30.0 # seconds
+PING_INTERVAL = 5.0      # seconds
+PING_TIMEOUT_MS = 2500   # milliseconds
+
 # 2. Setup Logging for this specific service
 # Call this early, before other imports that might log (like MarketDataGatewayService)
 setup_logging(service_name="StrategySubscriber") # Give a specific name
@@ -65,6 +71,9 @@ logger = getLogger(__name__)
 class StrategySubscriber:
     def __init__(self, gateway_pub_url: str, order_req_url: str, order_report_url: str, subscribe_symbols: list):
         """Initializes the subscriber and order pusher."""
+        # Get logger instance for the class
+        self.logger = getLogger(__name__) # Use instance logger
+
         self.context = zmq.Context()
 
         # Socket to subscribe to market data and order reports
@@ -105,7 +114,21 @@ class StrategySubscriber:
         logger.info(f"  订阅订单状态主题: {order_status_prefix}*")
         logger.info(f"  订阅成交回报主题: {trade_prefix}*")
 
+        # Store subscribed symbols for market data check
+        self.subscribed_symbols = set(subscribe_symbols if subscribe_symbols else [])
+
         logger.info(f"已订阅 {len(self.subscribe_topics)} 个主题/前缀。")
+
+        # Command socket to ping Order Gateway
+        self.command_socket = self.context.socket(zmq.REQ)
+        self._command_connect_url = self._get_connect_url(config.ORDER_GATEWAY_COMMAND_URL)
+        self._setup_command_socket()
+
+        # Health Status Flags & Timers
+        self.market_data_ok = True
+        self.gateway_connected = True
+        self.last_tick_time: Dict[str, float] = {}
+        self.last_ping_time = time.time()
 
         self.running = False
         self.last_order_time = {} # Tracks last time an order was sent for a symbol (cooling)
@@ -120,8 +143,117 @@ class StrategySubscriber:
         # +++ 结束添加 +++
         self.trades = []
 
+    # --- Helper Methods for Health Checks (adapted from RiskManager) --- 
+
+    def _get_connect_url(self, base_url: str) -> str:
+        """Replaces wildcard address with localhost for connection."""
+        if base_url.startswith("tcp://*"):
+            return base_url.replace("tcp://*", "tcp://localhost", 1)
+        elif base_url.startswith("tcp://0.0.0.0"):
+            return base_url.replace("tcp://0.0.0.0", "tcp://localhost", 1)
+        else:
+            return base_url
+
+    def _setup_command_socket(self):
+        """Sets up or resets the command REQ socket."""
+        if hasattr(self, 'command_socket') and self.command_socket:
+            self.logger.info("(Strategy) 尝试关闭旧的指令 Socket...")
+            try:
+                self.command_socket.close(linger=0)
+            except Exception as e_close:
+                 self.logger.warning(f"(Strategy) 关闭旧指令 Socket 时出错: {e_close}")
+        
+        self.logger.info(f"(Strategy) 正在创建并连接指令 Socket 到: {self._command_connect_url}")
+        self.command_socket = self.context.socket(zmq.REQ)
+        self.command_socket.setsockopt(zmq.LINGER, 0)
+        try:
+             self.command_socket.connect(self._command_connect_url)
+        except Exception as e_conn:
+             self.logger.error(f"(Strategy) 连接指令 Socket 时出错: {e_conn}")
+             if self.gateway_connected:
+                 self.logger.error("(Strategy) 与订单执行网关的连接丢失 (Connection Error)! ")
+                 self.gateway_connected = False
+
+    def _is_trading_hours(self) -> bool:
+        """Checks if the current time is within any defined trading session."""
+        now_dt = datetime.now()
+        current_time = now_dt.time()
+        try:
+            for start_str, end_str in config.FUTURES_TRADING_SESSIONS:
+                start_time = dt_time.fromisoformat(start_str) 
+                end_time = dt_time.fromisoformat(end_str)
+                if start_time <= end_time:
+                    if start_time <= current_time < end_time:
+                        return True
+                # else: # Handle overnight sessions if needed
+                #     if current_time >= start_time or current_time < end_time:
+                #          return True
+        except Exception as e:
+            self.logger.error(f"(Strategy) 检查交易时间时出错: {e}")
+            return True # Fail open
+        return False
+
+    def _send_ping(self):
+        """Sends a PING request to the Order Gateway and handles the reply."""
+        log_prefix = "[Ping GW]" if self.gateway_connected else "[Ping GW - Reconnecting]"
+        self.logger.debug(f"{log_prefix} Sending...")
+        ping_msg = {"type": "PING", "data": {}}
+        current_time = time.time()
+        self.last_ping_time = current_time
+        try:
+            poller = zmq.Poller()
+            poller.register(self.command_socket, zmq.POLLIN)
+            packed_request = msgpack.packb(ping_msg, use_bin_type=True)
+            self.command_socket.send(packed_request)
+            readable = dict(poller.poll(PING_TIMEOUT_MS))
+            if self.command_socket in readable and readable[self.command_socket] & zmq.POLLIN:
+                packed_reply = self.command_socket.recv(zmq.NOBLOCK)
+                reply = msgpack.unpackb(packed_reply, raw=False)
+                if reply.get("reply") == "PONG":
+                    self.logger.debug("Received PONG from GW.")
+                    if not self.gateway_connected:
+                        self.logger.info("与订单执行网关的连接已恢复。")
+                        self.gateway_connected = True
+                else:
+                    self.logger.warning(f"Received unexpected reply to PING from GW: {reply}")
+                    if self.gateway_connected:
+                        self.logger.error("与订单执行网关的连接可能存在问题 (Unexpected PING reply)! ")
+                        self.gateway_connected = False
+            else:
+                self.logger.warning(f"{log_prefix} PING request timed out after {PING_TIMEOUT_MS}ms.")
+                if self.gateway_connected:
+                    self.logger.error("与订单执行网关的连接丢失 (PING timeout)!")
+                self.gateway_connected = False
+                self.logger.info("尝试重置指令 Socket (因 PING 超时)...")
+                self._setup_command_socket()
+                return 
+        except zmq.ZMQError as e:
+            self.logger.error(f"{log_prefix} 发送 PING 或接收 PONG 时 ZMQ 错误: {e}")
+            if self.gateway_connected:
+                self.logger.error(f"与订单执行网关的连接丢失 ({e})! ")
+            self.gateway_connected = False
+            self.logger.info("尝试重置指令 Socket (因 ZMQ 错误)...")
+            self._setup_command_socket()
+            return 
+        except Exception as e:
+            self.logger.exception(f"{log_prefix} 发送或处理 PING/PONG 时发生未知错误")
+            if self.gateway_connected:
+                self.logger.error("与订单执行网关的连接丢失 (Unknown Error)! ")
+            self.gateway_connected = False
+
+    # --- End Helper Methods --- 
+
     def send_limit_order(self, symbol: str, exchange: Exchange, direction: Direction, price: float, volume: float, offset: Offset = Offset.NONE):
         """Constructs and sends a limit order request via ZMQ PUSH socket."""
+        # --- Health Check Guard --- 
+        if not self.market_data_ok:
+             self.logger.warning(f"无法发送订单 ({symbol}): 行情数据流可能中断或延迟。")
+             return
+        if not self.gateway_connected:
+             self.logger.error(f"无法发送订单 ({symbol}): 与订单执行网关失去连接。")
+             return
+        # --- End Health Check Guard --- 
+
         # --- 禁用基于 time.time() 的冷却 (不适用于回测) ---
         # # Prevent sending orders too frequently for the same symbol
         # now = time.time()
@@ -220,6 +352,7 @@ class StrategySubscriber:
         while self.running:
             try:
                 # +++ 使用 Poller 检查消息 +++
+                poll_timeout_ms = 1000 # Check roughly every second
                 sockets = dict(poller.poll(timeout=poll_timeout_ms))
                 # +++ 结束检查 +++
 
@@ -260,8 +393,15 @@ class StrategySubscriber:
                     ask_price = msg_data.get('ask_price_1', None)
                     bid_price = msg_data.get('bid_price_1', None) # 买一价
                     exchange_str = msg_data.get('exchange', None)
+                    vt_symbol = msg_data.get('vt_symbol')
 
-                    # print(f"[{pretty_time}] 行情 [{topic_str}] - 符号: {symbol}, 价格: {price}, 卖一: {ask_price}")
+                    # --- Update Market Data Status --- 
+                    if vt_symbol:
+                         tick_time = time.time() # Use arrival time
+                         self.last_tick_time[vt_symbol] = tick_time
+                         # Log recovery if status was bad
+                         # The periodic check will set market_data_ok back to True
+                    # --- End Update --- 
 
                     # --- Simple Strategy Logic with State Check --- 
                     # --- Strategy Logic for SA505.CZCE ---
@@ -411,6 +551,36 @@ class StrategySubscriber:
                 else:
                     logger.info(f"[{pretty_time}] 收到未知类型消息 [{topic_str}] - Type: {msg_type}")
 
+                # --- Run Periodic Health Checks --- 
+                current_time = time.time()
+
+                # 1. Check Order Gateway Connection (Ping)
+                if current_time - self.last_ping_time >= PING_INTERVAL:
+                    self._send_ping()
+
+                # 2. Check Market Data Freshness (only during trading hours)
+                if self._is_trading_hours():
+                    found_stale_symbol = False
+                    stale_symbols = []
+                    for symbol_key in self.subscribed_symbols: # Use the stored set
+                        last_ts = self.last_tick_time.get(symbol_key)
+                        if last_ts is None:
+                            if current_time - self.last_ping_time > PING_INTERVAL * 2:
+                                found_stale_symbol = True
+                                stale_symbols.append(f"{symbol_key} (no tick)")
+                        elif current_time - last_ts > MARKET_DATA_TIMEOUT:
+                            found_stale_symbol = True
+                            stale_symbols.append(f"{symbol_key} (stale {current_time - last_ts:.1f}s)")
+
+                    if found_stale_symbol:
+                        if self.market_data_ok:
+                            self.logger.warning(f"[交易时段内] 行情数据可能中断! 超时: {', '.join(stale_symbols)}")
+                            self.market_data_ok = False
+                    elif not self.market_data_ok:
+                        self.logger.info("所有监控合约的行情数据流已恢复。")
+                        self.market_data_ok = True
+                # --- End Health Checks --- 
+
             except zmq.ZMQError as e:
                 # --- 区分预期关闭错误和意外错误 ---
                 # 如果 stop() 已经被调用 (self.running is False)，这个错误是预期的
@@ -457,13 +627,25 @@ class StrategySubscriber:
                 self.subscriber = None # Set to None regardless of success/failure
         
         # --- 恢复关闭 PUSH socket 的逻辑 --- 
+        # Close Command Socket
+        if self.command_socket:
+            try:
+                self.logger.info("关闭 command socket...")
+                self.command_socket.close(linger=0)
+                self.logger.info("ZeroMQ command socket 已关闭。")
+            except Exception as e:
+                self.logger.exception(f"关闭 ZeroMQ command socket 时出错: {e}")
+            finally:
+                self.command_socket = None
+
+        # Close PUSH socket
         if self.order_pusher:
             try:
-                logger.info("关闭 order pusher socket...")
+                self.logger.info("关闭 order pusher socket...")
                 self.order_pusher.close()
-                logger.info("ZeroMQ order pusher socket 已关闭。")
+                self.logger.info("ZeroMQ order pusher socket 已关闭。")
             except Exception as e:
-                logger.exception(f"关闭 ZeroMQ order pusher socket 时出错: {e}")
+                self.logger.exception(f"关闭 ZeroMQ order pusher socket 时出错: {e}")
             finally:
                 self.order_pusher = None # Set to None
         # --- 结束恢复 --- 
