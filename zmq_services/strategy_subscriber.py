@@ -203,8 +203,22 @@ class StrategySubscriber:
         try:
             poller = zmq.Poller()
             poller.register(self.command_socket, zmq.POLLIN)
+            # Check if socket is writable before sending
+            poller_out = zmq.Poller()
+            poller_out.register(self.command_socket, zmq.POLLOUT)
+            writable = dict(poller_out.poll(100)) # Small timeout
+            if not (self.command_socket in writable and writable[self.command_socket] & zmq.POLLOUT):
+                self.logger.warning(f"{log_prefix} Command socket not writable. Assuming connection issue.")
+                if self.gateway_connected: # Log error only on first detection
+                    self.logger.error(f"与订单执行网关的连接丢失 (Socket not writable)!")
+                self.gateway_connected = False
+                self.logger.info("尝试重置指令 Socket (因不可写)...")
+                self._setup_command_socket()
+                return # Exit after attempting reconnect
+
             packed_request = msgpack.packb(ping_msg, use_bin_type=True)
-            self.command_socket.send(packed_request)
+            self.command_socket.send(packed_request, zmq.NOBLOCK) # Send non-blocking
+
             readable = dict(poller.poll(PING_TIMEOUT_MS))
             if self.command_socket in readable and readable[self.command_socket] & zmq.POLLIN:
                 packed_reply = self.command_socket.recv(zmq.NOBLOCK)
@@ -228,8 +242,13 @@ class StrategySubscriber:
                 self._setup_command_socket()
                 return 
         except zmq.ZMQError as e:
-            self.logger.error(f"{log_prefix} 发送 PING 或接收 PONG 时 ZMQ 错误: {e}")
-            if self.gateway_connected:
+            # Handle errors during send or recv
+            if e.errno == zmq.EAGAIN:
+                 self.logger.warning(f"{log_prefix} 发送 PING 时 ZMQ 错误 (EAGAIN): {e}")
+            else:
+                 self.logger.error(f"{log_prefix} 发送 PING 或接收 PONG 时 ZMQ 错误: {e}")
+            # Mark as disconnected (if not already) and trigger reconnection
+            if self.gateway_connected: # Log error only on first detection
                 self.logger.error(f"与订单执行网关的连接丢失 ({e})! ")
             self.gateway_connected = False
             self.logger.info("尝试重置指令 Socket (因 ZMQ 错误)...")
@@ -580,6 +599,9 @@ class StrategySubscriber:
                         self.logger.info("所有监控合约的行情数据流已恢复。")
                         self.market_data_ok = True
                 # --- End Health Checks --- 
+
+                # Log end of loop iteration (useful for debugging hangs)
+                self.logger.debug("Main loop iteration complete.")
 
             except zmq.ZMQError as e:
                 # --- 区分预期关闭错误和意外错误 ---

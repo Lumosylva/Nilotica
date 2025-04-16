@@ -367,7 +367,14 @@ class RiskManagerService:
             # self.logger.debug(f"Inactive order removed: {order.vt_orderid} Status: {order.status.value}")
 
     def check_risk(self, vt_symbol: str = None, trigger_event: str = "UNKNOWN", current_position: int = None):
-        """Checks various risk limits based on current state."""
+        """Checks various risk limits based on current state. Logs market data status."""
+
+        # Log market data status at the beginning of check
+        if not self.market_data_ok:
+            self.logger.warning("[Risk Check] 行情数据流异常，部分依赖市价的检查可能不准确或已跳过。")
+        # else:
+        #     self.logger.debug("[Risk Check] Market data stream OK.") # Optional debug log
+
         # 1. Position Limit Check (only if vt_symbol is provided)
         if vt_symbol:
             position = self.positions.get(vt_symbol, 0)

@@ -4536,3 +4536,810 @@ lhost:5558
 2025-04-17 00:14:51,529 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
 2025-04-17 00:14:56,548 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
 2025-04-17 00:15:01,570 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:06,610 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:11,631 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:16,660 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:21,684 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:26,735 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:31,750 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:36,776 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:41,802 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:46,822 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:51,842 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:15:56,859 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:01,913 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:06,951 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:11,978 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:16,992 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:22,029 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:27,051 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:32,097 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:37,128 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:42,178 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:47,216 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:52,242 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:16:57,281 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:02,308 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:07,333 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:12,361 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:17,375 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:22,403 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:27,423 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:32,437 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:37,481 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:42,509 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:47,530 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:52,570 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:17:52,866 - OrderGatewayRunner - INFO - 主程序检测到 Ctrl+C，正在停止服务...
+2025-04-17 00:17:52,866 - OrderGatewayRunner - INFO - 停止订单执行网关服务...
+2025-04-17 00:17:52,867 - OrderGatewayRunner - INFO - ZeroMQ 订单请求接收器已关闭。
+2025-04-17 00:17:52,867 - OrderGatewayRunner - INFO - ZeroMQ 订单/成交回报发布器已关闭。
+2025-04-17 00:17:52,867 - OrderGatewayRunner - INFO - ZeroMQ 指令接收器已关闭。
+2025-04-17 00:17:54,579 - RiskManagerRunner - INFO - 主程序检测到 Ctrl+C，正在停止...
+2025-04-17 00:17:54,579 - RiskManagerRunner - INFO - 正在停止风险管理器服务...
+2025-04-17 00:17:54,581 - RiskManagerRunner - INFO - 关闭 ZMQ sockets 和 context...
+2025-04-17 00:17:54,581 - RiskManagerRunner - INFO - ZeroMQ 订阅器已关闭。
+2025-04-17 00:17:54,582 - RiskManagerRunner - INFO - ZeroMQ 指令发送器已关闭。
+2025-04-17 00:17:54,585 - RiskManagerRunner - INFO - ZeroMQ Context 已终止。
+2025-04-17 00:17:54,585 - RiskManagerRunner - INFO - 风险管理器已停止。
+2025-04-17 00:17:54,586 - RiskManagerRunner - INFO - 风险管理器运行结束。
+2025-04-17 00:17:56,522 - StrategySubscriber - INFO - 检测到中断信号，停止订阅器...
+2025-04-17 00:17:56,523 - StrategySubscriber - INFO - 策略订阅器循环结束。
+2025-04-17 00:17:56,524 - StrategySubscriber - INFO - 策略订阅器运行结束。
+2025-04-17 00:18:11,318 - MarketDataGatewayRunner - INFO - Logging configured for service 'MarketDataGatewayRunner'. Level: INFO, Console: True, File: True
+2025-04-17 00:18:12,027 - MarketDataGatewayRunner - INFO - 正在初始化行情网关服务...
+2025-04-17 00:18:12,055 - MarketDataGatewayRunner - INFO - 行情发布器绑定到: tcp://*:5555
+2025-04-17 00:18:12,062 - MarketDataGatewayRunner - INFO - 行情网关服务初始化完成。
+2025-04-17 00:18:12,062 - MarketDataGatewayRunner - INFO - 尝试启动服务...
+2025-04-17 00:18:12,062 - MarketDataGatewayRunner - INFO - 启动行情网关服务...
+2025-04-17 00:18:12,062 - MarketDataGatewayRunner - INFO - 事件引擎已启动。
+2025-04-17 00:18:12,062 - MarketDataGatewayRunner - INFO - 连接 CTP 网关...
+2025-04-17 00:18:12,062 - MarketDataGatewayRunner - INFO - CTP 网关连接请求已发送。等待连接成功...
+2025-04-17 00:18:12,210 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 交易服务器连接成功
+2025-04-17 00:18:12,225 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 行情服务器连接成功
+2025-04-17 00:18:12,794 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 交易服务器授权验证成功
+2025-04-17 00:18:12,794 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 行情服务器登录成功
+2025-04-17 00:18:12,855 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 交易服务器登录成功
+2025-04-17 00:18:12,940 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 结算信息确认成功
+2025-04-17 00:18:13,726 - OrderGatewayRunner - INFO - Logging configured for service 'OrderGatewayRunner'. Level: INFO, Console: True, File: True
+2025-04-17 00:18:13,726 - OrderGatewayRunner - INFO - 正在初始化订单执行网关服务...
+2025-04-17 00:18:13,742 - OrderGatewayRunner - INFO - 订单请求接收器绑定到: tcp://*:5556
+2025-04-17 00:18:13,755 - OrderGatewayRunner - INFO - 订单/成交回报发布器绑定到: tcp://*:5557
+2025-04-17 00:18:13,756 - OrderGatewayRunner - INFO - 指令接收器绑定到: tcp://*:5558
+2025-04-17 00:18:13,756 - OrderGatewayRunner - INFO - 尝试从 D:\Project\PycharmProjects\Nilotica_dev\config\project_files\product_info.ini 加载产品信息...
+2025-04-17 00:18:13,756 - OrderGatewayRunner - INFO - 从 D:\Project\PycharmProjects\Nilotica_dev\config\project_files\product_info.ini 加载了 2 个合约的乘数和 2 个合约的手续费规则。
+2025-04-17 00:18:13,756 - OrderGatewayRunner - INFO - 订单执行网关服务初始化完成。
+2025-04-17 00:18:13,756 - OrderGatewayRunner - INFO - 尝试启动服务...
+2025-04-17 00:18:13,756 - OrderGatewayRunner - INFO - 启动订单执行网关服务...
+2025-04-17 00:18:13,756 - OrderGatewayRunner - INFO - 事件引擎已启动。
+2025-04-17 00:18:13,756 - OrderGatewayRunner - INFO - CTP 交易网关连接请求已发送。等待连接成功...
+2025-04-17 00:18:13,909 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器连接成功
+2025-04-17 00:18:13,947 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器连接成功
+2025-04-17 00:18:13,977 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器登录成功
+2025-04-17 00:18:14,367 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器授权验证成功
+2025-04-17 00:18:14,438 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器登录成功
+2025-04-17 00:18:14,540 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 结算信息确认成功
+2025-04-17 00:18:19,237 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - ctp_gateway.py：合约信息查询成功
+2025-04-17 00:18:19,275 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - ctp_gateway.py：合约信息查询成功
+2025-04-17 00:18:19,884 - OrderGatewayRunner - INFO - [2025-04-17 00:18:19.884] 账户关键信息更新 (GW): AccountID=160219, Balance=31998043.53, Available=31993797.13, Margin=0.00
+2025-04-17 00:18:22,068 - MarketDataGatewayRunner - INFO - CTP 网关假定连接成功（基于延时）。
+2025-04-17 00:18:22,068 - MarketDataGatewayRunner - INFO - 订阅行情...
+2025-04-17 00:18:22,068 - MarketDataGatewayRunner - INFO - 发送订阅请求: SA505.CZCE
+2025-04-17 00:18:22,572 - MarketDataGatewayRunner - INFO - 发送订阅请求: rb2510.SHFE
+2025-04-17 00:18:23,074 - MarketDataGatewayRunner - INFO - 已发送 2 个合约的订阅请求。
+2025-04-17 00:18:23,076 - MarketDataGatewayRunner - INFO - 行情网关服务正在运行。按 Ctrl+C 停止。
+2025-04-17 00:18:23,762 - OrderGatewayRunner - INFO - CTP 交易网关假定连接成功（基于延时）。
+2025-04-17 00:18:23,762 - OrderGatewayRunner - INFO - 订单请求处理线程已启动。
+2025-04-17 00:18:23,762 - OrderGatewayRunner - INFO - 指令处理线程已启动。
+2025-04-17 00:18:23,762 - OrderGatewayRunner - INFO - 订单执行网关服务启动完成。
+2025-04-17 00:18:23,766 - OrderGatewayRunner - INFO - 订单执行网关服务正在运行。按 Ctrl+C 停止。
+2025-04-17 00:18:33,086 - RiskManagerRunner - INFO - Logging configured for service 'RiskManagerRunner'. Level: INFO, Console: True, File: True
+2025-04-17 00:18:33,088 - RiskManagerRunner - INFO - 正在初始化风险管理器...
+2025-04-17 00:18:33,100 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:18:33,100 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:18:33,100 - RiskManagerRunner - INFO - 数据订阅器连接到: tcp://localhost:5555
+2025-04-17 00:18:33,100 - RiskManagerRunner - INFO - 数据订阅器连接到: tcp://localhost:5557
+2025-04-17 00:18:33,100 - RiskManagerRunner - INFO - 订阅主题前缀: TICK., TRADE., ORDER_STATUS., ACCOUNT_DATA.
+2025-04-17 00:18:33,100 - RiskManagerRunner - INFO - 加载持仓限制: {'SA505.CZCE': 5, 'rb2510.SHFE': 10}
+2025-04-17 00:18:33,100 - RiskManagerRunner - INFO - 将监控以下合约行情超时: {'SA505.CZCE', 'rb2510.SHFE'}
+2025-04-17 00:18:33,100 - RiskManagerRunner - INFO - 风险管理器初始化完成。
+2025-04-17 00:18:33,106 - RiskManagerRunner - INFO - 尝试启动风险管理器...
+2025-04-17 00:18:33,106 - RiskManagerRunner - INFO - 启动风险管理器服务...
+2025-04-17 00:18:33,106 - RiskManagerRunner - INFO - 风险管理器服务已启动，开始监听消息...
+2025-04-17 00:18:36,407 - RiskManagerRunner - INFO - [2025-04-17 00:18:36.407] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000040, Status=提交中, Traded=0
+2025-04-17 00:18:36,407 - RiskManagerRunner - INFO - [2025-04-17 00:18:36.407] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000040, Status=全部成交, Traded=1
+2025-04-17 00:18:36,407 - RiskManagerRunner - INFO - [2025-04-17 00:18:36.407] 收到成交回报: SA505.CZCE
+2025-04-17 00:18:36,407 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 0 | 变动: -1 | 新: -1
+2025-04-17 00:18:38,420 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:18:41,254 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 行情服务器连接断开，原因4097
+2025-04-17 00:18:41,404 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 行情服务器连接成功
+2025-04-17 00:18:41,455 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 行情服务器登录成功
+2025-04-17 00:18:43,636 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:18:48,116 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器连接断开，原因4097
+2025-04-17 00:18:48,278 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器连接成功
+2025-04-17 00:18:48,337 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器登录成功
+2025-04-17 00:18:48,648 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:18:48,983 - StrategySubscriber - INFO - Logging configured for service 'StrategySubscriber'. Level: INFO, Console: True, File: True
+2025-04-17 00:18:48,983 - StrategySubscriber - INFO - 正在初始化策略订阅器...
+2025-04-17 00:18:49,000 - StrategySubscriber - INFO - 策略订阅器连接行情发布器: tcp://localhost:5555
+2025-04-17 00:18:49,001 - StrategySubscriber - INFO - 策略订阅器连接回报发布器: tcp://localhost:5557
+2025-04-17 00:18:49,007 - StrategySubscriber - INFO - 策略订单推送器连接到: tcp://localhost:5556
+2025-04-17 00:18:49,007 - StrategySubscriber - INFO -   订阅行情主题: TICK.SA505.CZCE
+2025-04-17 00:18:49,008 - StrategySubscriber - INFO -   订阅行情主题: TICK.rb2510.SHFE
+2025-04-17 00:18:49,008 - StrategySubscriber - INFO -   订阅订单状态主题: ORDER_STATUS.*
+2025-04-17 00:18:49,008 - StrategySubscriber - INFO -   订阅成交回报主题: TRADE.*
+2025-04-17 00:18:49,009 - StrategySubscriber - INFO - 已订阅 4 个主题/前缀。
+2025-04-17 00:18:49,010 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:18:49,042 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:18:49,042 - StrategySubscriber - INFO - 尝试启动订阅器...
+2025-04-17 00:18:49,042 - StrategySubscriber - INFO - 启动策略订阅器...
+2025-04-17 00:18:49,042 - StrategySubscriber - INFO - 重置策略内部状态...
+2025-04-17 00:18:49,192 - StrategySubscriber - INFO - 准备发送订单: 多 1 lots SA505@1328.0
+2025-04-17 00:18:49,192 - StrategySubscriber - INFO -   订单请求已推送: {'symbol': 'SA505', 'exchange': 'CZCE', 'direction': '多', 'type': '限价', 'volume': 1, 'price': 1328.0, 'offset': '开', 'reference': 'SimpleZmqStrategy_01'}
+2025-04-17 00:18:49,192 - OrderGatewayRunner - INFO - 收到订单请求: SA505, 多, Vol:1
+2025-04-17 00:18:49,192 - StrategySubscriber - INFO -   设置 SA505 买入开仓状态: True, Entry: 1328.0, Target: 1338.0, Stop: 1323.0
+2025-04-17 00:18:49,192 - OrderGatewayRunner - INFO - 订单请求已发送至 CTP 网关: SA505, 本地ID: CTP_Execution.1_-666522848_1
+2025-04-17 00:18:49,192 - RiskManagerRunner - INFO - [2025-04-17 00:18:49.192] 订单状态更新: ID=CTP_Execution.1_-666522848_1, Status=提交中, Traded=0
+�: 提交中, 成交量: 0
+2025-04-17 00:18:49,261 - StrategySubscriber - INFO - [2025-04-17 00:18:49.260] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-666522848_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:18:49,261 - RiskManagerRunner - INFO - [2025-04-17 00:18:49.260] 订单状态更新: ID=CTP_Execution.1_-666522848_1, Status=全部成交, Traded=1
+2025-04-17 00:18:49,262 - StrategySubscriber - INFO - [2025-04-17 00:18:49.260] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000996, OrderID: CTP_Execution.1_-666522848_1, 方向: 多, 开平: 开, 价格: 1328.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:18:49,262 - RiskManagerRunner - INFO - [2025-04-17 00:18:49.260] 收到成交回报: SA505.CZCE
+2025-04-17 00:18:49,263 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: -1 | 变动: 1 | 新: 0
+2025-04-17 00:18:53,709 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:18:54,210 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:18:59,207 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:18:59,684 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:04,729 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:04,730 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:09,619 - MarketDataGatewayRunner - INFO - 
+检测到 Ctrl+C，正在停止服务...
+2025-04-17 00:19:09,619 - MarketDataGatewayRunner - INFO - 停止行情网关服务...
+2025-04-17 00:19:09,714 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:09,714 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:10,156 - MarketDataGatewayRunner - INFO - 事件引擎已停止。
+2025-04-17 00:19:10,173 - MarketDataGatewayRunner - INFO - CTP 网关已关闭。
+2025-04-17 00:19:10,174 - MarketDataGatewayRunner - INFO - ZeroMQ 发布器已关闭。
+2025-04-17 00:19:10,174 - MarketDataGatewayRunner - INFO - ZeroMQ Context 已终止。
+2025-04-17 00:19:10,174 - MarketDataGatewayRunner - INFO - 行情网关服务已停止。
+2025-04-17 00:19:10,177 - MarketDataGatewayRunner - INFO - 行情网关服务已退出。
+2025-04-17 00:19:14,749 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:19,765 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:24,806 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:29,842 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:34,882 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:19:38,949 - OrderGatewayRunner - INFO - 主程序检测到 Ctrl+C，正在停止服务...
+2025-04-17 00:19:38,949 - OrderGatewayRunner - INFO - 停止订单执行网关服务...
+2025-04-17 00:19:38,949 - OrderGatewayRunner - INFO - ZeroMQ 订单请求接收器已关闭。
+2025-04-17 00:19:38,949 - OrderGatewayRunner - INFO - ZeroMQ 订单/成交回报发布器已关闭。
+2025-04-17 00:19:38,949 - OrderGatewayRunner - INFO - ZeroMQ 指令接收器已关闭。
+2025-04-17 00:19:42,430 - RiskManagerRunner - WARNING - [Ping] PING request timed out after 2500ms.
+2025-04-17 00:19:42,430 - RiskManagerRunner - ERROR - 与订单执行网关的连接丢失 (PING timeout)!
+2025-04-17 00:19:42,432 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:19:42,432 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:19:42,433 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:19:47,959 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:19:47,961 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:19:47,961 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:19:47,961 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:19:53,484 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:19:53,485 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:19:53,485 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:19:53,485 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:19:59,024 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:19:59,024 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:19:59,025 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:19:59,025 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:04,534 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:04,535 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:04,536 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:04,537 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:10,071 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:10,072 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:10,072 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:10,074 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:15,621 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:15,621 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:15,622 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:15,622 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:21,142 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:21,142 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:21,143 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:21,144 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:26,693 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:26,693 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:26,693 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:26,693 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:32,207 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:32,209 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:32,209 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:32,209 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:37,739 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:37,741 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:37,741 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:37,742 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:43,289 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:43,291 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:43,291 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:43,291 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:48,847 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:48,847 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:48,847 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:48,847 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:54,364 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:54,364 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:54,364 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:54,365 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:20:59,895 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:20:59,896 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:20:59,896 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:20:59,897 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:05,436 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:05,437 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:05,438 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:05,439 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:10,953 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:10,954 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:10,954 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:10,955 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:12,502 - StrategySubscriber - INFO - 检测到中断信号，停止订阅器...
+2025-04-17 00:21:12,502 - StrategySubscriber - INFO - 策略订阅器循环结束。
+2025-04-17 00:21:12,502 - StrategySubscriber - INFO - 策略订阅器运行结束。
+2025-04-17 00:21:16,472 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:16,472 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:16,472 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:16,472 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:21,992 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:21,993 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:21,994 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:21,994 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:27,513 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:27,513 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:27,513 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:27,513 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:33,033 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:33,033 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:33,033 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:33,033 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:38,560 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:38,560 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:38,560 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:38,560 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:44,090 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:44,091 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:44,092 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:44,093 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:49,600 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:49,601 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:49,602 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:49,603 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:21:55,145 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:21:55,145 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:21:55,145 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:21:55,147 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:22:00,656 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:22:00,656 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:22:00,656 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:22:00,657 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:22:02,661 - RiskManagerRunner - INFO - 主程序检测到 Ctrl+C，正在停止...
+2025-04-17 00:22:02,661 - RiskManagerRunner - INFO - 正在停止风险管理器服务...
+2025-04-17 00:22:02,661 - RiskManagerRunner - INFO - 关闭 ZMQ sockets 和 context...
+2025-04-17 00:22:02,662 - RiskManagerRunner - INFO - ZeroMQ 订阅器已关闭。
+2025-04-17 00:22:02,662 - RiskManagerRunner - INFO - ZeroMQ 指令发送器已关闭。
+2025-04-17 00:22:02,663 - RiskManagerRunner - INFO - ZeroMQ Context 已终止。
+2025-04-17 00:22:02,663 - RiskManagerRunner - INFO - 风险管理器已停止。
+2025-04-17 00:22:02,663 - RiskManagerRunner - INFO - 风险管理器运行结束。
+2025-04-17 00:22:19,691 - MarketDataGatewayRunner - INFO - Logging configured for service 'MarketDataGatewayRunner'. Level: INFO, Console: True, File: True
+2025-04-17 00:22:20,337 - MarketDataGatewayRunner - INFO - 正在初始化行情网关服务...
+2025-04-17 00:22:20,368 - MarketDataGatewayRunner - INFO - 行情发布器绑定到: tcp://*:5555
+2025-04-17 00:22:20,368 - MarketDataGatewayRunner - INFO - 行情网关服务初始化完成。
+2025-04-17 00:22:20,368 - MarketDataGatewayRunner - INFO - 尝试启动服务...
+2025-04-17 00:22:20,368 - MarketDataGatewayRunner - INFO - 启动行情网关服务...
+2025-04-17 00:22:20,369 - MarketDataGatewayRunner - INFO - 事件引擎已启动。
+2025-04-17 00:22:20,369 - MarketDataGatewayRunner - INFO - 连接 CTP 网关...
+2025-04-17 00:22:20,370 - MarketDataGatewayRunner - INFO - CTP 网关连接请求已发送。等待连接成功...
+2025-04-17 00:22:20,603 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 行情服务器连接成功
+2025-04-17 00:22:20,603 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 交易服务器连接成功
+2025-04-17 00:22:20,707 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 行情服务器登录成功
+2025-04-17 00:22:21,160 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 交易服务器授权验证成功
+2025-04-17 00:22:21,205 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 交易服务器登录成功
+2025-04-17 00:22:21,298 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - 结算信息确认成功
+2025-04-17 00:22:22,670 - OrderGatewayRunner - INFO - Logging configured for service 'OrderGatewayRunner'. Level: INFO, Console: True, File: True
+2025-04-17 00:22:22,670 - OrderGatewayRunner - INFO - 正在初始化订单执行网关服务...
+2025-04-17 00:22:22,695 - OrderGatewayRunner - INFO - 订单请求接收器绑定到: tcp://*:5556
+2025-04-17 00:22:22,697 - OrderGatewayRunner - INFO - 订单/成交回报发布器绑定到: tcp://*:5557
+2025-04-17 00:22:22,699 - OrderGatewayRunner - INFO - 指令接收器绑定到: tcp://*:5558
+2025-04-17 00:22:22,699 - OrderGatewayRunner - INFO - 尝试从 D:\Project\PycharmProjects\Nilotica_dev\config\project_files\product_info.ini 加载产品信息...
+2025-04-17 00:22:22,700 - OrderGatewayRunner - INFO - 从 D:\Project\PycharmProjects\Nilotica_dev\config\project_files\product_info.ini 加载了 2 个合约的乘数和 2 个合约的手续费规则。
+2025-04-17 00:22:22,700 - OrderGatewayRunner - INFO - 订单执行网关服务初始化完成。
+2025-04-17 00:22:22,700 - OrderGatewayRunner - INFO - 尝试启动服务...
+2025-04-17 00:22:22,700 - OrderGatewayRunner - INFO - 启动订单执行网关服务...
+2025-04-17 00:22:22,701 - OrderGatewayRunner - INFO - 事件引擎已启动。
+2025-04-17 00:22:22,702 - OrderGatewayRunner - INFO - CTP 交易网关连接请求已发送。等待连接成功...
+2025-04-17 00:22:22,844 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器连接成功
+2025-04-17 00:22:22,844 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器连接成功
+2025-04-17 00:22:23,261 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器授权验证成功
+2025-04-17 00:22:23,295 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器登录成功
+2025-04-17 00:22:23,420 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 结算信息确认成功
+2025-04-17 00:22:24,788 - MarketDataGatewayRunner - INFO - [VNPY LOG - MDGW] CTP_MarketData - ctp_gateway.py：合约信息查询成功
+2025-04-17 00:22:28,197 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - ctp_gateway.py：合约信息查询成功
+2025-04-17 00:22:28,803 - OrderGatewayRunner - INFO - [2025-04-17 00:22:28.803] 账户关键信息更新 (GW): AccountID=160219, Balance=31998027.58, Available=31998027.58, Margin=0.00
+2025-04-17 00:22:30,372 - MarketDataGatewayRunner - INFO - CTP 网关假定连接成功（基于延时）。
+2025-04-17 00:22:30,374 - MarketDataGatewayRunner - INFO - 订阅行情...
+2025-04-17 00:22:30,375 - MarketDataGatewayRunner - INFO - 发送订阅请求: SA505.CZCE
+2025-04-17 00:22:30,877 - MarketDataGatewayRunner - INFO - 发送订阅请求: rb2510.SHFE
+2025-04-17 00:22:31,380 - MarketDataGatewayRunner - INFO - 已发送 2 个合约的订阅请求。
+2025-04-17 00:22:31,380 - MarketDataGatewayRunner - INFO - 行情网关服务正在运行。按 Ctrl+C 停止。
+2025-04-17 00:22:32,705 - OrderGatewayRunner - INFO - CTP 交易网关假定连接成功（基于延时）。
+2025-04-17 00:22:32,706 - OrderGatewayRunner - INFO - 订单请求处理线程已启动。
+2025-04-17 00:22:32,706 - OrderGatewayRunner - INFO - 指令处理线程已启动。
+2025-04-17 00:22:32,706 - OrderGatewayRunner - INFO - 订单执行网关服务启动完成。
+2025-04-17 00:22:32,706 - OrderGatewayRunner - INFO - 订单执行网关服务正在运行。按 Ctrl+C 停止。
+2025-04-17 00:22:37,678 - RiskManagerRunner - INFO - Logging configured for service 'RiskManagerRunner'. Level: INFO, Console: True, File: True
+2025-04-17 00:22:37,678 - RiskManagerRunner - INFO - 正在初始化风险管理器...
+2025-04-17 00:22:37,686 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:22:37,686 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 数据订阅器连接到: tcp://localhost:5555
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 数据订阅器连接到: tcp://localhost:5557
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 订阅主题前缀: TICK., TRADE., ORDER_STATUS., ACCOUNT_DATA.
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 加载持仓限制: {'SA505.CZCE': 5, 'rb2510.SHFE': 10}
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 将监控以下合约行情超时: {'SA505.CZCE', 'rb2510.SHFE'}
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 风险管理器初始化完成。
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 尝试启动风险管理器...
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 启动风险管理器服务...
+2025-04-17 00:22:37,692 - RiskManagerRunner - INFO - 风险管理器服务已启动，开始监听消息...
+2025-04-17 00:22:42,065 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器连接断开，原因4097
+2025-04-17 00:22:42,269 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器连接成功
+2025-04-17 00:22:42,311 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器登录成功
+2025-04-17 00:22:42,758 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:22:44,659 - StrategySubscriber - INFO - Logging configured for service 'StrategySubscriber'. Level: INFO, Console: True, File: True
+2025-04-17 00:22:44,659 - StrategySubscriber - INFO - 正在初始化策略订阅器...
+2025-04-17 00:22:44,673 - StrategySubscriber - INFO - 策略订阅器连接行情发布器: tcp://localhost:5555
+2025-04-17 00:22:44,673 - StrategySubscriber - INFO - 策略订阅器连接回报发布器: tcp://localhost:5557
+2025-04-17 00:22:44,674 - StrategySubscriber - INFO - 策略订单推送器连接到: tcp://localhost:5556
+2025-04-17 00:22:44,674 - StrategySubscriber - INFO -   订阅行情主题: TICK.SA505.CZCE
+2025-04-17 00:22:44,674 - StrategySubscriber - INFO -   订阅行情主题: TICK.rb2510.SHFE
+2025-04-17 00:22:44,674 - StrategySubscriber - INFO -   订阅订单状态主题: ORDER_STATUS.*
+2025-04-17 00:22:44,674 - StrategySubscriber - INFO -   订阅成交回报主题: TRADE.*
+2025-04-17 00:22:44,674 - StrategySubscriber - INFO - 已订阅 4 个主题/前缀。
+2025-04-17 00:22:44,674 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:22:44,674 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:22:44,707 - StrategySubscriber - INFO - 尝试启动订阅器...
+2025-04-17 00:22:44,707 - StrategySubscriber - INFO - 启动策略订阅器...
+2025-04-17 00:22:44,707 - StrategySubscriber - INFO - 重置策略内部状态...
+2025-04-17 00:22:44,931 - StrategySubscriber - INFO - 准备发送订单: 多 1 lots SA505@1329.0
+2025-04-17 00:22:44,931 - StrategySubscriber - INFO -   订单请求已推送: {'symbol': 'SA505', 'exchange': 'CZCE', 'direction': '多', 'type': '限价', 'volume': 1, 'price': 1329.0, 'offset': '开', 'reference': 'SimpleZmqStrategy_01'}
+2025-04-17 00:22:44,931 - OrderGatewayRunner - INFO - 收到订单请求: SA505, 多, Vol:1
+2025-04-17 00:22:44,933 - StrategySubscriber - INFO -   设置 SA505 买入开仓状态: True, Entry: 1329.0, Target: 1339.0, Stop: 1324.0
+2025-04-17 00:22:44,933 - OrderGatewayRunner - INFO - 订单请求已发送至 CTP 网关: SA505, 本地ID: CTP_Execution.1_-650202805_1
+2025-04-17 00:22:44,933 - RiskManagerRunner - INFO - [2025-04-17 00:22:44.933] 订单状态更新: ID=CTP_Execution.1_-650202805_1, Status=提交中, Traded=0
+2025-04-17 00:22:44,933 - StrategySubscriber - INFO - [2025-04-17 00:22:44.933] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-650202805_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:22:44,992 - RiskManagerRunner - INFO - [2025-04-17 00:22:44.990] 订单状态更新: ID=CTP_Execution.1_-650202805_1, Status=全部成交, Traded=1
+全部成交, 成交量: 1
+2025-04-17 00:22:44,992 - RiskManagerRunner - INFO - [2025-04-17 00:22:44.990] 收到成交回报: SA505.CZCE
+2025-04-17 00:22:44,992 - StrategySubscriber - INFO - [2025-04-17 00:22:44.990] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000998, OrderID: CTP_Execution.1_-650202805_1, 方向: 多, 开平: 开, 价格: 1329.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:22:44,992 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 0 | 变动: 1 | 新: 1
+2025-04-17 00:22:47,767 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:22:49,752 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:22:52,859 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:22:54,074 - OrderGatewayRunner - INFO - 主程序检测到 Ctrl+C，正在停止服务...
+2025-04-17 00:22:54,074 - OrderGatewayRunner - INFO - 停止订单执行网关服务...
+2025-04-17 00:22:54,074 - OrderGatewayRunner - INFO - ZeroMQ 订单请求接收器已关闭。
+2025-04-17 00:22:54,074 - OrderGatewayRunner - INFO - ZeroMQ 订单/成交回报发布器已关闭。
+2025-04-17 00:22:54,074 - OrderGatewayRunner - INFO - ZeroMQ 指令接收器已关闭。
+2025-04-17 00:22:57,353 - StrategySubscriber - WARNING - [Ping GW] PING request timed out after 2500ms.
+2025-04-17 00:22:57,355 - StrategySubscriber - ERROR - 与订单执行网关的连接丢失 (PING timeout)!
+2025-04-17 00:22:57,355 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:22:57,356 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:22:57,356 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:00,454 - RiskManagerRunner - WARNING - [Ping] PING request timed out after 2500ms.
+2025-04-17 00:23:00,454 - RiskManagerRunner - ERROR - 与订单执行网关的连接丢失 (PING timeout)!
+2025-04-17 00:23:00,454 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:00,454 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:00,454 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:02,675 - StrategySubscriber - WARNING - [Ping GW - Reconnecting] PING request timed out after 2500ms.
+2025-04-17 00:23:02,676 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:02,676 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:02,676 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:05,682 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:23:05,683 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:05,683 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:05,683 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:07,802 - StrategySubscriber - WARNING - [Ping GW - Reconnecting] PING request timed out after 2500ms.
+2025-04-17 00:23:07,802 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:07,802 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:07,802 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:10,773 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:23:10,775 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:10,775 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:10,775 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:11,957 - OrderGatewayRunner - INFO - Logging configured for service 'OrderGatewayRunner'. Level: INFO, Console: True, File: True
+2025-04-17 00:23:11,957 - OrderGatewayRunner - INFO - 正在初始化订单执行网关服务...
+2025-04-17 00:23:11,990 - OrderGatewayRunner - INFO - 订单请求接收器绑定到: tcp://*:5556
+2025-04-17 00:23:11,993 - OrderGatewayRunner - INFO - 订单/成交回报发布器绑定到: tcp://*:5557
+2025-04-17 00:23:11,996 - OrderGatewayRunner - INFO - 指令接收器绑定到: tcp://*:5558
+2025-04-17 00:23:11,996 - OrderGatewayRunner - INFO - 尝试从 D:\Project\PycharmProjects\Nilotica_dev\config\project_files\product_info.ini 加载产品信息...
+2025-04-17 00:23:11,997 - OrderGatewayRunner - INFO - 从 D:\Project\PycharmProjects\Nilotica_dev\config\project_files\product_info.ini 加载了 2 个合约的乘数和 2 个合约的手续费规则。
+2025-04-17 00:23:11,997 - OrderGatewayRunner - INFO - 订单执行网关服务初始化完成。
+2025-04-17 00:23:11,997 - OrderGatewayRunner - INFO - 尝试启动服务...
+2025-04-17 00:23:11,997 - OrderGatewayRunner - INFO - 启动订单执行网关服务...
+2025-04-17 00:23:11,997 - OrderGatewayRunner - INFO - 事件引擎已启动。
+2025-04-17 00:23:11,997 - OrderGatewayRunner - INFO - CTP 交易网关连接请求已发送。等待连接成功...
+2025-04-17 00:23:12,147 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器连接成功
+2025-04-17 00:23:12,148 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器连接成功
+2025-04-17 00:23:12,186 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器登录成功
+2025-04-17 00:23:12,641 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器授权验证成功
+2025-04-17 00:23:12,683 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器登录成功
+2025-04-17 00:23:12,802 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 结算信息确认成功
+2025-04-17 00:23:13,184 - StrategySubscriber - WARNING - [Ping GW - Reconnecting] PING request timed out after 2500ms.
+2025-04-17 00:23:13,184 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:13,185 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:13,185 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:16,195 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:23:16,195 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:16,195 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:16,196 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:16,378 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - ctp_gateway.py：合约信息查询成功
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-741634315_1, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-741634315_1, Status=全部成交, Traded=1
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000016, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000016, Status=全部成交, Traded=1
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-741634315_2, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-741634315_2, Status=全部成交, Traded=1
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000024, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000024, Status=全部成交, Traded=1
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-695623596_1, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-695623596_1, Status=全部成交, Traded=1
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-690642373_1, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-690642373_1, Status=全部成交, Traded=1
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000032, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000032, Status=全部成交, Traded=2
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-690642373_2, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-690642373_2, Status=全部成交, Traded=1
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000040, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000040, Status=全部成交, Traded=1
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-666522848_1, Status=提交中, Traded=0
+2025-04-17 00:23:16,378 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-666522848_1, Status=全部成交, Traded=1
+2025-04-17 00:23:16,386 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000048, Status=提交中, Traded=0
+2025-04-17 00:23:16,386 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000048, Status=全部成交, Traded=1
+2025-04-17 00:23:16,386 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-650202805_1, Status=提交中, Traded=0
+2025-04-17 00:23:16,387 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 订单状态更新: ID=CTP_Execution.1_-650202805_1, Status=全部成交, Traded=1
+2025-04-17 00:23:16,387 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,387 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 1 | 变动: 1 | 新: 2
+2025-04-17 00:23:16,387 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,387 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 2 | 变动: -1 | 新: 1
+2025-04-17 00:23:16,388 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,388 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 1 | 变动: 1 | 新: 2
+2025-04-17 00:23:16,388 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,388 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 2 | 变动: -1 | 新: 1
+2025-04-17 00:23:16,388 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,388 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 1 | 变动: 1 | 新: 2
+2025-04-17 00:23:16,388 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,389 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 2 | 变动: 1 | 新: 3
+2025-04-17 00:23:16,389 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,389 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 3 | 变动: -2 | 新: 1
+2025-04-17 00:23:16,389 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,389 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 1 | 变动: 1 | 新: 2
+2025-04-17 00:23:16,389 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,389 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 2 | 变动: -1 | 新: 1
+2025-04-17 00:23:16,389 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,390 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 1 | 变动: 1 | 新: 2
+2025-04-17 00:23:16,390 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,390 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 2 | 变动: -1 | 新: 1
+2025-04-17 00:23:16,390 - RiskManagerRunner - INFO - [2025-04-17 00:23:16.378] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:16,390 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 1 | 变动: 1 | 新: 2
+2025-04-17 00:23:18,115 - OrderGatewayRunner - INFO - [2025-04-17 00:23:18.115] 账户关键信息更新 (GW): AccountID=160219, Balance=31998022.26, Available=31993769.46, Margin=0.00
+2025-04-17 00:23:18,131 - RiskManagerRunner - INFO - [2025-04-17 00:23:18.131] 账户关键信息更新: AccountID=160219, Balance=31998022.26, Available=31993769.46, Margin=0.00, Frozen=0.00
+2025-04-17 00:23:18,214 - StrategySubscriber - WARNING - [Ping GW - Reconnecting] PING request timed out after 2500ms.
+2025-04-17 00:23:18,214 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:18,214 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:18,214 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:18,214 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-741634315_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,214 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-741634315_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,224 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000016, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,225 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000016, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,225 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-741634315_2, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,225 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-741634315_2, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,225 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000024, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,225 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000024, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,225 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-695623596_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,225 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-695623596_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,231 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-690642373_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,232 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-690642373_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,232 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000032, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,232 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000032, 状态: 全部成交, 成交量: 2
+2025-04-17 00:23:18,232 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-690642373_2, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,232 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-690642373_2, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,232 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000040, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,232 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000040, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,239 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-666522848_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,239 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-666522848_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,239 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000048, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,239 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000048, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,239 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-650202805_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:18,239 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-650202805_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:18,239 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000987, OrderID: CTP_Execution.1_-741634315_1, 方向: 多, 开平: 开, 价格: 1326.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,245 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000988, OrderID: CTP_Execution.1_-948551111_000000000016, 方向: 空, 开平: 平, 价格: 1325.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,246 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000988 (OrderID: CTP_Execution.1_-948551111_000000000016), 重置等待平仓标志和持仓状态。
+2025-04-17 00:23:18,246 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000989, OrderID: CTP_Execution.1_-741634315_2, 方向: 多, 开平: 开, 价格: 1326.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,246 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000990, OrderID: CTP_Execution.1_-948551111_000000000024, 方向: 空, 开平: 平, 价格: 1326.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,246 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000990 (OrderID: CTP_Execution.1_-948551111_000000000024), 重置等待平仓标志和持仓状态。
+2025-04-17 00:23:18,246 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000991, OrderID: CTP_Execution.1_-695623596_1, 方向: 多, 开平: 开, 价格: 1327.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,246 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000992, OrderID: CTP_Execution.1_-690642373_1, 方向: 多, 开平: 开, 价格: 1327.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,246 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000993, OrderID: CTP_Execution.1_-948551111_000000000032, 方向: 空, 开平: 平, 价格: 1326.0, 数量: 2, 手续费: 10.40
+2025-04-17 00:23:18,253 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000993 (OrderID: CTP_Execution.1_-948551111_000000000032), 重置等待平仓标志和持仓状态。
+2025-04-17 00:23:18,253 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000994, OrderID: CTP_Execution.1_-690642373_2, 方向: 多, 开平: 开, 价格: 1327.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,253 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000995, OrderID: CTP_Execution.1_-948551111_000000000040, 方向: 空, 开平: 平, 价格: 1327.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,253 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000995 (OrderID: CTP_Execution.1_-948551111_000000000040), 重置等待平仓标志和持仓状态。
+2025-04-17 00:23:18,253 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000996, OrderID: CTP_Execution.1_-666522848_1, 方向: 多, 开平: 开, 价格: 1328.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,253 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000997, OrderID: CTP_Execution.1_-948551111_000000000048, 方向: 空, 开平: 平, 价格: 1328.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:18,253 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000997 (OrderID: CTP_Execution.1_-948551111_000000000048), 重置等待平仓标志和持仓状态。
+2025-04-17 00:23:18,253 - StrategySubscriber - INFO - [2025-04-17 00:23:16.378] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000998, OrderID: CTP_Execution.1_-650202805_1, 方向: 多, 开平: 开, 价格: 1329.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:19,204 - StrategySubscriber - ERROR - 无法发送订单 (SA505): 与订单执行网关失去连接。
+2025-04-17 00:23:20,236 - StrategySubscriber - ERROR - 无法发送订单 (SA505): 与订单执行网关失去连接。
+2025-04-17 00:23:21,204 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:23:21,204 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:21,204 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:21,204 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:21,204 - StrategySubscriber - ERROR - 无法发送订单 (SA505): 与订单执行网关失去连接。
+2025-04-17 00:23:22,002 - OrderGatewayRunner - INFO - CTP 交易网关假定连接成功（基于延时）。
+2025-04-17 00:23:22,002 - OrderGatewayRunner - INFO - 订单请求处理线程已启动。
+2025-04-17 00:23:22,002 - OrderGatewayRunner - INFO - 指令处理线程已启动。
+2025-04-17 00:23:22,002 - OrderGatewayRunner - INFO - 订单执行网关服务启动完成。
+2025-04-17 00:23:22,002 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:22,002 - OrderGatewayRunner - INFO - 订单执行网关服务正在运行。按 Ctrl+C 停止。
+2025-04-17 00:23:22,002 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:22,009 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:22,010 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:22,011 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:22,012 - StrategySubscriber - INFO - 与订单执行网关的连接已恢复。
+2025-04-17 00:23:22,203 - StrategySubscriber - INFO - 准备发送订单: 多 1 lots SA505@1329.0
+2025-04-17 00:23:22,205 - StrategySubscriber - INFO -   订单请求已推送: {'symbol': 'SA505', 'exchange': 'CZCE', 'direction': '多', 'type': '限价', 'volume': 1, 'price': 1329.0, 'offset': '开', 'reference': 'SimpleZmqStrategy_01'}
+2025-04-17 00:23:22,205 - OrderGatewayRunner - INFO - 收到订单请求: SA505, 多, Vol:1
+2025-04-17 00:23:22,205 - StrategySubscriber - INFO -   设置 SA505 买入开仓状态: True, Entry: 1329.0, Target: 1339.0, Stop: 1324.0
+2025-04-17 00:23:22,206 - OrderGatewayRunner - INFO - 订单请求已发送至 CTP 网关: SA505, 本地ID: CTP_Execution.1_-646991240_1
+2025-04-17 00:23:22,207 - StrategySubscriber - INFO - [2025-04-17 00:23:22.206] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-646991240_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:23:22,207 - RiskManagerRunner - INFO - [2025-04-17 00:23:22.206] 订单状态更新: ID=CTP_Execution.1_-646991240_1, Status=提交中, Traded=0
+2025-04-17 00:23:22,254 - StrategySubscriber - INFO - [2025-04-17 00:23:22.253] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-646991240_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:23:22,255 - RiskManagerRunner - INFO - [2025-04-17 00:23:22.253] 收到成交回报: SA505.CZCE
+2025-04-17 00:23:22,255 - StrategySubscriber - INFO - [2025-04-17 00:23:22.253] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000999, OrderID: CTP_Execution.1_-646991240_1, 方向: 多, 开平: 开, 价格: 1329.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:23:22,256 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 2 | 变动: 1 | 新: 3
+2025-04-17 00:23:24,231 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:24,231 - RiskManagerRunner - INFO - 与订单执行网关的连接已恢复。
+2025-04-17 00:23:26,694 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:29,232 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:32,198 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:34,250 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:37,250 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:39,619 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:23:40,494 - OrderGatewayRunner - INFO - 主程序检测到 Ctrl+C，正在停止服务...
+2025-04-17 00:23:40,494 - OrderGatewayRunner - INFO - 停止订单执行网关服务...
+2025-04-17 00:23:40,494 - OrderGatewayRunner - INFO - ZeroMQ 订单请求接收器已关闭。
+2025-04-17 00:23:40,494 - OrderGatewayRunner - INFO - ZeroMQ 订单/成交回报发布器已关闭。
+2025-04-17 00:23:40,499 - OrderGatewayRunner - INFO - ZeroMQ 指令接收器已关闭。
+2025-04-17 00:23:44,766 - StrategySubscriber - WARNING - [Ping GW] PING request timed out after 2500ms.
+2025-04-17 00:23:44,766 - StrategySubscriber - ERROR - 与订单执行网关的连接丢失 (PING timeout)!
+2025-04-17 00:23:44,767 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:44,767 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:44,768 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:47,198 - RiskManagerRunner - WARNING - [Ping] PING request timed out after 2500ms.
+2025-04-17 00:23:47,199 - RiskManagerRunner - ERROR - 与订单执行网关的连接丢失 (PING timeout)!
+2025-04-17 00:23:47,200 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:47,200 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:47,201 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:49,824 - StrategySubscriber - WARNING - [Ping GW - Reconnecting] PING request timed out after 2500ms.
+2025-04-17 00:23:49,825 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:49,825 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:49,825 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:52,587 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:23:52,587 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:52,589 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:52,589 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:55,345 - StrategySubscriber - WARNING - [Ping GW - Reconnecting] PING request timed out after 2500ms.
+2025-04-17 00:23:55,345 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:55,345 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:55,345 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:23:57,846 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:23:57,846 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:23:57,846 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:23:57,846 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:24:00,588 - OrderGatewayRunner - INFO - Logging configured for service 'OrderGatewayRunner'. Level: INFO, Console: True, File: True
+2025-04-17 00:24:00,589 - OrderGatewayRunner - INFO - 正在初始化订单执行网关服务...
+2025-04-17 00:24:00,609 - OrderGatewayRunner - INFO - 订单请求接收器绑定到: tcp://*:5556
+2025-04-17 00:24:00,612 - OrderGatewayRunner - INFO - 订单/成交回报发布器绑定到: tcp://*:5557
+2025-04-17 00:24:00,616 - OrderGatewayRunner - INFO - 指令接收器绑定到: tcp://*:5558
+2025-04-17 00:24:00,617 - OrderGatewayRunner - INFO - 尝试从 D:\Project\PycharmProjects\Nilotica_dev\config\project_files\product_info.ini 加载产品信息...
+2025-04-17 00:24:00,618 - OrderGatewayRunner - INFO - 从 D:\Project\PycharmProjects\Nilotica_dev\config\project_files\product_info.ini 加载了 2 个合约的乘数和 2 个合约的手续费规则。
+2025-04-17 00:24:00,619 - OrderGatewayRunner - INFO - 订单执行网关服务初始化完成。
+2025-04-17 00:24:00,619 - OrderGatewayRunner - INFO - 尝试启动服务...
+2025-04-17 00:24:00,619 - OrderGatewayRunner - INFO - 启动订单执行网关服务...
+2025-04-17 00:24:00,620 - OrderGatewayRunner - INFO - 事件引擎已启动。
+2025-04-17 00:24:00,623 - OrderGatewayRunner - INFO - CTP 交易网关连接请求已发送。等待连接成功...
+2025-04-17 00:24:00,733 - StrategySubscriber - WARNING - [Ping GW - Reconnecting] PING request timed out after 2500ms.
+2025-04-17 00:24:00,733 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:24:00,734 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:24:00,734 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:24:00,803 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器连接成功
+2025-04-17 00:24:00,803 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器连接成功
+2025-04-17 00:24:00,851 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 行情服务器登录成功
+2025-04-17 00:24:01,251 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器授权验证成功
+2025-04-17 00:24:01,295 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 交易服务器登录成功
+2025-04-17 00:24:01,389 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - 结算信息确认成功
+2025-04-17 00:24:03,344 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:24:03,344 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:24:03,344 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:24:03,344 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:24:06,018 - StrategySubscriber - WARNING - [Ping GW - Reconnecting] PING request timed out after 2500ms.
+2025-04-17 00:24:06,018 - StrategySubscriber - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:24:06,018 - StrategySubscriber - INFO - (Strategy) 尝试关闭旧的指令 Socket...
+2025-04-17 00:24:06,018 - StrategySubscriber - INFO - (Strategy) 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:24:06,797 - OrderGatewayRunner - INFO - [VNPY LOG - ExecGW] CTP_Execution - ctp_gateway.py：合约信息查询成功
+2025-04-17 00:24:06,797 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-741634315_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,797 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-741634315_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,797 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000016, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,797 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000016, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,797 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-741634315_2, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,797 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-741634315_2, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,797 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000024, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,809 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000024, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,810 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-695623596_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,810 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-695623596_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,812 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-690642373_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,813 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-690642373_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,814 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000032, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,814 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000032, 状态: 全部成交, 成交量: 2
+2025-04-17 00:24:06,815 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-690642373_2, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,816 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-690642373_2, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,816 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000040, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,816 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000040, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,816 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-666522848_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,816 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-666522848_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,816 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000048, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,816 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-948551111_000000000048, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,821 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-650202805_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,821 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-650202805_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,821 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-646991240_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-646991240_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000987, OrderID: CTP_Execution.1_-741634315_1, 方向: 多, 开平: 开, 价格: 1326.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000988, OrderID: CTP_Execution.1_-948551111_000000000016, 方向: 空, 开平: 平, 价格: 1325.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000988 (OrderID: CTP_Execution.1_-948551111_000000000016), 重置等待平仓标志和持仓状态。
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000989, OrderID: CTP_Execution.1_-741634315_2, 方向: 多, 开平: 开, 价格: 1326.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000990, OrderID: CTP_Execution.1_-948551111_000000000024, 方向: 空, 开平: 平, 价格: 1326.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000990 (OrderID: CTP_Execution.1_-948551111_000000000024), 重置等待平仓标志和持仓状态。
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000991, OrderID: CTP_Execution.1_-695623596_1, 方向: 多, 开平: 开, 价格: 1327.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000992, OrderID: CTP_Execution.1_-690642373_1, 方向: 多, 开平: 开, 价格: 1327.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000993, OrderID: CTP_Execution.1_-948551111_000000000032, 方向: 空, 开平: 平, 价格: 1326.0, 数量: 2, 手续费: 10.40
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000993 (OrderID: CTP_Execution.1_-948551111_000000000032), 重置等待平仓标志和持仓状态。
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000994, OrderID: CTP_Execution.1_-690642373_2, 方向: 多, 开平: 开, 价格: 1327.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000995, OrderID: CTP_Execution.1_-948551111_000000000040, 方向: 空, 开平: 平, 价格: 1327.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,822 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000995 (OrderID: CTP_Execution.1_-948551111_000000000040), 重置等待平仓标志和持仓状态。
+2025-04-17 00:24:06,828 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000996, OrderID: CTP_Execution.1_-666522848_1, 方向: 多, 开平: 开, 价格: 1328.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,828 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000997, OrderID: CTP_Execution.1_-948551111_000000000048, 方向: 空, 开平: 平, 价格: 1328.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,828 - StrategySubscriber - INFO -   SA505 平仓成交 CTP_Execution.2025041500000997 (OrderID: CTP_Execution.1_-948551111_000000000048), 重置等待平仓标志和持仓状态。
+2025-04-17 00:24:06,829 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000998, OrderID: CTP_Execution.1_-650202805_1, 方向: 多, 开平: 开, 价格: 1329.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,829 - StrategySubscriber - INFO - [2025-04-17 00:24:06.797] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500000999, OrderID: CTP_Execution.1_-646991240_1, 方向: 多, 开平: 开, 价格: 1329.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:06,906 - StrategySubscriber - ERROR - 无法发送订单 (SA505): 与订单执行网关失去连接。
+2025-04-17 00:24:07,872 - StrategySubscriber - ERROR - 无法发送订单 (SA505): 与订单执行网关失去连接。
+2025-04-17 00:24:08,835 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:24:08,835 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:24:08,835 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:24:08,835 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:24:08,835 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-741634315_1, Status=提交中, Traded=0
+2025-04-17 00:24:08,835 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-741634315_1, Status=全部成交, Traded=1
+2025-04-17 00:24:08,835 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000016, Status=提交中, Traded=0
+2025-04-17 00:24:08,842 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000016, Status=全部成交, Traded=1
+2025-04-17 00:24:08,843 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-741634315_2, Status=提交中, Traded=0
+2025-04-17 00:24:08,844 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-741634315_2, Status=全部成交, Traded=1
+2025-04-17 00:24:08,845 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000024, Status=提交中, Traded=0
+2025-04-17 00:24:08,845 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000024, Status=全部成交, Traded=1
+2025-04-17 00:24:08,847 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-695623596_1, Status=提交中, Traded=0
+2025-04-17 00:24:08,847 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-695623596_1, Status=全部成交, Traded=1
+2025-04-17 00:24:08,848 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-690642373_1, Status=提交中, Traded=0
+2025-04-17 00:24:08,849 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-690642373_1, Status=全部成交, Traded=1
+2025-04-17 00:24:08,850 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000032, Status=提交中, Traded=0
+2025-04-17 00:24:08,851 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000032, Status=全部成交, Traded=2
+2025-04-17 00:24:08,851 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-690642373_2, Status=提交中, Traded=0
+2025-04-17 00:24:08,852 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-690642373_2, Status=全部成交, Traded=1
+2025-04-17 00:24:08,853 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000040, Status=提交中, Traded=0
+2025-04-17 00:24:08,854 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000040, Status=全部成交, Traded=1
+2025-04-17 00:24:08,854 - StrategySubscriber - ERROR - 无法发送订单 (SA505): 与订单执行网关失去连接。
+2025-04-17 00:24:08,855 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-666522848_1, Status=提交中, Traded=0
+2025-04-17 00:24:08,855 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-666522848_1, Status=全部成交, Traded=1
+2025-04-17 00:24:08,855 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000048, Status=提交中, Traded=0
+2025-04-17 00:24:08,855 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-948551111_000000000048, Status=全部成交, Traded=1
+2025-04-17 00:24:08,858 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-650202805_1, Status=提交中, Traded=0
+2025-04-17 00:24:08,858 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-650202805_1, Status=全部成交, Traded=1
+2025-04-17 00:24:08,859 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-646991240_1, Status=提交中, Traded=0
+2025-04-17 00:24:08,859 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 订单状态更新: ID=CTP_Execution.1_-646991240_1, Status=全部成交, Traded=1
+2025-04-17 00:24:08,860 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,860 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 3 | 变动: 1 | 新: 4
+2025-04-17 00:24:08,861 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,861 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 4 | 变动: -1 | 新: 3
+2025-04-17 00:24:08,861 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,861 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 3 | 变动: 1 | 新: 4
+2025-04-17 00:24:08,862 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,864 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 4 | 变动: -1 | 新: 3
+2025-04-17 00:24:08,865 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,865 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 3 | 变动: 1 | 新: 4
+2025-04-17 00:24:08,866 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,867 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 4 | 变动: 1 | 新: 5
+2025-04-17 00:24:08,867 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,868 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 5 | 变动: -2 | 新: 3
+2025-04-17 00:24:08,870 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,870 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 3 | 变动: 1 | 新: 4
+2025-04-17 00:24:08,870 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,870 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 4 | 变动: -1 | 新: 3
+2025-04-17 00:24:08,873 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,874 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 3 | 变动: 1 | 新: 4
+2025-04-17 00:24:08,875 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,875 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 4 | 变动: -1 | 新: 3
+2025-04-17 00:24:08,876 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,876 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 3 | 变动: 1 | 新: 4
+2025-04-17 00:24:08,878 - RiskManagerRunner - INFO - [2025-04-17 00:24:06.797] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:08,878 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 4 | 变动: 1 | 新: 5
+2025-04-17 00:24:10,624 - OrderGatewayRunner - INFO - CTP 交易网关假定连接成功（基于延时）。
+2025-04-17 00:24:10,624 - OrderGatewayRunner - INFO - 订单请求处理线程已启动。
+2025-04-17 00:24:10,624 - OrderGatewayRunner - INFO - 指令处理线程已启动。
+2025-04-17 00:24:10,624 - OrderGatewayRunner - INFO - 订单执行网关服务启动完成。
+2025-04-17 00:24:10,624 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:10,624 - OrderGatewayRunner - INFO - 订单执行网关服务正在运行。按 Ctrl+C 停止。
+2025-04-17 00:24:10,624 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:10,624 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:10,631 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:10,633 - StrategySubscriber - INFO - 与订单执行网关的连接已恢复。
+2025-04-17 00:24:10,633 - StrategySubscriber - INFO - 准备发送订单: 多 1 lots SA505@1330.0
+2025-04-17 00:24:10,634 - OrderGatewayRunner - INFO - 收到订单请求: SA505, 多, Vol:1
+2025-04-17 00:24:10,635 - OrderGatewayRunner - INFO - 订单请求已发送至 CTP 网关: SA505, 本地ID: CTP_Execution.1_-643779646_1
+2025-04-17 00:24:10,636 - RiskManagerRunner - INFO - [2025-04-17 00:24:10.635] 订单状态更新: ID=CTP_Execution.1_-643779646_1, Status=提交中, Traded=0
+2025-04-17 00:24:10,634 - StrategySubscriber - INFO -   订单请求已推送: {'symbol': 'SA505', 'exchange': 'CZCE', 'direction': '多', 'type': '限价', 'volume': 1, 'price': 1330.0, 'offset': '开', 'reference': 'SimpleZmqStrategy_01'}
+2025-04-17 00:24:10,638 - StrategySubscriber - INFO -   设置 SA505 买入开仓状态: True, Entry: 1330.0, Target: 1340.0, Stop: 1325.0
+2025-04-17 00:24:10,638 - StrategySubscriber - INFO - [2025-04-17 00:24:10.635] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-643779646_1, 状态: 提交中, 成交量: 0
+2025-04-17 00:24:10,697 - OrderGatewayRunner - INFO - [2025-04-17 00:24:10.697] 账户关键信息更新 (GW): AccountID=160219, Balance=31997991.62, Available=31985230.02, Margin=0.00
+2025-04-17 00:24:10,697 - StrategySubscriber - INFO - [2025-04-17 00:24:10.697] 订单回报 [ORDER_STATUS.SA505.CZCE] - ID: CTP_Execution.1_-643779646_1, 状态: 全部成交, 成交量: 1
+2025-04-17 00:24:10,697 - RiskManagerRunner - INFO - [2025-04-17 00:24:10.697] 订单状态更新: ID=CTP_Execution.1_-643779646_1, Status=全部成交, Traded=1
+2025-04-17 00:24:10,697 - StrategySubscriber - INFO - [2025-04-17 00:24:10.697] 成交回报 [TRADE.SA505.CZCE] - TradeID: CTP_Execution.2025041500001000, OrderID: CTP_Execution.1_-643779646_1, 方向: 多, 开平: 开, 价格: 1330.0, 数量: 1, 手续费: 5.20
+2025-04-17 00:24:10,697 - RiskManagerRunner - INFO - [2025-04-17 00:24:10.697] 收到成交回报: SA505.CZCE
+2025-04-17 00:24:10,697 - RiskManagerRunner - INFO - 持仓更新: SA505.CZCE | 旧: 5 | 变动: 1 | 新: 6
+2025-04-17 00:24:10,697 - RiskManagerRunner - WARNING - [风险告警] 合约 SA505.CZCE: 持仓 6 超出限制 5!
+2025-04-17 00:24:11,756 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:11,758 - RiskManagerRunner - INFO - 与订单执行网关的连接已恢复。
+2025-04-17 00:24:14,252 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:16,768 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:17,097 - MarketDataGatewayRunner - INFO - 
+检测到 Ctrl+C，正在停止服务...
+2025-04-17 00:24:17,097 - MarketDataGatewayRunner - INFO - 停止行情网关服务...
+2025-04-17 00:24:17,481 - MarketDataGatewayRunner - INFO - 事件引擎已停止。
+2025-04-17 00:24:17,531 - MarketDataGatewayRunner - INFO - CTP 网关已关闭。
+2025-04-17 00:24:17,533 - MarketDataGatewayRunner - INFO - ZeroMQ 发布器已关闭。
+2025-04-17 00:24:17,536 - MarketDataGatewayRunner - INFO - ZeroMQ Context 已终止。
+2025-04-17 00:24:17,536 - MarketDataGatewayRunner - INFO - 行情网关服务已停止。
+2025-04-17 00:24:17,537 - MarketDataGatewayRunner - INFO - 行情网关服务已退出。
+2025-04-17 00:24:22,277 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:27,289 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:32,315 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:37,357 - OrderGatewayRunner - INFO - 收到指令: Type=PING, Data={}
+2025-04-17 00:24:38,301 - OrderGatewayRunner - INFO - 主程序检测到 Ctrl+C，正在停止服务...
+2025-04-17 00:24:38,301 - OrderGatewayRunner - INFO - 停止订单执行网关服务...
+2025-04-17 00:24:38,301 - OrderGatewayRunner - INFO - ZeroMQ 订单请求接收器已关闭。
+2025-04-17 00:24:38,301 - OrderGatewayRunner - INFO - ZeroMQ 订单/成交回报发布器已关闭。
+2025-04-17 00:24:38,301 - OrderGatewayRunner - INFO - ZeroMQ 指令接收器已关闭。
+2025-04-17 00:24:44,914 - RiskManagerRunner - WARNING - [Ping] PING request timed out after 2500ms.
+2025-04-17 00:24:44,914 - RiskManagerRunner - ERROR - 与订单执行网关的连接丢失 (PING timeout)!
+2025-04-17 00:24:44,915 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:24:44,915 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:24:44,915 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:24:50,442 - RiskManagerRunner - WARNING - [Ping - Attempting Reconnect] PING request timed out after 2500ms.
+2025-04-17 00:24:50,442 - RiskManagerRunner - INFO - 尝试重置指令 Socket (因 PING 超时)...
+2025-04-17 00:24:50,442 - RiskManagerRunner - INFO - 尝试关闭旧的指令 Socket...
+2025-04-17 00:24:50,442 - RiskManagerRunner - INFO - 正在创建并连接指令 Socket 到: tcp://localhost:5558
+2025-04-17 00:24:51,459 - RiskManagerRunner - INFO - 主程序检测到 Ctrl+C，正在停止...
+2025-04-17 00:24:51,459 - RiskManagerRunner - INFO - 正在停止风险管理器服务...
+2025-04-17 00:24:51,459 - RiskManagerRunner - INFO - 关闭 ZMQ sockets 和 context...
+2025-04-17 00:24:51,459 - RiskManagerRunner - INFO - ZeroMQ 订阅器已关闭。
+2025-04-17 00:24:51,459 - RiskManagerRunner - INFO - ZeroMQ 指令发送器已关闭。
+2025-04-17 00:24:51,459 - RiskManagerRunner - INFO - ZeroMQ Context 已终止。
+2025-04-17 00:24:51,459 - RiskManagerRunner - INFO - 风险管理器已停止。
+2025-04-17 00:24:51,459 - RiskManagerRunner - INFO - 风险管理器运行结束。
+2025-04-17 00:25:02,550 - StrategySubscriber - INFO - 检测到中断信号，停止订阅器...
+2025-04-17 00:25:02,550 - StrategySubscriber - INFO - 策略订阅器循环结束。
+2025-04-17 00:25:02,550 - StrategySubscriber - INFO - 策略订阅器运行结束。
