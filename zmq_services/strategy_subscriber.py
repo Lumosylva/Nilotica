@@ -10,11 +10,19 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import local config
-from . import config
+# Import new config location
+from config import zmq_config as config
 
 # Import vnpy constants if needed for constructing order requests
 from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status
+
+from logger import setup_logging, getLogger # Now safe to import
+
+# 2. Setup Logging for this specific service
+# Call this early, before other imports that might log (like MarketDataGatewayService)
+setup_logging(service_name="StrategySubscriber") # Give a specific name
+# 3. Get a logger for this script
+logger = getLogger(__name__)
 
 # --- Helper function to reconstruct vnpy objects (Optional for now) ---
 # If you need full vnpy objects in the strategy, uncomment and potentially expand this.
@@ -64,18 +72,18 @@ class StrategySubscriber:
         self.subscriber.setsockopt(zmq.LINGER, 0)
         self.subscriber.connect(gateway_pub_url) # Connect to Market Data PUB
         self.subscriber.connect(order_report_url) # Connect to Order Report PUB
-        print(f"策略订阅器连接行情发布器: {gateway_pub_url}")
-        print(f"策略订阅器连接回报发布器: {order_report_url}")
+        logger.info(f"策略订阅器连接行情发布器: {gateway_pub_url}")
+        logger.info(f"策略订阅器连接回报发布器: {order_report_url}")
 
         # Socket to push order requests
         self.order_pusher = self.context.socket(zmq.PUSH)
         self.order_pusher.setsockopt(zmq.LINGER, 0)
         self.order_pusher.connect(order_req_url)
-        print(f"策略订单推送器连接到: {order_req_url}")
+        logger.info(f"策略订单推送器连接到: {order_req_url}")
 
         self.subscribe_topics = []
         if not subscribe_symbols:
-            print("警告: 未指定订阅合约，将接收所有行情 (不推荐)!")
+            logger.warning("警告: 未指定订阅合约，将接收所有行情 (不推荐)!")
             # Still subscribe to specific report topics
             self.subscriber.subscribe("TICK.") # Subscribe to all ticks
             self.subscribe_topics.append("TICK.")
@@ -85,7 +93,7 @@ class StrategySubscriber:
                 tick_topic_str = f"TICK.{vt_symbol}"
                 self.subscriber.subscribe(tick_topic_str.encode('utf-8'))
                 self.subscribe_topics.append(tick_topic_str)
-                print(f"  订阅行情主题: {tick_topic_str}")
+                logger.info(f"  订阅行情主题: {tick_topic_str}")
 
         # Subscribe to Order Status and Trade Reports (using prefix subscription)
         order_status_prefix = "ORDER_STATUS."
@@ -94,13 +102,14 @@ class StrategySubscriber:
         self.subscriber.subscribe(trade_prefix.encode('utf-8'))
         self.subscribe_topics.append(order_status_prefix)
         self.subscribe_topics.append(trade_prefix)
-        print(f"  订阅订单状态主题: {order_status_prefix}*")
-        print(f"  订阅成交回报主题: {trade_prefix}*")
+        logger.info(f"  订阅订单状态主题: {order_status_prefix}*")
+        logger.info(f"  订阅成交回报主题: {trade_prefix}*")
 
-        print(f"已订阅 {len(self.subscribe_topics)} 个主题/前缀。")
+        logger.info(f"已订阅 {len(self.subscribe_topics)} 个主题/前缀。")
 
         self.running = False
-        self.last_order_time = {}
+        self.last_order_time = {} # Tracks last time an order was sent for a symbol (cooling)
+        self.last_order_status = {} # Tracks last logged status for each order ID
         self.sa505_long_pending_or_open = False
         # +++ 添加用于止盈止损的状态变量 +++
         self.sa505_entry_price = 0.0
@@ -123,10 +132,10 @@ class StrategySubscriber:
 
         # --- Add Price Validity Check ---
         if price is None or price <= 0:
-            print(f"错误: 尝试发送订单时价格无效 ({price})，跳过。 Symbol: {symbol}")
+            logger.warning(f"错误: 尝试发送订单时价格无效 ({price})，跳过。 Symbol: {symbol}")
             return
 
-        print(f"准备发送订单: {direction.value} {volume} lots {symbol}@{price}")
+        logger.info(f"准备发送订单: {direction.value} {volume} lots {symbol}@{price}")
         
         request_data = {
             "symbol": symbol,
@@ -151,7 +160,7 @@ class StrategySubscriber:
             packed_message = msgpack.packb(message, use_bin_type=True)
             self.order_pusher.send(packed_message)
             self.last_order_time[symbol] = time.time() # Update last order time
-            print(f"  订单请求已推送: {request_data}")
+            logger.info(f"  订单请求已推送: {request_data}")
 
             # --- Update state after sending specific order --- 
             if symbol == "SA505" and direction == Direction.LONG and offset == Offset.OPEN:
@@ -162,7 +171,7 @@ class StrategySubscriber:
                 stop_loss = 5.0    # 示例：止损点数
                 self.sa505_target_price = price + profit_target
                 self.sa505_stop_price = price - stop_loss
-                print(f"  设置 SA505 买入开仓状态: True, Entry: {self.sa505_entry_price:.1f}, Target: {self.sa505_target_price:.1f}, Stop: {self.sa505_stop_price:.1f}")
+                logger.info(f"  设置 SA505 买入开仓状态: True, Entry: {self.sa505_entry_price:.1f}, Target: {self.sa505_target_price:.1f}, Stop: {self.sa505_stop_price:.1f}")
                 # +++ 结束记录 +++
 
             # --- 重置状态 (如果发送的是平仓单) ---
@@ -179,16 +188,16 @@ class StrategySubscriber:
                  pass # No specific action needed here now when sending close order
 
         except Exception as e:
-            print(f"推送订单请求时出错: {e}")
-            print(f"原始请求: {message}")
+            logger.exception(f"推送订单请求时出错: {e}")
+            logger.exception(f"原始请求: {message}")
 
     def start(self):
         """Starts listening for messages and executing strategy logic."""
         if self.running:
-            print("策略订阅器已在运行中。")
+            logger.info("策略订阅器已在运行中。")
             return
 
-        print("启动策略订阅器...")
+        logger.info("启动策略订阅器...")
         self.running = True
 
         # +++ 使用 Poller +++
@@ -198,7 +207,7 @@ class StrategySubscriber:
         # +++ 结束使用 +++
 
         # +++ 在循环开始前重置策略状态 +++
-        print("重置策略内部状态...")
+        logger.info("重置策略内部状态...")
         self.sa505_long_pending_or_open = False
         self.sa505_entry_price = 0.0
         self.sa505_target_price = 0.0
@@ -216,7 +225,7 @@ class StrategySubscriber:
 
                 # --- 在处理消息前检查 self.running --- 
                 if not self.running:
-                    print("策略运行标志为 False，退出循环...")
+                    logger.info("策略运行标志为 False，退出循环...")
                     break # 优先退出
                 # --- 结束检查 ---
 
@@ -274,9 +283,9 @@ class StrategySubscriber:
                                      offset=Offset.OPEN # Assuming opening a position
                                  )
                              except ValueError as e:
-                                 print(f"  创建开仓订单时交易所错误: {e}")
+                                 logger.error(f"  创建开仓订单时交易所错误: {e}")
                              except Exception as e:
-                                  print(f"  发送开仓订单时发生错误: {e}")
+                                  logger.exception(f"  发送开仓订单时发生错误: {e}")
 
                         # --- Closing Logic (if holding long position) ---
                         elif self.sa505_long_pending_or_open and not self.sa505_close_pending and bid_price is not None and bid_price > 0:
@@ -294,7 +303,7 @@ class StrategySubscriber:
                              if should_close:
                                  # +++ 在尝试发送前设置标志 +++
                                  self.sa505_close_pending = True
-                                 print(f"[{pretty_time}] 触发平仓条件 ({reason}) for SA505 @ Bid={bid_price} (Target: {self.sa505_target_price:.1f}, Stop: {self.sa505_stop_price:.1f}). 设置等待平仓标志, 尝试发送平仓单...")
+                                 logger.info(f"[{pretty_time}] 触发平仓条件 ({reason}) for SA505 @ Bid={bid_price} (Target: {self.sa505_target_price:.1f}, Stop: {self.sa505_stop_price:.1f}). 设置等待平仓标志, 尝试发送平仓单...")
                                  # +++ 结束设置 +++
                                  try:
                                      exchange_enum = Exchange(exchange_str)
@@ -309,9 +318,9 @@ class StrategySubscriber:
                                      )
                                      # Flag reset is now handled inside send_limit_order after sending close
                                  except ValueError as e:
-                                     print(f"  创建平仓订单时交易所错误: {e}")
+                                     logger.error(f"  创建平仓订单时交易所错误: {e}")
                                  except Exception as e:
-                                      print(f"  发送平仓订单时发生错误: {e}")
+                                      logger.exception(f"  发送平仓订单时发生错误: {e}")
 
                     # --- Handle other symbols or add more logic ---
                     # elif symbol == "rb2510.SHFE":
@@ -319,29 +328,34 @@ class StrategySubscriber:
 
                     elif symbol == "SA505.CZCE" and price is not None and price > 1310.0 and not self.sa505_long_pending_or_open:
                          # Condition met but ask_price is invalid
-                         print(f"[{pretty_time}] WARN: {symbol} 价格满足条件 ({price} > 1310) 但卖一价无效 ({ask_price})，无法下单。")
+                         logger.info(f"[{pretty_time}] WARN: {symbol} 价格满足条件 ({price} > 1310) 但卖一价无效 ({ask_price})，无法下单。")
 
                 elif msg_type == "ORDER_STATUS":
                     order_id = msg_data.get('vt_orderid', 'N/A')
-                    order_status = msg_data.get('status', 'N/A')
+                    order_status_value = msg_data.get('status', 'N/A') # Get raw status value
                     traded_vol = msg_data.get('traded', 0)
                     order_ref = msg_data.get('reference', '') # Assuming reference field exists in order data
                     symbol_from_order = msg_data.get('symbol', '') # Assuming symbol exists
 
-                    print(f"[{pretty_time}] 订单回报 [{topic_str}] - ID: {order_id}, 状态: {order_status}, 成交量: {traded_vol}")
-                    # +++ 如果平仓单被拒或撤销，重置 close_pending +++
-                    # Also check offset to ensure it's a closing order status
-                    if (symbol_from_order == "SA505" and
-                        msg_data.get('offset') == Offset.CLOSE.value and # Check if it's a closing order
-                        order_ref == "SimpleZmqStrategy_01" and # 确保是本策略的订单
-                        self.sa505_close_pending and
-                        order_status in [Status.REJECTED.value, Status.CANCELLED.value]):
+                    # --- Only log and process if status has changed --- 
+                    last_status = self.last_order_status.get(order_id)
+                    if order_status_value != last_status:
+                        self.last_order_status[order_id] = order_status_value # Update last known status
+                        logger.info(f"[{pretty_time}] 订单回报 [{topic_str}] - ID: {order_id}, 状态: {order_status_value}, 成交量: {traded_vol}")
 
-                        self.sa505_close_pending = False
-                        # Keep sa505_long_pending_or_open as True since the close failed
-                        # self.sa505_long_pending_or_open = True # No need to reset this, it should still be true
-                        print(f"  SA505 平仓订单 {order_id} 状态为 {order_status}, 重置等待平仓标志。持仓状态不变。")
-                    # +++ 结束处理 +++
+                        # +++ Process rejected/cancelled closing orders (only when status changes) +++
+                        if (symbol_from_order == "SA505" and
+                            msg_data.get('offset') == Offset.CLOSE.value and # Check if it's a closing order
+                            order_ref == "SimpleZmqStrategy_01" and # 确保是本策略的订单
+                            self.sa505_close_pending and
+                            order_status_value in [Status.REJECTED.value, Status.CANCELLED.value]):
+
+                            self.sa505_close_pending = False
+                            logger.info(f"  SA505 平仓订单 {order_id} 状态为 {order_status_value}, 重置等待平仓标志。持仓状态不变。")
+                    # else:
+                        # Optional: Log unchanged status at DEBUG level if needed
+                        # logger.debug(f"[{pretty_time}] 订单回报 (状态未变) [{topic_str}] - ID: {order_id}, 状态: {order_status_value}")
+                    # --- End status change check --- 
 
                 elif msg_type == "TRADE":
                     trade_id = msg_data.get('vt_tradeid', 'N/A')
@@ -358,7 +372,7 @@ class StrategySubscriber:
                     commission = msg_data.get('calculated_commission', msg_data.get('commission', 0.0)) 
                     # --- 结束读取 ---
 
-                    print(f"[{pretty_time}] 成交回报 [{topic_str}] - TradeID: {trade_id}, OrderID: {order_id}, 方向: {direction}, 开平: {offset}, 价格: {trade_price}, 数量: {trade_vol}, 手续费: {commission:.2f}")
+                    logger.info(f"[{pretty_time}] 成交回报 [{topic_str}] - TradeID: {trade_id}, OrderID: {order_id}, 方向: {direction}, 开平: {offset}, 价格: {trade_price}, 数量: {trade_vol}, 手续费: {commission:.2f}")
 
                     # +++ 收集成交记录 +++
                     try:
@@ -385,76 +399,76 @@ class StrategySubscriber:
                             self.sa505_entry_price = 0.0 # Reset prices
                             self.sa505_target_price = 0.0
                             self.sa505_stop_price = 0.0
-                            print(f"  SA505 平仓成交 {trade_id} (OrderID: {order_id}), 重置等待平仓标志和持仓状态。")
+                            logger.info(f"  SA505 平仓成交 {trade_id} (OrderID: {order_id}), 重置等待平仓标志和持仓状态。")
                         # +++ 结束处理 +++
 
                     except Exception as e:
-                        print(f"    添加到成交记录时出错: {e}. 数据: {msg_data}")
+                        logger.exception(f"    添加到成交记录时出错: {e}. 数据: {msg_data}")
                     # +++ 结束收集 +++
 
                     # Update internal position state here... (If needed by strategy logic)
 
                 else:
-                    print(f"[{pretty_time}] 收到未知类型消息 [{topic_str}] - Type: {msg_type}")
+                    logger.info(f"[{pretty_time}] 收到未知类型消息 [{topic_str}] - Type: {msg_type}")
 
             except zmq.ZMQError as e:
                 # --- 区分预期关闭错误和意外错误 ---
                 # 如果 stop() 已经被调用 (self.running is False)，这个错误是预期的
                 if not self.running:
                     # 可以选择不打印，或者打印更温和的信息
-                    print(f"捕获到预期的 ZMQ 错误 ({e.errno})，策略正在停止...")
+                    logger.info(f"捕获到预期的 ZMQ 错误 ({e.errno})，策略正在停止...")
                     # 不需要再次设置 self.running = False，循环将在下一次检查 self.running 时退出
                 else:
                     # 如果 self.running 仍然是 True，说明是意外错误
-                    print(f"捕获到意外的 ZMQ 错误 ({e.errno}): {e}")
+                    logger.info(f"捕获到意外的 ZMQ 错误 ({e.errno}): {e}")
                     if e.errno == zmq.ETERM:
-                        print("  错误原因是 Context 已终止。")
+                        logger.info("  错误原因是 Context 已终止。")
                     # 在任何意外错误时停止循环
-                    print("因意外 ZMQ 错误，停止策略订阅器循环...")
+                    logger.info("因意外 ZMQ 错误，停止策略订阅器循环...")
                     self.running = False # Ensure loop stops on unexpected error
                 # --- 结束区分 ---
             except msgpack.UnpackException as e:
-                print(f"Msgpack 解码错误: {e}. 跳过消息。")
+                logger.exception(f"Msgpack 解码错误: {e}. 跳过消息。")
             except KeyboardInterrupt:
-                print("检测到中断信号，停止订阅器...")
+                logger.info("检测到中断信号，停止订阅器...")
                 self.running = False
             except Exception as e:
-                print(f"处理消息时发生未知错误: {e}")
+                logger.exception(f"处理消息时发生未知错误: {e}")
                 import traceback
                 traceback.print_exc()
                 time.sleep(1)
 
-        print("策略订阅器循环结束。")
+        logger.info("策略订阅器循环结束。")
 
     def stop(self):
         """Signals the subscriber to stop and closes both sockets. Context termination should be handled externally after thread join.""" # Docstring updated
-        print("停止策略订阅器 (发送信号并关闭 sockets)...") # Modified log
+        logger.info("停止策略订阅器 (发送信号并关闭 sockets)...") # Modified log
         self.running = False # Signal the loop to stop
 
         # Close SUB Socket - This should interrupt recv_multipart
         if self.subscriber:
             try:
-                print("关闭 subscriber socket...")
+                logger.info("关闭 subscriber socket...")
                 self.subscriber.close()
-                print("ZeroMQ subscriber socket 已关闭。")
+                logger.info("ZeroMQ subscriber socket 已关闭。")
             except Exception as e:
-                print(f"关闭 ZeroMQ subscriber socket 时出错: {e}")
+                logger.exception(f"关闭 ZeroMQ subscriber socket 时出错: {e}")
             finally:
                 self.subscriber = None # Set to None regardless of success/failure
         
         # --- 恢复关闭 PUSH socket 的逻辑 --- 
         if self.order_pusher:
             try:
-                print("关闭 order pusher socket...")
+                logger.info("关闭 order pusher socket...")
                 self.order_pusher.close()
-                print("ZeroMQ order pusher socket 已关闭。")
+                logger.info("ZeroMQ order pusher socket 已关闭。")
             except Exception as e:
-                print(f"关闭 ZeroMQ order pusher socket 时出错: {e}")
+                logger.exception(f"关闭 ZeroMQ order pusher socket 时出错: {e}")
             finally:
                 self.order_pusher = None # Set to None
         # --- 结束恢复 --- 
 
-        print("策略订阅器停止信号已发送，sockets 已关闭。") # Modified log
+        logger.info("策略订阅器停止信号已发送，sockets 已关闭。") # Modified log
 
 
 # --- Main execution block (for testing) ---
@@ -477,8 +491,8 @@ if __name__ == "__main__":
     try:
         subscriber_service.start() # This now blocks until stopped
     except KeyboardInterrupt:
-        print("\n主程序接收到中断信号。")
+        logger.info("\n主程序接收到中断信号。")
     finally:
         if subscriber_service.running:
             subscriber_service.stop()
-        print("策略订阅器测试运行结束。")
+        logger.info("策略订阅器测试运行结束。")

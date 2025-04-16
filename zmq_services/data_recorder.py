@@ -5,6 +5,9 @@ import sys
 import os
 import json
 from datetime import datetime
+# Import logger
+import logging
+from logger import getLogger
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -12,29 +15,31 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import local config
-from . import config
+from config import zmq_config as config
 
 # --- Data Recorder Service ---
 class DataRecorderService:
     def __init__(self, market_data_url: str, order_report_url: str, recording_path: str):
         """Initializes the data recorder service."""
+        self.logger = getLogger(__name__)
+
         self.context = zmq.Context()
         self.subscriber = self.context.socket(zmq.SUB)
 
         # Connect to publishers
         self.subscriber.connect(market_data_url)
         self.subscriber.connect(order_report_url)
-        print(f"数据记录器连接行情发布器: {market_data_url}")
-        print(f"数据记录器连接回报发布器: {order_report_url}")
+        self.logger.info(f"数据记录器连接行情发布器: {market_data_url}")
+        self.logger.info(f"数据记录器连接回报发布器: {order_report_url}")
 
         # Subscribe to ALL topics
         self.subscriber.subscribe("")
-        print("订阅所有主题 (*)")
+        self.logger.info("订阅所有主题 (*)")
 
         # Ensure recording directory exists
         self.recording_path = recording_path
         os.makedirs(self.recording_path, exist_ok=True)
-        print(f"数据将记录到: {self.recording_path}")
+        self.logger.info(f"数据将记录到: {self.recording_path}")
 
         # File handles (lazy opening or manage carefully)
         self.file_handles = {} # Store open file handles if needed, but appending might be safer
@@ -64,7 +69,7 @@ class DataRecorderService:
         filename = self.get_log_filename(msg_type)
 
         if not filename:
-            # print(f"跳过记录未知类型的消息: {msg_type}")
+            self.logger.debug(f"跳过记录未知类型的消息: {msg_type}")
             return
 
         record = {
@@ -79,18 +84,18 @@ class DataRecorderService:
                 json.dump(record, f, ensure_ascii=False) # Write as JSON line
                 f.write('\n') # Add newline separator
         except IOError as e:
-            print(f"写入文件 {filename} 时出错: {e}")
+            self.logger.error(f"写入文件 {filename} 时出错: {e}")
         except Exception as e:
-            print(f"记录消息时发生意外错误: {e}")
-            print(f"消息内容: {record}") # Log the problematic record
+            self.logger.exception("记录消息时发生意外错误")
+            self.logger.error(f"出错时的消息内容 (部分): {{'zmq_topic': record.get('zmq_topic'), 'type': message.get('type')}}") # Log only essential parts
 
     def start(self):
         """Starts listening for messages and recording them."""
         if self.running:
-            print("数据记录器已在运行中。")
+            self.logger.warning("数据记录器已在运行中。")
             return
 
-        print("启动数据记录器...")
+        self.logger.info("启动数据记录器...")
         self.running = True
 
         while self.running:
@@ -100,39 +105,40 @@ class DataRecorderService:
                     message = msgpack.unpackb(packed_message, raw=False)
                     self.record_message(topic, message)
                 except msgpack.UnpackException as e:
-                    print(f"Msgpack 解码错误: {e}. Topic: {topic.decode('utf-8', errors='ignore')}")
+                    self.logger.error(f"Msgpack 解码错误: {e}. Topic: {topic.decode('utf-8', errors='ignore')}")
                     # Optionally log the raw packed_message for debugging
 
             except zmq.ZMQError as e:
                 if e.errno == zmq.ETERM:
-                    print("ZMQ Context 已终止，停止数据记录器...")
+                    self.logger.info("ZMQ Context 已终止，停止数据记录器...")
                     self.running = False
                 else:
                     print(f"ZMQ 错误: {e}")
+                    self.logger.error(f"ZMQ 错误: {e}")
                     time.sleep(1)
             except KeyboardInterrupt:
-                print("检测到中断信号，停止数据记录器...")
+                self.logger.info("检测到中断信号，停止数据记录器...")
                 self.running = False
             except Exception as e:
                 print(f"处理消息时发生未知错误: {e}")
-                import traceback
-                traceback.print_exc()
+                self.logger.exception("处理消息时发生未知错误")
                 time.sleep(1)
 
-        print("数据记录器循环结束。")
+        self.logger.info("数据记录器循环结束。")
         self.stop()
 
     def stop(self):
         """Stops the service and cleans up resources."""
-        print("停止数据记录器...")
+        self.logger.info("停止数据记录器...")
         self.running = False
         # Close subscriber first to prevent receiving more messages
         if self.subscriber:
             try:
                 self.subscriber.close()
-                print("ZeroMQ 订阅器已关闭。")
+                self.logger.info("ZeroMQ 订阅器已关闭。")
             except Exception as e:
                  print(f"关闭 ZeroMQ 订阅器时出错: {e}")
+                 self.logger.error(f"关闭 ZeroMQ 订阅器时出错: {e}")
 
         # Close context
         if self.context:
@@ -140,13 +146,16 @@ class DataRecorderService:
                 # Check if context is already terminated before terminating again
                 if not self.context.closed:
                     self.context.term()
-                    print("ZeroMQ Context 已终止。")
+                    self.logger.info("ZeroMQ Context 已终止。")
                 else:
                     print("ZeroMQ Context 已终止 (之前已关闭).")
+                    self.logger.info("ZeroMQ Context 已终止 (之前已关闭).")
             except zmq.ZMQError as e:
                  print(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
+                 self.logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
             except Exception as e:
                  print(f"关闭 ZeroMQ Context 时发生未知错误: {e}")
+                 self.logger.exception("关闭 ZeroMQ Context 时发生未知错误")
 
         # Close any open file handles (if managing them explicitly)
         # for f in self.file_handles.values():
@@ -156,10 +165,23 @@ class DataRecorderService:
         #         print(f"关闭文件句柄时出错: {e}")
         # self.file_handles.clear()
         print("数据记录器已停止。")
+        self.logger.info("数据记录器已停止。")
 
 
 # --- Main execution block (for testing) ---
 if __name__ == "__main__":
+    # Setup logging for direct execution test
+    try:
+        from logger import setup_logging, getLogger
+        setup_logging(service_name="DataRecorder_DirectRun")
+    except ImportError as log_err:
+        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+        sys.exit(1)
+
+    logger_main = getLogger(__name__)
+
+    logger_main.info("Starting Data Recorder direct test run...")
+
     # Connect to localhost publishers
     md_url = config.MARKET_DATA_PUB_URL.replace("*", "localhost")
     report_url = config.ORDER_REPORT_PUB_URL.replace("*", "localhost")
@@ -173,9 +195,11 @@ if __name__ == "__main__":
     try:
         recorder.start()
     except KeyboardInterrupt:
-        print("\n主程序接收到中断信号。")
+        logger_main.info("\n主程序接收到中断信号。")
+    except Exception as e:
+        logger_main.exception("主测试循环发生未处理错误")
     finally:
         # The start loop handles cleanup, but call stop for safety
         if recorder.running:
             recorder.stop()
-        print("数据记录器测试运行结束。")
+        logger_main.info("数据记录器测试运行结束。")

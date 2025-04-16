@@ -208,3 +208,19 @@ exclude_lines = [
     "pass",
     "raise ImportError",
 ]
+
+pyzmq==25.1.2
+pyqtgraph==0.13.4
+QDarkStyle==3.2.3
+PySide6==6.3.0
+importlib_metadata==8.6.1
+tzlocal==5.2
+pathlib==1.0.1
+numpy==1.26.4
+tqdm==4.66.3
+deap==1.4.1
+msgpack==1.1.0
+pandas==2.2.3
+pybind11==2.13.6
+setuptools==78.1.0
+hatchling==1.27.0

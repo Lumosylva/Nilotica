@@ -4,11 +4,14 @@ import os
 import sys
 from pathlib import Path
 
+from config.constants.params import Params
+
 # --- Default Configuration ---
-DEFAULT_LOG_LEVEL = "INFO"
-DEFAULT_LOG_FORMAT = "%(asctime)s - %(service)s - %(name)s - %(levelname)s - %(message)s"
-DEFAULT_LOG_DIR = "logs" # Relative to project root
-DEFAULT_LOG_FILENAME = "nilotica.log"
+DEFAULT_LOG_LEVEL = Params.log_level
+# DEFAULT_LOG_FORMAT = "%(asctime)s - %(service)s - %(name)s - %(levelname)s - %(message)s"
+DEFAULT_LOG_FORMAT = "%(asctime)s - %(service)s - %(levelname)s - %(message)s"
+DEFAULT_LOG_DIR = Params.log_dir_name # Relative to project root
+DEFAULT_LOG_FILENAME = Params.log_filename
 DEFAULT_LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 DEFAULT_LOG_BACKUP_COUNT = 5
 DEFAULT_LOG_TO_CONSOLE = True

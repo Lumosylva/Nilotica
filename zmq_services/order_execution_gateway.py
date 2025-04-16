@@ -205,6 +205,7 @@ class OrderExecutionGatewayService:
         self.req_thread = None # Thread for receiving ZMQ requests
         self.contracts: Dict[str, ContractData] = {}
         self.command_thread = None # Thread for handling commands
+        self.last_account_data: AccountData | None = None # Store last account state
 
         # +++ 加载产品信息 +++
         # 修正路径：从 zmq_services 目录出发，向上一级到项目根目录，再进入 config
@@ -260,8 +261,10 @@ class OrderExecutionGatewayService:
                     calculated_commission = turnover * rate
                 
                 calculated_commission = max(calculated_commission, min_comm)
-                print(f"收到成交回报: {trade.vt_tradeid}, 使用加载规则计算手续费: {calculated_commission:.2f}") # 更新日志
-                self.logger.info(f"收到成交回报: {trade.vt_tradeid}, 使用加载规则计算手续费: {calculated_commission:.2f}")
+                # print(f"收到成交回报: {trade.vt_tradeid}, 使用加载规则计算手续费: {calculated_commission:.2f}") # 更新日志
+
+                # Log the trade information
+                # self.logger.info(f"收到成交回报: TradeID={trade.vt_tradeid}, Symbol={trade.symbol}, Dir={trade.direction.value}, Off={trade.offset.value}, Px={trade.price}, Vol={trade.volume}, Commission={calculated_commission:.2f}")
             
             elif not contract:
                 print(f"警告: 未找到成交 {trade.vt_tradeid} 对应的合约信息 ({trade.vt_symbol})，手续费计为 0。")
@@ -294,9 +297,24 @@ class OrderExecutionGatewayService:
             # Add ExecGW prefix to distinguish from MarketDataGateway logs if needed
             self.logger.log(logger_level, f"[VNPY LOG - ExecGW] {gateway_name} - {log.msg}")
         elif event_type == EVENT_ACCOUNT:
+             # --- Process AccountData only if key fields changed --- 
              account: AccountData = event.data
-             self.logger.info(f"收到账户信息: AccountID={account.accountid}, Balance={account.balance:.2f}, Available={account.available:.2f}")
-             self.publish_report(account, "ACCOUNT_DATA")
+             has_key_fields_changed = False
+             if self.last_account_data is None:
+                 has_key_fields_changed = True
+             else:
+                 # Compare margin, frozen, commission - adjust fields as needed
+                 if (getattr(account, 'margin', None) != getattr(self.last_account_data, 'margin', None) or
+                     getattr(account, 'frozen', None) != getattr(self.last_account_data, 'frozen', None) or
+                     getattr(account, 'commission', None) != getattr(self.last_account_data, 'commission', None)):
+                      has_key_fields_changed = True
+
+             if has_key_fields_changed:
+                 self.last_account_data = account # Update stored data
+                 pretty_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                 self.logger.info(f"[{pretty_time}] 账户关键信息更新 (GW): AccountID={account.accountid}, Balance={account.balance:.2f}, Available={account.available:.2f}, Margin={getattr(account, 'margin', 0.0):.2f}")
+                 self.publish_report(account, "ACCOUNT_DATA")
+             # --- End change check --- 
         elif event_type == EVENT_CONTRACT:
              contract: ContractData = event.data
              self.contracts[contract.vt_symbol] = contract # Store contract details
@@ -409,6 +427,9 @@ class OrderExecutionGatewayService:
                 if command_type == "CANCEL_ORDER":
                     reply_data = self._handle_cancel_order_command(command_data)
                 # Add handlers for other command types here
+                elif command_type == "PING":
+                    self.logger.debug("Received PING, sending PONG") # Use debug level for frequent messages
+                    reply_data = {"status": "ok", "reply": "PONG"}
 
                 # Send reply back via REP socket
                 packed_reply = msgpack.packb(reply_data, use_bin_type=True)

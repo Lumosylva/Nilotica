@@ -3,6 +3,8 @@ import msgpack
 import time
 import threading
 from datetime import datetime
+import logging
+from logger import getLogger
 
 # VNPY imports - Adjust paths if necessary based on your project structure
 # Assuming zmq_services is at the same level as vnpy, vnpy_ctp etc.
@@ -23,16 +25,18 @@ try:
 except ImportError as e:
     print(f"Error importing vnpy modules: {e}")
     print("Please ensure vnpy and vnpy_ctp are installed and accessible.")
-    print(f"Project root added to path: {project_root}")
-    print(f"Current sys.path: {sys.path}")
+    print(f"CRITICAL: Project root added to path: {project_root}")
+    print(f"CRITICAL: Current sys.path: {sys.path}")
     sys.exit(1)
 
-# Import local config
-from . import config
+# Import new config location
+from config import zmq_config as config
 
 # --- Helper Function for Serialization ---
 def vnpy_object_to_dict(obj):
     """Converts specific vnpy objects to a dictionary suitable for msgpack."""
+    logger = getLogger('vnpy_object_to_dict') # Get logger for this helper function
+
     if isinstance(obj, TickData):
         # Explicitly list fields to include and handle conversions
         dt_iso = obj.datetime.isoformat() if obj.datetime else None
@@ -100,6 +104,7 @@ def vnpy_object_to_dict(obj):
         except AttributeError:
             # Final fallback for unhandled types
             print(f"Warning: Unhandled type encountered during serialization: {type(obj)}. Converting to string.")
+            logger.warning(f"Unhandled type encountered during serialization: {type(obj)}. Converting to string.")
             return str(obj)
 
 
@@ -107,10 +112,11 @@ def vnpy_object_to_dict(obj):
 class MarketDataGatewayService:
     def __init__(self):
         """Initializes the gateway service."""
+        self.logger = getLogger(__name__)
         self.context = zmq.Context()
         self.publisher = self.context.socket(zmq.PUB)
         self.publisher.bind(config.MARKET_DATA_PUB_URL)
-        print(f"行情发布器绑定到: {config.MARKET_DATA_PUB_URL}")
+        self.logger.info(f"行情发布器绑定到: {config.MARKET_DATA_PUB_URL}")
 
         self.event_engine = EventEngine()
         self.gateway: BaseGateway = CtpGateway(self.event_engine, "CTP_MarketData") # Use a unique gateway name
@@ -137,7 +143,7 @@ class MarketDataGatewayService:
         self.running = False
         self._subscribe_list = [] # Store pending subscriptions
 
-        print("行情网关服务初始化完成。")
+        self.logger.info("行情网关服务初始化完成。")
 
     def process_event(self, event: Event):
         """Processes events from the EventEngine."""
@@ -148,14 +154,25 @@ class MarketDataGatewayService:
             self.publish_data(tick)
         elif event_type == EVENT_LOG:
             log: LogData = event.data
-            # Check the type of log.level before accessing .name
-            if isinstance(log.level, int):
-                level_str = str(log.level) # Use the integer directly
-            elif hasattr(log.level, 'name'):
-                level_str = log.level.name # Use the enum name if available
-            else:
-                level_str = str(log.level) # Fallback to string representation
-            print(f"[VNPY LOG] {level_str}: {log.msg}")
+            # Map vnpy log level to standard logging level
+            level_map = {
+                logging.DEBUG: logging.DEBUG,
+                logging.INFO: logging.INFO,
+                logging.WARNING: logging.WARNING,
+                logging.ERROR: logging.ERROR,
+                logging.CRITICAL: logging.CRITICAL,
+            }
+            log_level_attr = getattr(log, 'level', logging.INFO) # Default to INFO
+            log_level_value = log_level_attr
+            if hasattr(log_level_attr, 'value') and isinstance(log_level_attr.value, int):
+                log_level_value = log_level_attr.value
+            elif not isinstance(log_level_attr, int):
+                 log_level_value = logging.INFO # Fallback if not enum or int
+
+            logger_level = level_map.get(log_level_value, logging.INFO)
+            gateway_name = getattr(log, 'gateway_name', 'UnknownGateway')
+            # Add MarketData prefix if needed to distinguish from other gateway logs
+            self.logger.log(logger_level, f"[VNPY LOG - MDGW] {gateway_name} - {log.msg}")
         elif event_type == EVENT_CONTRACT:
             # Handle contract data if needed, e.g., confirm subscriptions
             pass # Placeholder
@@ -171,6 +188,7 @@ class MarketDataGatewayService:
         #    message_type = "BAR"
         else:
             print(f"收到未知类型数据，无法发布: {type(data_object)}")
+            self.logger.warning(f"收到未知类型数据，无法发布: {type(data_object)}")
             return
 
         topic = topic_str.encode('utf-8')
@@ -195,9 +213,11 @@ class MarketDataGatewayService:
             self.publisher.send_multipart([topic, packed_message])
             # print(f"发布: {topic_str}") # Debug print
         except Exception as e:
-            print(f"序列化或发布消息时出错 ({topic_str}): {e}")
+            self.logger.exception(f"序列化或发布消息时出错 ({topic_str})")
             # Avoid printing potentially huge raw data in production, maybe log relevant parts
             print(f"原始消息结构 (部分): {{'topic': '{topic_str}', 'type': '{message_type}', 'source': '{message['source']}', ...}}")
+            # Log relevant parts without potentially large data
+            self.logger.error(f"序列化或发布消息时出错: Topic={topic_str}, Type={message_type}, Source={message['source']}")
             # If you still need to debug the data part:
             # import json
             # try:
@@ -209,18 +229,18 @@ class MarketDataGatewayService:
     def start(self):
         """Starts the event engine and connects the gateway."""
         if self.running:
-            print("行情网关服务已在运行中。")
+            self.logger.warning("行情网关服务已在运行中。")
             return
 
-        print("启动行情网关服务...")
+        self.logger.info("启动行情网关服务...")
         self.running = True
         self.event_engine.register(EVENT_TICK, self.process_event)
         self.event_engine.register(EVENT_LOG, self.process_event)
         self.event_engine.register(EVENT_CONTRACT, self.process_event) # Listen for contract events if needed
         self.event_engine.start()
-        print("事件引擎已启动。")
+        self.logger.info("事件引擎已启动。")
 
-        print("连接 CTP 网关...")
+        self.logger.info("连接 CTP 网关...")
         # Ensure the setting keys match what CtpGateway.connect expects
         # You might need to inspect the CtpGateway code or vnpy documentation
         # Common keys: userID, password, brokerID, tdAddress, mdAddress, productInfo, authCode
@@ -238,12 +258,15 @@ class MarketDataGatewayService:
         try:
             self.gateway.connect(vnpy_settings) # Use the mapped dictionary
             print("CTP 网关连接请求已发送。等待连接成功...")
+            self.logger.info("CTP 网关连接请求已发送。等待连接成功...")
 
             # Give some time for connection and login before subscribing
             # A better approach is to wait for a connection status event if vnpy provides one
             time.sleep(10) # Adjust sleep time as needed, or implement event-based waiting
+            self.logger.info("CTP 网关假定连接成功（基于延时）。") # Log assumption
 
             print("订阅行情...")
+            self.logger.info("订阅行情...")
             self._subscribe_list = [] # Reset list before subscribing
             for vt_symbol in config.SUBSCRIBE_SYMBOLS:
                 try:
@@ -255,25 +278,30 @@ class MarketDataGatewayService:
                     self.gateway.subscribe(req)
                     self._subscribe_list.append(vt_symbol) # Track successful subscriptions
                     print(f"  发送订阅请求: {vt_symbol}")
+                    self.logger.info(f"发送订阅请求: {vt_symbol}")
                     time.sleep(0.5) # Avoid sending requests too fast
                 except ValueError:
                      print(f"  错误的合约格式，跳过订阅: {vt_symbol} (应为 SYMBOL.EXCHANGE)")
+                     self.logger.error(f"错误的合约格式，跳过订阅: {vt_symbol} (应为 SYMBOL.EXCHANGE)")
                 except Exception as e:
                      print(f"  订阅 {vt_symbol} 时出错: {e}")
+                     self.logger.exception(f"订阅 {vt_symbol} 时出错")
             print(f"已发送 {len(self._subscribe_list)} 个合约的订阅请求。")
+            self.logger.info(f"已发送 {len(self._subscribe_list)} 个合约的订阅请求。")
 
         except Exception as e:
             print(f"连接或订阅 CTP 网关时发生严重错误: {e}")
+            self.logger.exception("连接或订阅 CTP 网关时发生严重错误")
             self.stop() # Stop if connection fails
 
 
     def stop(self):
         """Stops the service and cleans up resources."""
         if not self.running:
-            print("行情网关服务未运行。")
+            self.logger.warning("行情网关服务未运行。")
             return
 
-        print("停止行情网关服务...")
+        self.logger.info("停止行情网关服务...")
         self.running = False
 
         # Check if EventEngine has is_active() public method, otherwise use _active
@@ -281,33 +309,44 @@ class MarketDataGatewayService:
         try:
              if self.event_engine.is_active(): # Prefer public method if exists
                  self.event_engine.stop()
-                 print("事件引擎已停止。")
+                 self.logger.info("事件引擎已停止。")
         except AttributeError:
              if hasattr(self.event_engine, '_active') and self.event_engine._active: # Fallback to private
                  self.event_engine.stop()
-                 print("事件引擎已停止。")
+                 self.logger.info("事件引擎已停止。")
              else:
                  print("无法确定事件引擎状态或引擎已停止。")
+                 self.logger.warning("无法确定事件引擎状态或引擎已停止。")
 
 
         if self.gateway:
             self.gateway.close()
-            print("CTP 网关已关闭。")
+            self.logger.info("CTP 网关已关闭。")
 
         if self.publisher:
             self.publisher.close()
-            print("ZeroMQ 发布器已关闭。")
+            self.logger.info("ZeroMQ 发布器已关闭。")
 
         if self.context:
             self.context.term() # Use terminate() or term() based on pyzmq version, term() is common
-            print("ZeroMQ Context 已终止。")
+            self.logger.info("ZeroMQ Context 已终止。")
 
-        print("行情网关服务已停止。")
+        self.logger.info("行情网关服务已停止。")
 
 # --- Main execution block (for testing) ---
 # Usually, you'd run this from a separate run script.
 if __name__ == "__main__":
-    # Simple test run
+    # Setup logging for direct execution test
+    try:
+        from logger import setup_logging, getLogger
+        setup_logging(service_name="MarketDataGateway_DirectRun")
+    except ImportError as log_err:
+        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+        sys.exit(1)
+
+    logger_main = getLogger(__name__)
+
+    logger_main.info("Starting direct test run...")
     gateway_service = MarketDataGatewayService()
     gateway_service.start()
 
@@ -316,6 +355,9 @@ if __name__ == "__main__":
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("接收到中断信号，正在停止服务...")
+        logger_main.info("接收到中断信号，正在停止服务...")
+    except Exception as e:
+        logger_main.exception("主测试循环发生未处理错误")
+    finally:
         gateway_service.stop()
-        print("服务已安全停止。") 
+        logger_main.info("服务已安全停止。") 

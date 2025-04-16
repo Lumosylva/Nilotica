@@ -28,6 +28,13 @@ class Params(object):
     # 项目名称
     project_name = "Nilotica_dev"
 
+    # 日志目录名
+    log_dir_name = "logs"
+
+    log_level = "INFO"
+
+    log_filename = "nilotica.log"
+
     # 实时数据目录名
     tick_data_name = "recorded_data"
 

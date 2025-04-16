@@ -4,10 +4,10 @@ ORDER_REQUEST_PULL_URL = "tcp://*:5556" # 订单请求接收地址 (PULL)
 ORDER_REPORT_PUB_URL = "tcp://*:5557"   # 订单/成交回报发布地址 (PUB)
 
 # CTP Gateway Configuration (与 vnpy 配置文件类似，需要您填写实际信息)
-# CTP_TD_ADDRESS = "tcp://180.168.146.187:10130"  # CTP 交易服务器地址
-# CTP_MD_ADDRESS = "tcp://180.168.146.187:10131"  # CTP 行情服务器地址
-CTP_TD_ADDRESS = "tcp://180.168.146.187:10201"  # CTP 交易服务器地址
-CTP_MD_ADDRESS = "tcp://180.168.146.187:10211"  # CTP 行情服务器地址
+CTP_TD_ADDRESS = "tcp://180.168.146.187:10130"  # CTP 交易服务器地址
+CTP_MD_ADDRESS = "tcp://180.168.146.187:10131"  # CTP 行情服务器地址
+# CTP_TD_ADDRESS = "tcp://180.168.146.187:10201"  # CTP 交易服务器地址
+# CTP_MD_ADDRESS = "tcp://180.168.146.187:10211"  # CTP 行情服务器地址
 CTP_USER_ID = "160219"             # CTP 用户ID
 CTP_PASSWORD = "Mdd103010$"           # CTP 密码
 CTP_BROKER_ID = "9999"         # CTP Broker ID
@@ -58,3 +58,13 @@ MAX_PENDING_ORDERS_PER_CONTRACT = 5       # 单合约最大挂单笔数
 GLOBAL_MAX_PENDING_ORDERS = 20            # 全局最大挂单笔数
 MARGIN_USAGE_LIMIT = 0.8                  # 保证金占用率上限 (80%)
 # Add more rules like order rate limits etc. 
+
+# --- Trading Session Configuration --- 
+# List of (start_time, end_time) tuples in HH:MM format
+# Used by Risk Manager to check market data timeliness during active hours
+FUTURES_TRADING_SESSIONS = [
+    ("09:00", "11:00"), # Morning session 1
+    # ("10:15", "11:30"), # Morning session 2 (adjust if needed)
+    ("13:30", "15:00"), # Afternoon session
+    ("21:00", "23:00"), # Evening session
+] 

@@ -33,8 +33,3 @@ class GetPath(object):
     def set_project_dir(self, project_dir):
         self._project_dir = project_dir
 
-
-if __name__ == '__main__':
-    get_path = GetPath()
-    print(get_path.get_current_dir())
-    print(get_path.get_project_dir())

@@ -3,7 +3,7 @@ import msgpack
 import time
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, time as dt_time
 import threading
 from collections import defaultdict
 
@@ -29,6 +29,11 @@ except ImportError:
 # VNPY imports (potentially needed for position/trade data structures)
 from vnpy.trader.object import PositionData, TradeData, OrderData, AccountData # Import as needed
 
+# Constants for Heartbeat
+MARKET_DATA_TIMEOUT = 30.0 # seconds - Timeout for considering market data stale
+PING_INTERVAL = 5.0  # seconds
+PING_TIMEOUT_MS = 2500 # milliseconds
+
 # --- Risk Manager Service ---
 class RiskManagerService:
     def __init__(self, market_data_url: str, order_report_url: str, position_limits: dict):
@@ -44,25 +49,12 @@ class RiskManagerService:
         self.margin_limit_ratio = getattr(config, 'MARGIN_USAGE_LIMIT', 0.8) # Default 80%
 
         self.context = zmq.Context()
-        self.subscriber = self.context.socket(zmq.SUB)
-
-        # Command socket to send requests (e.g., cancel order) to Order Gateway
         self.command_socket = self.context.socket(zmq.REQ)
-        self.command_socket.setsockopt(zmq.LINGER, 0) # Prevent hanging on close
-        # Build the connection URL - replace '*' or '0.0.0.0' with target host if needed
-        # Assuming risk manager runs on same machine or network accessible
-        command_url = config.ORDER_GATEWAY_COMMAND_URL # Use the configured URL
-        # If the URL uses '*' or '0.0.0.0', replace it for connection
-        # Common case: connect to 'localhost' if the gateway binds to '*'
-        # TODO: Make this more robust based on deployment setup
-        if command_url.startswith("tcp://*"):
-             connect_url = command_url.replace("tcp://*", "tcp://localhost", 1)
-        elif command_url.startswith("tcp://0.0.0.0"):
-             connect_url = command_url.replace("tcp://0.0.0.0", "tcp://localhost", 1)
-        else:
-             connect_url = command_url # Assume it's a specific address
-        self.logger.info(f"指令发送器将连接到: {connect_url}")
-        self.command_socket.connect(connect_url)
+        self._command_connect_url = self._get_connect_url(config.ORDER_GATEWAY_COMMAND_URL)
+        self._setup_command_socket() # Setup initial command socket
+
+        # Subscriber socket
+        self.subscriber = self.context.socket(zmq.SUB)
 
         # Connect to both publishers
         self.subscriber.connect(market_data_url)
@@ -89,8 +81,84 @@ class RiskManagerService:
         self.last_order_status: Dict[str, Status] = {} # vt_orderid -> last logged status
         self.logger.info(f"加载持仓限制: {self.position_limits}")
 
+        # Market Data Status
+        self.last_tick_time: Dict[str, float] = {} # vt_symbol -> last reception timestamp
+        self.market_data_ok: bool = True
+        # Assume we need ticks for symbols we might have limits for or defined in config
+        # A more robust way might be to dynamically get subscribed symbols if possible
+        self.subscribed_symbols: set = set(config.SUBSCRIBE_SYMBOLS) 
+        self.logger.info(f"将监控以下合约行情超时: {self.subscribed_symbols}")
+
+        # Gateway Connection Status
+        self.gateway_connected = True # Assume connected initially
+        self.last_ping_time = time.time()
+
         self.running = False
         self.logger.info("风险管理器初始化完成。")
+
+    def _get_connect_url(self, base_url: str) -> str:
+        """Replaces wildcard address with localhost for connection."""
+        if base_url.startswith("tcp://*"):
+            return base_url.replace("tcp://*", "tcp://localhost", 1)
+        elif base_url.startswith("tcp://0.0.0.0"):
+            return base_url.replace("tcp://0.0.0.0", "tcp://localhost", 1)
+        else:
+            return base_url
+
+    def _setup_command_socket(self):
+        """Sets up or resets the command REQ socket."""
+        if hasattr(self, 'command_socket') and self.command_socket:
+            self.logger.info("尝试关闭旧的指令 Socket...")
+            try:
+                self.command_socket.close(linger=0)
+            except Exception as e_close:
+                 self.logger.warning(f"关闭旧指令 Socket 时出错: {e_close}")
+        
+        self.logger.info(f"正在创建并连接指令 Socket 到: {self._command_connect_url}")
+        self.command_socket = self.context.socket(zmq.REQ)
+        self.command_socket.setsockopt(zmq.LINGER, 0)
+        try:
+             self.command_socket.connect(self._command_connect_url)
+             # Connection might not happen immediately, ping will verify
+        except Exception as e_conn:
+             self.logger.error(f"连接指令 Socket 时出错: {e_conn}")
+             # Mark as disconnected immediately if connection fails
+             if self.gateway_connected:
+                 self.logger.error("与订单执行网关的连接丢失 (Connection Error)! ")
+                 self.gateway_connected = False
+
+    def _is_trading_hours(self) -> bool:
+        """Checks if the current time is within any defined trading session."""
+        # TODO: This assumes sessions are for the current day and doesn't handle cross-day sessions well (e.g., night to next morning)
+        # TODO: Consider timezone awareness if server/client timezones differ significantly.
+        # TODO: Specific contracts might have slightly different hours.
+        now_dt = datetime.now()
+        current_time = now_dt.time()
+        # Optional: Consider day of week check if needed
+        # if now_dt.weekday() >= 5: # Skip weekends
+        #     return False 
+
+        try:
+            for start_str, end_str in config.FUTURES_TRADING_SESSIONS:
+                start_time = dt_time.fromisoformat(start_str) # HH:MM
+                end_time = dt_time.fromisoformat(end_str)
+                
+                # Simple case: session within the same day (e.g., 09:00-11:00)
+                if start_time <= end_time:
+                    if start_time <= current_time < end_time:
+                        return True
+                # Case: session crosses midnight (e.g., 21:00-02:30) - simplified handling
+                # This simple check might not be robust enough for all cross-midnight scenarios
+                # For 21:00-23:00, the above simple case works.
+                # If a session was 21:00-01:00, we'd need: current_time >= start_time or current_time < end_time
+                # else: # Assuming end_time < start_time means overnight
+                #     if current_time >= start_time or current_time < end_time:
+                #          return True
+        except Exception as e:
+            self.logger.error(f"检查交易时间时出错: {e}")
+            return True # Fail open: assume trading hours if config is wrong
+        
+        return False # Not in any session
 
     def _process_message(self, topic_bytes: bytes, message: dict):
         """Processes a received message (Tick or Trade)."""
@@ -357,6 +425,11 @@ class RiskManagerService:
         """Sends a cancel order request to the Order Execution Gateway."""
         if not vt_orderid:
             self.logger.error("尝试发送空 vt_orderid 的撤单请求。")
+            return # Don't proceed if no order ID
+
+        # Check gateway connection status before sending
+        if not self.gateway_connected:
+            self.logger.error(f"无法发送撤单指令 ({vt_orderid})：与订单执行网关失去连接。")
             return
 
         self.logger.info(f"发送撤单指令给网关: {vt_orderid}")
@@ -394,6 +467,71 @@ class RiskManagerService:
         except Exception as e:
             self.logger.exception(f"发送或处理撤单指令 ({vt_orderid}) 回复时出错")
 
+    def _send_ping(self):
+        """Sends a PING request to the Order Gateway and handles the reply."""
+        # Determine log prefix based on current assumed state
+        log_prefix = "[Ping]" if self.gateway_connected else "[Ping - Attempting Reconnect]"
+        self.logger.debug(f"{log_prefix} Sending...")
+
+        ping_msg = {"type": "PING", "data": {}}
+        current_time = time.time()
+        self.last_ping_time = current_time # Update last ping attempt time
+
+        try:
+            # Use Poller for non-blocking send with timeout check
+            poller = zmq.Poller()
+            poller.register(self.command_socket, zmq.POLLOUT | zmq.POLLIN) # Check if writable and readable
+
+            # Send PING
+            packed_request = msgpack.packb(ping_msg, use_bin_type=True)
+            self.command_socket.send(packed_request) # Use blocking send, rely on timeout/error for issues
+
+            # Wait for PONG reply with timeout
+            readable = dict(poller.poll(PING_TIMEOUT_MS))
+            if self.command_socket in readable and readable[self.command_socket] & zmq.POLLIN:
+                packed_reply = self.command_socket.recv(zmq.NOBLOCK)
+                reply = msgpack.unpackb(packed_reply, raw=False)
+                if reply.get("reply") == "PONG":
+                    self.logger.debug("Received PONG successfully.")
+                    if not self.gateway_connected:
+                         self.logger.info("与订单执行网关的连接已恢复。")
+                         self.gateway_connected = True # Mark as connected
+                else:
+                    self.logger.warning(f"Received unexpected reply to PING: {reply}")
+                    if self.gateway_connected:
+                         self.logger.error("与订单执行网关的连接可能存在问题 (Unexpected PING reply)! ")
+                         self.gateway_connected = False
+            else:
+                # Timeout waiting for reply
+                self.logger.warning(f"{log_prefix} PING request timed out after {PING_TIMEOUT_MS}ms.")
+                # Mark as disconnected (if not already) and trigger reconnection
+                if self.gateway_connected: # Log error only on first detection
+                    self.logger.error(f"与订单执行网关的连接丢失 (PING timeout)!")
+                self.gateway_connected = False
+                self.logger.info("尝试重置指令 Socket (因 PING 超时)...")
+                self._setup_command_socket()
+                return # Exit after attempting reconnect
+
+        except zmq.ZMQError as e:
+            # Handle errors during send or recv
+            self.logger.error(f"{log_prefix} 发送 PING 或接收 PONG 时 ZMQ 错误: {e}")
+            # Mark as disconnected (if not already) and trigger reconnection
+            if self.gateway_connected: # Log error only on first detection
+                self.logger.error(f"与订单执行网关的连接丢失 ({e})! ")
+            self.gateway_connected = False
+            self.logger.info("尝试重置指令 Socket (因 ZMQ 错误)...")
+            self._setup_command_socket()
+            return # Exit after attempting reconnect
+
+        except Exception as e:
+            # Handle other unexpected errors
+            self.logger.exception(f"{log_prefix} 发送或处理 PING/PONG 时发生未知错误")
+            # Mark as disconnected (if not already)
+            if self.gateway_connected: # Log error only on first detection
+                self.logger.error("与订单执行网关的连接丢失 (Unknown Error)! ")
+                self.gateway_connected = False
+            # Optional: Trigger reconnection on unknown errors too?
+
     def start(self):
         """Starts listening for messages and performing risk checks."""
         if self.running:
@@ -406,19 +544,62 @@ class RiskManagerService:
         
         # --- Main Loop --- 
         while self.running:
+            # Use Poller for non-blocking receive on subscriber
+            poller = zmq.Poller()
+            poller.register(self.subscriber, zmq.POLLIN)
+            # Poll with a timeout (e.g., 1 second) to allow for other checks
+            poll_timeout_ms = 1000 
+            socks = dict(poller.poll(poll_timeout_ms)) 
+
             try:
-                # Blocking receive
-                topic, packed_message = self.subscriber.recv_multipart()
+                # Process incoming subscription messages if any
+                if self.subscriber in socks and socks[self.subscriber] == zmq.POLLIN:
+                    topic, packed_message = self.subscriber.recv_multipart(zmq.NOBLOCK)
 
-                # Check running flag *after* potentially blocking recv returns
-                if not self.running:
-                    break 
+                    # Check running flag *after* potentially blocking recv returns
+                    if not self.running:
+                        break 
 
-                try:
-                    message = msgpack.unpackb(packed_message, raw=False)
-                    self._process_message(topic, message)
-                except msgpack.UnpackException as e:
-                    self.logger.error(f"Msgpack 解码错误: {e}. Topic: {topic.decode('utf-8', errors='ignore')}")
+                    try:
+                        message = msgpack.unpackb(packed_message, raw=False)
+                        self._process_message(topic, message)
+                    except msgpack.UnpackException as e:
+                        self.logger.error(f"Msgpack 解码错误: {e}. Topic: {topic.decode('utf-8', errors='ignore')}")
+
+                # --- Periodic Heartbeat Check --- 
+                current_time = time.time()
+                if current_time - self.last_ping_time >= PING_INTERVAL:
+                     self._send_ping()
+                # --- End Heartbeat Check --- 
+
+                # --- Periodic Market Data Timeout Check --- 
+                # Check if any subscribed symbol hasn't received a tick recently
+                # TODO: Add trading session check to avoid false alarms outside trading hours
+                # Only check for stale data during defined trading hours
+                if self._is_trading_hours():
+                    found_stale_symbol = False
+                    stale_symbols = []
+                    check_time = time.time()
+                    for symbol in self.subscribed_symbols:
+                        last_ts = self.last_tick_time.get(symbol)
+                        if last_ts is None:
+                            # If a subscribed symbol NEVER received a tick, consider it stale after a grace period
+                            if check_time - self.last_ping_time > PING_INTERVAL * 2: # Allow some time after start
+                                found_stale_symbol = True
+                                stale_symbols.append(f"{symbol} (no tick received)")
+                        elif check_time - last_ts > MARKET_DATA_TIMEOUT:
+                            found_stale_symbol = True
+                            stale_symbols.append(f"{symbol} (last {check_time - last_ts:.1f}s ago)")
+
+                    if found_stale_symbol:
+                        if self.market_data_ok: # Log only when status changes to False
+                            self.logger.warning(f"[交易时段内] 行情数据可能中断或延迟! 超时合约: {', '.join(stale_symbols)}")
+                            self.market_data_ok = False
+                    elif not self.market_data_ok:
+                        # If no symbols are stale now, but status was False, means it recovered
+                        self.logger.info("所有监控合约的行情数据流已恢复。")
+                        self.market_data_ok = True
+                # --- End Market Data Timeout Check --- 
 
             except zmq.ZMQError as e:
                 # Check if the error occurred because we are stopping

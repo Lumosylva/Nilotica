@@ -20,6 +20,9 @@ class GlobalPath(object):
     # 项目根路径
     project_root_path = Path(get_path_ins.get_project_dir())
 
+    # 日志目录完整路径
+    log_dir_path = project_root_path / Params.log_dir_name
+
     # 实时数据完整路径
     tick_data_path = project_root_path / "zmq_services" / Params.tick_data_name
 

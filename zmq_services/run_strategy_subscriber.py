@@ -8,19 +8,16 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import the subscriber class and config
-try:
-    from zmq_services.strategy_subscriber import StrategySubscriber
-    from zmq_services import config
-except ImportError as e:
-    print(f"Error importing modules: {e}")
-    print(f"Project root added to path: {project_root}")
-    print(f"Current sys.path: {sys.path}")
-    print("Ensure zmq_services directory and its project_files exist.")
-    sys.exit(1)
+from zmq_services.strategy_subscriber import StrategySubscriber
+from config import zmq_config as config
+
 
 def main():
     """Runs the strategy subscriber service."""
-    print("正在初始化策略订阅器...")
+    # Get a logger for this script (can be done after setup_logging)
+    logger = getLogger(__name__)
+
+    logger.info("正在初始化策略订阅器...")
     
     # Determine the connection URLs
     md_gateway_url = config.MARKET_DATA_PUB_URL.replace("*", "localhost")
@@ -37,22 +34,39 @@ def main():
         subscribe_symbols=symbols_to_subscribe
     )
     
-    print("尝试启动订阅器...")
+    logger.info("尝试启动订阅器...")
     try:
         # The start method contains the main loop and blocking logic
         subscriber.start()
     except KeyboardInterrupt:
-        print("\n主程序检测到 Ctrl+C，正在停止...")
+        logger.info("主程序检测到 Ctrl+C，正在停止...")
         # The subscriber's start loop should catch KeyboardInterrupt and call stop,
         # but we call it here again just in case.
         if subscriber.running:
             subscriber.stop()
     except Exception as e:
-        print(f"订阅器运行时发生意外错误: {e}")
+        # Log exception with original text and exception info
+        logger.exception(f"订阅器运行时发生意外错误: {e}")
         if subscriber.running:
              subscriber.stop()
     finally:
-        print("策略订阅器运行结束。")
+        logger.info("策略订阅器运行结束。")
 
 if __name__ == "__main__":
+    # --- Setup Logging --- 
+    # Add project root first
+    project_root_setup = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    if project_root_setup not in sys.path:
+        sys.path.insert(0, project_root_setup)
+    # Now import logger setup
+    try:
+        from logger import setup_logging, getLogger
+        # Set service name for logs originating from this runner script
+        setup_logging(service_name="StrategySubscriberRunner")
+    except ImportError as log_err:
+        # Fallback to print if logger setup fails
+        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+        sys.exit(1)
+
+    # Run the main function after logging is set up
     main()
