@@ -135,6 +135,12 @@ rm -rf .pytest_cache .mypy_cache .ruff_cache dist build *.egg-info
 build.bat
 ```
 
+或者
+
+```bash
+install.sh
+```
+
 方式二：
 
 设置ta-lib源文件为环境变量（设置为你自己的实际路径），再执行hatch build

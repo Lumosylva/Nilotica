@@ -131,6 +131,12 @@ Method 1:
 build.bat
 ```
 
+or
+
+```bash
+install.sh
+```
+
 Method 2:
 
 Set the ta-lib source file as an environment variable (set it to your actual path), and then execute hatch build
