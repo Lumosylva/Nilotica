@@ -195,8 +195,8 @@ hatch build
 ├── README_EN.md - English description of the project
 ├── __init__.py - the project version number
 ├── hatch_build.py - custom build hook responsible for compiling C++ extensions
-├── install.bat - Windows project automatic build script
-├── install.sh - Linux project automatic build script
+├── build.bat - Windows project automatic build script
+├── build.sh - Linux project automatic build script
 ├── install.bat - Windows installation script for ta-lib 0.6.3, temporarily useless
 ├── install.sh - script for installing ta-lib 0.6.3 on Linux, temporarily useless
 ├── logo.png - project logo
