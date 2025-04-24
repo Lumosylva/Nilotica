@@ -30,6 +30,8 @@ The functions currently implemented by the system are:
 
 - **vnpy** : version 3.9.4
 
+- vnpy changes: vnpy/trader/utility.py, line68: TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+
 - **vnpy_ctp**: `6.7.2.1` version (based on **CTP 6.7.2** interface encapsulation, the interface comes with the dll file of the penetrating environment)
 
 - If you need to compile other versions of CTP `C++`, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command

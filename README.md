@@ -30,6 +30,8 @@ Language: [ENGLISH](README_EN.md)
 
 - **vnpy** ：`3.9.4`版本
 
+- vnpy改动点：vnpy/trader/utility.py，line68：TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+
 - **vnpy_ctp**： `6.7.2.1`版本（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
 
 - 若需要其他版本CTP `C++` 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
