@@ -173,4 +173,4 @@
       incurred by, or claims asserted against, such Contributor by reason
       of your accepting any such warranty or additional liability.
 
-   Copyright [2025] [https://github.com/Nilotica/Nilotica]
+   Copyright [2025] [https://github.com/Nilotica/Nilotica_dev][https://gitcode.com/Nilotica/Nilotica_dev]
