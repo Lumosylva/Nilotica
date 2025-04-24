@@ -167,6 +167,7 @@ hatch build
 │   │   └── path.py - 路径常量
 │   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录。
 ├── run_image - 服务运行截图目录
+├── structlog - 另一个日志模块，暂时无用
 ├── ta-lib - ta-lib库源文件
 ├── utils - 工具类包
 ├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎，版本3.9.4。
@@ -198,6 +199,8 @@ hatch build
 ├── README_EN.md - 项目英文说明
 ├── __init__.py - 项目的版本号
 ├── hatch_build.py - 自定义构建钩子负责编译 C++ 扩展
+├── install.bat - Windows安装ta-lib 0.6.3的脚本，暂时无用
+├── install.sh - Linux安装ta-lib 0.6.3的脚本，暂时无用
 ├── logo.png - 项目logo
 ├── main.py - 项目主文件，暂时无定义
 ├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
