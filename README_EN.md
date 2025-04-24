@@ -139,11 +139,18 @@ install.sh
 
 Method 2:
 
-Set the ta-lib source file as an environment variable (set it to your actual path), and then execute hatch build
+Enter the project root directory, add the ta-lib source file directory to the temporary environment variable (set it to your actual path), and then execute hatch build
 
 ```bash
 set TA_INCLUDE_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\include
 set TA_LIBRARY_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\lib
+```
+
+or
+
+```bash
+export TA_INCLUDE_PATH="$PATH:/ta-lib/include"
+export TA_LIBRARY_PATH="$PATH:/ta-lib/lib"
 ```
 
 ```bash

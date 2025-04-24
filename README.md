@@ -143,11 +143,18 @@ install.sh
 
 方式二：
 
-设置ta-lib源文件为环境变量（设置为你自己的实际路径），再执行hatch build
+进入项目根目录，将ta-lib源文件目录加入临时环境变量（设置为你自己的实际路径），再执行hatch build
 
 ```bash
 set TA_INCLUDE_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\include
 set TA_LIBRARY_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\lib
+```
+
+或
+
+```bash
+export TA_INCLUDE_PATH="$PATH:/ta-lib/include"
+export TA_LIBRARY_PATH="$PATH:/ta-lib/lib"
 ```
 
 ```bash
