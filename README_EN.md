@@ -40,9 +40,9 @@ The functions currently implemented by the system are:
 
 ### **3. Description**
 
-To prevent conflicts with other vnpy projects on the local machine when using the same user configuration directory:
+In order to prevent conflicts with other vnpy projects on the local machine when using the same user configuration directory, this project modifies the files in the `vnpy` library:
 
-File in `vnpy` library: vnpy/trader/utility.py
+vnpy/trader/utility.py
 
 Original code:
 

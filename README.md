@@ -44,9 +44,9 @@ Language: [ENGLISH](README_EN.md)
 
 ### **3. 说明**
 
-为了防止与本机中其它vnpy项目共存时用同一用户配置目录发生冲突：
+为了防止与本机中其它vnpy项目共存时用同一用户配置目录发生冲突，本项目修改了`vnpy`库中文件：
 
-`vnpy`库中文件：vnpy/trader/utility.py
+vnpy/trader/utility.py
 
 原代码：
 
