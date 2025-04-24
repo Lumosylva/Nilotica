@@ -28,9 +28,9 @@ The functions currently implemented by the system are:
 
 - **Toolchain**: `uv` + `hatch` + `setuptools`
 
-- **vnpy** : version 3.9.4
+- **vnpy** : version `4.0.0`
 
-- **vnpy_ctp**: `6.7.2.1` version (based on **CTP 6.7.2** interface encapsulation, the interface comes with the dll file of the penetrating environment)
+- **vnpy_ctp**: `6.7.7.1` version (developed based on the `6.7.7` interface package of CTP futures version, the interface comes with the dll file of [penetrating real disk environment])
 
 - If you need to compile other versions of CTP `C++`, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
 
@@ -42,9 +42,21 @@ The functions currently implemented by the system are:
 
 ### **3. Description**
 
-`vnpy` changes: vnpy/trader/utility.py, line68: TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+To prevent conflicts with other vnpy projects on the local machine when using the same user configuration directory:
 
-Prevent conflicts with other vnpy servers on the same machine when using the same user configuration directory
+File in `vnpy` library: vnpy/trader/utility.py
+
+Original code:
+
+```Python
+TRADER_DIR, TEMP_DIR = _get_trader_dir(".vntrader")
+```
+
+After the change:
+
+```Python
+TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+```
 
 ### **4. Environment Configuration**
 

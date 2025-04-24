@@ -28,9 +28,9 @@ Language: [ENGLISH](README_EN.md)
 
 - **工具链**：`uv` + `hatch` + `setuptools`
 
-- **vnpy** ：`3.9.4`版本
+- **vnpy** ：`4.0.0`版本
 
-- **vnpy_ctp**： `6.7.2.1`版本（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
+- **vnpy_ctp**： `6.7.7.1`版本（基于CTP期货版的`6.7.7`接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件）
 
 - 若需要其他版本CTP `C++` 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
 
@@ -42,9 +42,21 @@ Language: [ENGLISH](README_EN.md)
 
 ### **3. 说明**
 
-`vnpy`改动点：vnpy/trader/utility.py，line68：TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+为了防止与本机中其它vnpy项目共存时用同一用户配置目录发生冲突：
 
-防止与本机中其它vnpy共存时用同一用户配置目录发生冲突
+`vnpy`库中文件：vnpy/trader/utility.py
+
+原代码：
+
+```python
+TRADER_DIR, TEMP_DIR = _get_trader_dir(".vntrader")
+```
+
+改动后：
+
+```python
+TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+```
 
 ### **4. 环境配置**
 
