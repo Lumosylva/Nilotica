@@ -170,9 +170,9 @@ hatch build
 ├── structlog - 另一个日志模块，暂时无用
 ├── ta-lib - ta-lib库源文件
 ├── utils - 工具类包
-├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎，版本3.9.4。
+├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎。
 ├── vnpy_ctp - vnpy官方的ctp库，主要功能是与交易所行情和交易服务器交互。
-├── vnpy_rpcservice - vnpy官方的RPC库，实现了RPC服务。
+├── vnpy_rpcservice - vnpy官方的RPC库，主要功能是提供RPC服务。
 ├── zmq_services - 系统核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测、行情回放。
 │   ├── backtester - 回测目录
 │   │   ├── data_player.py - 数据回放

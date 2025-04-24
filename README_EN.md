@@ -166,9 +166,9 @@ hatch build
 ├── structlog - another log module, temporarily unused
 ├── ta-lib - ta-lib library source files
 ├── utils - utility package
-├── vnpy - vnpy's official core library, the main function is an event-driven engine, version 3.9.4.
+├── vnpy - vnpy's official core library, whose main function is an event-driven engine.
 ├── vnpy_ctp - vnpy's official ctp library, its main function is to interact with exchange quotes and trading servers.
-├── vnpy_rpcservice - vnpy official RPC library, which implements RPC service.
+├── vnpy_rpcservice - vnpy's official RPC library, its main function is to provide RPC services.
 ├── zmq_services - the core of the system, including market gateway, order execution gateway, strategy subscriber, risk control management, data recording, strategy backtesting, and market playback.
 │ ├── backtester - Backtesting directory
 │ │ ├── data_player.py - data playback
