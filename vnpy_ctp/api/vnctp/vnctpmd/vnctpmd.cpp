@@ -749,7 +749,7 @@ int MdApi::reqQryMulticastInstrument(const dict &req, int reqid)
 };
 
 ///-------------------------------------------------------------------------------------
-///Boost.Python·â×°
+///pybind11·â×°
 ///-------------------------------------------------------------------------------------
 
 class PyMdApi: public MdApi
@@ -926,7 +926,6 @@ PYBIND11_MODULE(vnctpmd, m)
 		.def("join", &MdApi::join)
 		.def("exit", &MdApi::exit)
 		.def("getTradingDay", &MdApi::getTradingDay)
-		.def("getApiVersion", &MdApi::getApiVersion)
 		.def("registerFront", &MdApi::registerFront)
 		.def("registerNameServer", &MdApi::registerNameServer)
 		.def("registerFensUserInfo", &MdApi::registerFensUserInfo)

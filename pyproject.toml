@@ -1,6 +1,6 @@
 [project]
 name = "nilotica_dev"
-version = "0.1.0"
+dynamic = ["version"]
 description = "一个基于vnpy的量化系统(Based vnpy quant trading system.)"
 license = { file = "LICENSE.txt" }
 authors = [{ name = "Donny", email = "donnymoving@gmail.com" }]
@@ -20,21 +20,23 @@ classifiers = [
 ]
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "deap==1.4.1",
+    "deap>=1.4.2",
     "msgpack==1.1.0",
-    "numpy==1.26.4",
+    "numpy>=2.2.3",
     "peewee==3.17.9",
-    "plotly==5.20.0",
-    "pybind11>=2.13.6",
+    "plotly>=6.0.0",
+    "pybind11>=2.9.0",
     "pybind11-stubgen>=2.5.3",
-    "pyqtgraph==0.13.4",
-    "pyside6==6.3.0",
-    "pyzmq==25.1.2",
-    "qdarkstyle==3.2.3",
+    "pyqtgraph>=0.13.7",
+    "pyside6>=6.8.2.1",
+    "pyzmq>=26.3.0",
+    "qdarkstyle>=3.2.3",
     "seaborn==0.13.2",
-    "tqdm==4.66.3",
+    "tqdm>=4.67.1",
+    "loguru>=0.7.3",
+    "nbformat>=5.10.4",
     "tushare==1.4.21",
-    "tzlocal==5.2",
+    "tzlocal>=5.3.1",
     "pandas>=2.2.3",
     "hatch>=1.14.1",
     "setuptools>=78.1.0",
@@ -52,12 +54,13 @@ keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
 "Documentation" = "https://github.com/Nilotica/nilotica_dev/README.md"
 "Repository" = "https://github.com/Nilotica/nilotica_dev.git"
 "Issues" = "https://github.com/Nilotica/nilotica_dev/issues"
-"Changelog" = "https://github.com/Nilotica/nilotica_dev/CHANGELOG.md"
+"Changes" = "https://github.com/Nilotica/nilotica_dev/CHANGELOG.md"
 "Source" = "https://github.com/Nilotica/nilotica_dev"
 
 [build-system]
 requires = [
-    "hatchling",
+    "hatchling>=1.27.0",
+    "babel>=2.17.0",
     "pybind11>=2.13.6",
     "pybind11-stubgen>=2.5.3",
     "setuptools",
@@ -68,27 +71,28 @@ requires = [
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "nilotica_dev/__init__.py"
+path = "__init__.py"
+pattern = "__version__ = ['\"](?P<version>[^'\"]+)['\"]"
 
 [tool.hatch.build.hooks.custom]
 path = "hatch_build.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/utils",
-    "/vnpy",
-    "/vnpy_ctp",
-    "/vnpy_rpcservice",
-    "/zmq_services",
-    "/config",
-    "/README.md",
-    "/LICENSE.txt",
-    "/pyproject.toml",
-    "/hatch_build.py",
-    "/vnpy_ctp/api/**/*.h",
-    "/vnpy_ctp/api/**/*.cpp",
-    "/vnpy_ctp/api/**/*.lib",
-    "/vnpy_ctp/api/**/*.a",
+    "utils*",
+    "vnpy*",
+    "vnpy_ctp*",
+    "vnpy_rpcservice*",
+    "zmq_services*",
+    "config*",
+    "README.md",
+    "LICENSE.txt",
+    "pyproject.toml",
+    "hatch_build.py",
+    "vnpy_ctp/api/**/*.h",
+    "vnpy_ctp/api/**/*.cpp",
+    "vnpy_ctp/api/**/*.lib",
+    "vnpy_ctp/api/**/*.a",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -103,6 +107,9 @@ packages = [
 
 [project.optional-dependencies]
 dev = [
+    "hatchling>=1.27.0",
+    "babel>=2.17.0",
+    "scipy>=1.15.2",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "black>=23.12.0",
@@ -163,6 +170,20 @@ scripts.format = [
   "isort .",
 ]
 
+[tool.ruff]
+target-version = "py312"
+output-format = "full"
+
+[tool.ruff.lint]
+select = [
+    "B",  # flake8-bugbear
+    "E",  # pycodestyle error
+    "F",  # pyflakes
+    "UP",  # pyupgrade
+    "W",  # pycodestyle warning
+]
+ignore = ["E501"]
+
 [tool.black]
 line-length = 88
 target-version = ["py310", "py311", "py312"]
@@ -181,6 +202,12 @@ line_length = 88
 python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 warn_no_return = true
@@ -208,19 +235,3 @@ exclude_lines = [
     "pass",
     "raise ImportError",
 ]
-
-pyzmq==25.1.2
-pyqtgraph==0.13.4
-QDarkStyle==3.2.3
-PySide6==6.3.0
-importlib_metadata==8.6.1
-tzlocal==5.2
-pathlib==1.0.1
-numpy==1.26.4
-tqdm==4.66.3
-deap==1.4.1
-msgpack==1.1.0
-pandas==2.2.3
-pybind11==2.13.6
-setuptools==78.1.0
-hatchling==1.27.0
