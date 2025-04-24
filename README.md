@@ -199,6 +199,8 @@ hatch build
 ├── README_EN.md - 项目英文说明
 ├── __init__.py - 项目的版本号
 ├── hatch_build.py - 自定义构建钩子负责编译 C++ 扩展
+├── install.bat - Windows项目自动构建脚本
+├── install.sh - Linux项目自动构建脚本
 ├── install.bat - Windows安装ta-lib 0.6.3的脚本，暂时无用
 ├── install.sh - Linux安装ta-lib 0.6.3的脚本，暂时无用
 ├── logo.png - 项目logo
