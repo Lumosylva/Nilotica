@@ -32,9 +32,3 @@ function ta-lib-exists()
     $prefix/ta-lib-config --libs > /dev/null
 }
 ta-lib-exists || install-ta-lib
-
-# Install local Chinese language environment
-locale-gen zh_CN.GB18030
-
-# Install VeighNa
-$python -m pip install . --index $pypi_index
