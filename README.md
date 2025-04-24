@@ -10,7 +10,7 @@ Language: [ENGLISH](README_EN.md)
 
 ### **1. 前言**
 
-本项目基于 [vnpy](https://github.com/vnpy/vnpy) 和 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) 之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，更加专注于策略的开发。
+本项目基于 **[vnpy](https://github.com/vnpy/vnpy)** 和 **[vnpy_ctp](https://github.com/vnpy/vnpy_ctp) **、**[vnpy_rpcservice](https://github.com/vnpy/vnpy_rpcservice)** 之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，更加专注于策略的开发。
 
 目前系统已实现的功能：
 
@@ -31,6 +31,8 @@ Language: [ENGLISH](README_EN.md)
 - **vnpy** ：`4.0.0`版本
 
 - **vnpy_ctp**： `6.7.7.1`版本（基于CTP期货版的`6.7.7`接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件）
+
+- **vnpy_rpcservice**：`1.0.6`版本
 
 - 若需要其他版本CTP `C++` 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
 

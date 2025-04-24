@@ -10,7 +10,7 @@ Language: [CHINESE](README.md)
 
 ### **1. Introduction**
 
-This project is based on [vnpy](https://github.com/vnpy/vnpy) and [vnpy_ctp](https://github.com/vnpy/vnpy_ctp). The purpose is to simplify the domestic futures quantitative trading experience, making it easier for manual traders to switch to quantitative trading and focus more on strategy development.
+This project is based on **[vnpy](https://github.com/vnpy/vnpy)**, **[vnpy_ctp](https://github.com/vnpy/vnpy_ctp) **, **[vnpy_rpcservice](https://github.com/vnpy/vnpy_rpcservice)**, and aims to simplify the domestic futures quantitative trading experience, making it easier for manual traders to switch to quantitative trading and focus more on strategy development.
 
 The functions currently implemented by the system are:
 
@@ -25,12 +25,10 @@ The functions currently implemented by the system are:
 ### **2. Basic Environment**
 
 - **Python** : `3.12.9` version
-
 - **Toolchain**: `uv` + `hatch` + `setuptools`
-
 - **vnpy** : version `4.0.0`
-
 - **vnpy_ctp**: `6.7.7.1` version (developed based on the `6.7.7` interface package of CTP futures version, the interface comes with the dll file of [penetrating real disk environment])
+- **vnpy_rpcservice**: version 1.0.6
 
 - If you need to compile other versions of CTP `C++`, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
 
