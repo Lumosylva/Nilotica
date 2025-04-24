@@ -21,8 +21,9 @@ from typing import Any, Dict
 
 try:
     import pybind11
-except ImportError:
+except ImportError as err:
     print("Error: pybind11 is required for building extensions. Please install it.", file=sys.stderr)
+    print("Error msg：", err)
     sys.exit(1)
 
 try:
@@ -89,7 +90,6 @@ class CustomBuildHook(BuildHookInterface):
 
         include_dirs_rel = [
             "vnpy_ctp/api/include",
-            # pybind11_include_path is absolute, no need to make relative
             "vnpy_ctp/api/vnctp",
             "vnpy_ctp/api/vnctp/vnctpmd",
             "vnpy_ctp/api/vnctp/vnctptd"
