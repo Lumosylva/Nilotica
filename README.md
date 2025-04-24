@@ -30,8 +30,6 @@ Language: [ENGLISH](README_EN.md)
 
 - **vnpy** ：`3.9.4`版本
 
-- vnpy改动点：vnpy/trader/utility.py，line68：TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
-
 - **vnpy_ctp**： `6.7.2.1`版本（基于**CTP 6.7.2**接口封装，接口中自带的是穿透式环境的dll文件）
 
 - 若需要其他版本CTP `C++` 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
@@ -42,7 +40,13 @@ Language: [ENGLISH](README_EN.md)
 
 - 注意：目前所有代码仅在`Windows`环境下测试，`Linux`下并未测试
 
-### **3. 环境配置**
+### **3. 说明**
+
+`vnpy`改动点：vnpy/trader/utility.py，line68：TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+
+防止与本机中其它vnpy共存时用同一用户配置目录发生冲突
+
+### **4. 环境配置**
 
 本项目使用`uv`管理Python虚拟环境及依赖的软件包，`hatch`作为构建工具
 
@@ -78,7 +82,7 @@ Language: [ENGLISH](README_EN.md)
    .venv\Scripts\activate
    ```
 
-### **4. 构建流程**
+### **5. 构建流程**
 
 `hatch build` 命令会在 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，hatch_build.py 负责编译 C++ 扩展，构建钩子（hatch_build.py）会使用 pybind11-stubgen 为编译好的模块生成  `.pyi`存根文件，编译后的  `.pyd` 文件和  `.pyi` 文件会被包含在最终的 Wheel 包中，`hatch build`  将会生成最终的发布包。若您需要进行CTP编译，可进行此构建流程，否则无需进行。
 
@@ -130,7 +134,7 @@ set TA_LIBRARY_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\lib
 hatch build
 ```
 
-### **5. 项目结构**
+### **6. 项目结构**
 
 ```reStructuredText
 .
@@ -187,7 +191,7 @@ hatch build
 └── uv.lock - 记录项目的所有依赖，由uv自动管理，不用手动编辑。
 ```
 
-### **6. 服务运行展示**
+### **7. 服务运行展示**
 
 1. 运行行情网关：
 
@@ -217,7 +221,7 @@ hatch build
 
    <img src="run_image/run_backtest3.png" style="zoom:67%;" />
 
-### **7. 项目进度**
+### **8. 项目进度**
 
 - [x] 行情网关
 
@@ -297,15 +301,15 @@ hatch build
 
 开发中......
 
-### **8. 更新日志**
+### **9. 更新日志**
 
 [CHANGELOG.md](CHANGELOG.md)
 
-### **9. 交流**
+### **10. 交流**
 
 QQ交流群：`446042777`(澄明期货研究)
 
-### **10. 免责声明**
+### **11. 免责声明**
 
 1. **信息仅供参考**
    本系统所提供的信息、数据、分析、建议或其他内容（以下统称为“信息”）仅供参考，不构成任何投资建议或交易指导。用户在使用本系统时，应充分认识到期货交易的高风险性，并自行承担由此产生的任何风险和后果。

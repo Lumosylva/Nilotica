@@ -30,8 +30,6 @@ The functions currently implemented by the system are:
 
 - **vnpy** : version 3.9.4
 
-- vnpy changes: vnpy/trader/utility.py, line68: TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
-
 - **vnpy_ctp**: `6.7.2.1` version (based on **CTP 6.7.2** interface encapsulation, the interface comes with the dll file of the penetrating environment)
 
 - If you need to compile other versions of CTP `C++`, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
@@ -42,7 +40,13 @@ The functions currently implemented by the system are:
 
 - Note: Currently all codes are only tested under `Windows` environment, not under `Linux`
 
-### **3. Environment Configuration**
+### **3. Description**
+
+`vnpy` changes: vnpy/trader/utility.py, line68: TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+
+Prevent conflicts with other vnpy servers on the same machine when using the same user configuration directory
+
+### **4. Environment Configuration**
 
 This project uses `uv` to manage Python virtual environments and dependent packages, and `hatch` as a build tool
 
@@ -78,7 +82,7 @@ Activate the virtual environment
 .venv\Scripts\activate
 ```
 
-### **4. Build Process**
+### **5. Build Process**
 
 The `hatch build` command will compile the dynamic link library `.pyd` file of the market and transaction under vnpy_ctp\api\. hatch_build.py is responsible for compiling C++ extensions. The build hook (hatch_build.py) will use pybind11-stubgen to generate `.pyi` stub files for the compiled modules. The compiled `.pyd` and `.pyi` files will be included in the final Wheel package. `hatch build` will generate the final release package. If you need to perform CTP compilation, you can perform this build process, otherwise you do not need to do it.
 
@@ -130,7 +134,7 @@ set TA_LIBRARY_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\lib
 hatch build
 ```
 
-### **5. Project Structure**
+### **6. Project Structure**
 
 ```reStructuredText
 .
@@ -187,7 +191,7 @@ hatch build
 └── uv.lock - records all dependencies of the project, which is automatically managed by uv and does not require manual editing.
 ```
 
-### **6. Service operation display**
+### **7. Service operation display**
 
 1. Run the market gateway:
 
@@ -217,7 +221,7 @@ hatch build
 
 <img src="run_image/run_backtest3.png" style="zoom:67%;" />
 
-### **7. Project Progress**
+### **8. Project Progress**
 
 - [x] Market Gateway
 
@@ -297,15 +301,15 @@ Connect the market information publisher (market information gateway) and the or
 
 Under development...
 
-### **8. Update log**
+### **9. Update log**
 
 [CHANGELOG.md](CHANGELOG.md)
 
-### 9. Communication
+### **10. Communication**
 
 QQ exchange group: `446042777` (Chengming Futures Research)
 
-### 10. Disclaimer**
+### **11. Disclaimer**
 
 1. **Information is for reference only**
 The information, data, analysis, advice or other content (hereinafter collectively referred to as "Information") provided by this system is for reference only and does not constitute any investment advice or trading guidance. When using this system, users should fully realize the high risk of futures trading and bear any risks and consequences arising therefrom.
