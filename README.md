@@ -343,7 +343,7 @@ QQ交流群：`446042777`(澄明期货研究)
 
 gitcode地址：https://gitcode.com/Nilotica/Nilotica_dev
 
-github地址：https://github.com/Nilotica/Nilotica_dev
+github地址：https://github.com/Ma-Dongdong/Nilotica_dev
 
 ### **11. 免责声明**
 

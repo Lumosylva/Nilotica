@@ -9,7 +9,6 @@
 @Software   : PyCharm
 @Description: 编译vnctpmd、vnctptd模块生成pyd文件，并生成对应的pyi文件
 """
-
 import os
 import platform
 import shutil
@@ -19,24 +18,13 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-try:
-    import pybind11
-except ImportError as err:
-    print("Error: pybind11 is required for building extensions. Please install it.", file=sys.stderr)
-    print("Error msg：", err)
-    sys.exit(1)
+import pybind11
 
-try:
-    from setuptools import Distribution, Extension
-    from setuptools.command.build_ext import build_ext as _build_ext
-except ImportError:
-    print("Error: setuptools is required for building extensions. Please ensure it's installed.", file=sys.stderr)
-    sys.exit(1)
-
+from setuptools import Distribution, Extension
+from setuptools.command.build_ext import build_ext as _build_ext
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
-# --- Logging Setup ---
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - HatchBuild - %(levelname)s - %(message)s'

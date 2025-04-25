@@ -1126,6 +1126,7 @@ wheels = [
 name = "nilotica-dev"
 source = { editable = "." }
 dependencies = [
+    { name = "babel" },
     { name = "deap" },
     { name = "hatch" },
     { name = "hatchling" },
@@ -1176,6 +1177,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
+    { name = "babel", specifier = "==2.17.0" },
     { name = "babel", marker = "extra == 'dev'", specifier = ">=2.17.0" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.12.0" },
     { name = "deap", specifier = ">=1.4.2" },

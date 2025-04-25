@@ -339,7 +339,7 @@ QQ exchange group: `446042777` (Chengming Futures Research)
 
 Gitcode address: https://gitcode.com/Nilotica/Nilotica_dev
 
-GitHub address: https://github.com/Nilotica/Nilotica_dev
+GitHub address: https://github.com/Ma-Dongdong/Nilotica_dev
 
 ### **11. Disclaimer**
 
