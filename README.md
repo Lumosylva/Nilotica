@@ -38,7 +38,7 @@ Language: [ENGLISH](README_EN.md)
 
 - 若直接使用本系统的CTP版本，则不需要进行下方第4步的构建流程，直接下载releases包中 `whl` uv pip install 安装即可
 
-  https://github.com/Nilotica/Nilotica_dev/releases
+  https://github.com/Ma-Dongdong/Nilotica_dev/releases
 
 - 注意：目前所有代码仅在`Windows`环境下测试，`Linux`下并未测试
 

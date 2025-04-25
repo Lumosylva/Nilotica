@@ -34,7 +34,7 @@ The functions currently implemented by the system are:
 
 - If you use the CTP version of this system directly, you do not need to follow the build process in step 4 below. You can directly download the `whl` uv pip install in the release package and install it.
 
-  https://github.com/Nilotica/Nilotica_dev/releases
+  https://github.com/Ma-Dongdong/Nilotica_dev/releases
 
 - Note: Currently all codes are only tested under `Windows` environment, not under `Linux`
 
