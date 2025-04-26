@@ -155,24 +155,23 @@ class CustomBuildHook(BuildHookInterface):
         cmd.ensure_finalized()
         cmd.inplace = False # Build in a temporary location first
 
-        logger.info("Running build_ext command...")
+        logger.info("Running build_ext command for vnpy_ctp...")
         try:
             cmd.run()
-            logger.info("build_ext command finished successfully.")
+            logger.info("build_ext command  for vnpy_ctp finished successfully.")
         except Exception as e:
-            logger.error(f"build_ext command failed: {e}", exc_info=True)
+            logger.error(f"build_ext command for vnpy_ctp failed: {e}", exc_info=True)
             if hasattr(e, 'cause') and e.cause:
                  logger.error(f"Compilation error details: {e.cause}")
-            raise RuntimeError("Failed to build C++ extensions.") from e
+            raise RuntimeError("Failed to build vnpy_ctp C++ extensions.") from e
 
         # --- Process Each Extension: Copy Artifacts, Copy DLLs, Generate Stubs ---
-        logger.info("Processing compiled artifacts and generating stubs individually...")
+        logger.info("Processing compiled vnpy_ctp artifacts and generating stubs individually...")
         build_lib_dir = Path(cmd.build_lib).resolve()
-        logger.info(f"Searching for artifacts in: {build_lib_dir}")
+        logger.info(f"Searching for vnpy_ctp artifacts in: {build_lib_dir}")
 
         # Prepare lists to collect file paths for final inclusion
         copied_artifacts = []
-        copied_ctp_dlls_map = {} # Track unique DLLs copied
         generated_stubs = []
 
         # Prepare stubgen command base if available
@@ -182,16 +181,12 @@ class CustomBuildHook(BuildHookInterface):
             stubgen_cmd_base = [sys.executable, "-m", "pybind11_stubgen"]
             logger.info("pybind11-stubgen found.")
         except ImportError:
-             logger.error("pybind11-stubgen not found. Cannot generate stubs.")
+             logger.error("pybind11-stubgen not found. Cannot generate stubs for vnpy_ctp.")
 
         # Setup env for stubgen (only needs PYTHONPATH)
         stubgen_env = os.environ.copy()
         stubgen_env["PYTHONPATH"] = str(artifact_dest_dir_abs) + os.pathsep + stubgen_env.get("PYTHONPATH", "")
-        logger.debug(f"Stubgen PYTHONPATH: {stubgen_env['PYTHONPATH']}")
-
-        # Define DLLs to copy (assuming they are in the source tree)
-        ctp_dlls_to_copy = ["thostmduserapi_se.dll", "thosttraderapi_se.dll"]
-        ctp_dll_source_dir = root_path / "vnpy_ctp" / "api"
+        logger.debug(f"CTP Stubgen PYTHONPATH: {stubgen_env['PYTHONPATH']}")
 
         for ext in extensions:
             module_name = ext.name.split('.')[-1]
@@ -217,7 +212,6 @@ class CustomBuildHook(BuildHookInterface):
                 artifact_copied = True
             except Exception as e:
                 logger.error(f"Failed to copy artifact {src_artifact}: {e}", exc_info=True)
-                artifact_copied = False
                 continue # If artifact copy fails, skip DLL copy and stubgen
 
             # 3. Generate Stubs (if artifact copied successfully)
@@ -259,7 +253,7 @@ class CustomBuildHook(BuildHookInterface):
             # Add other conditions if needed
 
         # --- Update build_data for Hatch ---
-        logger.info("Updating build_data['force_include'] for Hatch...")
+        logger.info("Updating build_data['force_include'] for vnpy_ctp Hatch...")
         if 'force_include' not in build_data:
             build_data['force_include'] = {}
 
@@ -278,7 +272,7 @@ class CustomBuildHook(BuildHookInterface):
                  logger.error(f"Failed to make path relative: {f_abs}. Error: {ve}")
 
 
-        logger.info(f"Final force_include data: {build_data['force_include']}")
+        logger.info(f"Final force_include data after CTP: {build_data['force_include']}")
         logger.info("--- CustomBuildHook: initialize finished ---")
 
 
