@@ -5,9 +5,10 @@ import threading
 import sys
 import os
 from datetime import datetime
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 import configparser
 import logging
+import pickle
 
 from vnpy.trader.utility import load_json
 
@@ -23,18 +24,19 @@ try:
     from vnpy.event import EventEngine, Event
     from vnpy.trader.gateway import BaseGateway
     from vnpy.trader.object import (OrderData, TradeData, OrderRequest, CancelRequest,
-                                    LogData, ContractData, AccountData) # Import necessary objects
-    from vnpy.trader.event import (EVENT_ORDER, EVENT_TRADE, EVENT_LOG, EVENT_CONTRACT, EVENT_ACCOUNT,
-                                   EVENT_TIMER) # Import necessary events
+                                    LogData, ContractData, AccountData)
+    from vnpy.trader.event import (EVENT_ORDER, EVENT_TRADE, EVENT_LOG, EVENT_CONTRACT, EVENT_ACCOUNT)
     from vnpy.trader.constant import (Direction, OrderType, Exchange, Offset, Status)
-    from vnpy_ctp import CtpGateway # Import the specific gateway
+    from vnpy_ctp import CtpGateway
+    from vnpy.rpc import RpcServer
 except ImportError as e:
-    print(f"Error importing vnpy modules: {e}")
-    print("Please ensure vnpy and vnpy_ctp are installed and accessible.")
-    # Log critical error if vnpy components fail to import
-    # Logger might not be available yet, so print is a fallback
-    print(f"CRITICAL: Project root added to path: {project_root}")
-    print(f"CRITICAL: Current sys.path: {sys.path}")
+    try:
+        getLogger(__name__).critical(f"Error importing vnpy modules: {e}", exc_info=True)
+    except Exception as e:
+        print(f"CRITICAL: Error importing vnpy modules: {e}")
+        print("Please ensure vnpy and vnpy_ctp are installed and accessible.")
+        print(f"CRITICAL: Project root added to path: {project_root}")
+        print(f"CRITICAL: Current sys.path: {sys.path}")
     sys.exit(1)
 
 # Import new config location
@@ -47,47 +49,37 @@ from config import zmq_config as config
 # +++ 添加函数：加载产品信息 +++
 def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
     """Loads commission rules and multipliers from an INI file."""
-    logger = getLogger('load_product_info') # Get logger for this function
-
+    logger = getLogger('load_product_info')
     parser = configparser.ConfigParser()
     if not os.path.exists(filepath):
         logger.error(f"错误：产品信息文件未找到 {filepath}")
         return {}, {}
-
     try:
         parser.read(filepath, encoding='utf-8')
     except Exception as err:
         logger.exception(f"错误：读取产品信息文件 {filepath} 时出错：{err}")
         return {}, {}
-
     commission_rules = {}
     contract_multipliers = {}
-
     for symbol in parser.sections():
         if not parser.has_option(symbol, 'multiplier'):
             logger.warning(f"警告：文件 {filepath} 中的 [{symbol}] 缺少 'multiplier'，跳过此合约。")
             continue
-        
         try:
             multiplier = parser.getfloat(symbol, 'multiplier')
             contract_multipliers[symbol] = multiplier
-
-            # 解析手续费规则 (允许部分缺失，使用 getfloat/getint 并提供默认值 0)
             rule = {
                 "open_rate": parser.getfloat(symbol, 'open_rate', fallback=0.0),
                 "close_rate": parser.getfloat(symbol, 'close_rate', fallback=0.0),
                 "open_fixed": parser.getfloat(symbol, 'open_fixed', fallback=0.0),
                 "close_fixed": parser.getfloat(symbol, 'close_fixed', fallback=0.0),
                 "min_commission": parser.getfloat(symbol, 'min_commission', fallback=0.0)
-                # 可以添加 closetoday_rate/fixed 等如果你的INI文件包含它们
             }
             commission_rules[symbol] = rule
-            # logger.debug(f"加载 {symbol}: Multiplier={multiplier}, Rules={rule}")
         except ValueError as err:
             logger.warning(f"警告：解析文件 {filepath} 中 [{symbol}] 的数值时出错: {err}，跳过此合约。")
         except Exception as err:
             logger.warning(f"警告：处理文件 {filepath} 中 [{symbol}] 时发生未知错误: {err}，跳过此合约。")
-            
     logger.info(f"从 {filepath} 加载了 {len(contract_multipliers)} 个合约的乘数和 {len(commission_rules)} 个合约的手续费规则。")
     return commission_rules, contract_multipliers
 # +++ 结束添加 +++
@@ -130,15 +122,14 @@ def vnpy_data_to_dict(obj):
             logger.warning(f"Warning: Unhandled type in vnpy_data_to_dict: {type(obj)}. Converting to string.")
             return str(obj)
 
-def dict_to_order_request(data_dict):
+def dict_to_order_request(data_dict: Dict[str, Any]) -> OrderRequest | None:
     """Converts a dictionary back into a vnpy OrderRequest object."""
-    logger = getLogger('dict_to_order_request') # Get logger for this function
+    logger = getLogger('dict_to_order_request')
     try:
-        # Convert string representations back to enums
         direction = Direction(data_dict['direction'])
         order_type = OrderType(data_dict['type'])
         exchange = Exchange(data_dict['exchange'])
-        offset = Offset(data_dict.get('offset', Offset.NONE.value)) # Default to NONE if not provided
+        offset = Offset(data_dict.get('offset', Offset.NONE.value))
 
         req = OrderRequest(
             symbol=data_dict['symbol'],
@@ -146,455 +137,346 @@ def dict_to_order_request(data_dict):
             direction=direction,
             type=order_type,
             volume=data_dict['volume'],
-            price=data_dict.get('price', 0.0), # Price might be optional for market orders
+            price=data_dict.get('price', 0.0),
             offset=offset,
-            reference=data_dict.get('reference', "zmq_gw") # Add a reference
+            reference=data_dict.get('reference', "rpc_gw")
         )
         return req
     except KeyError as err:
-        logger.error(f"创建 OrderRequest 失败：缺少关键字段：{err}")
-        logger.error(f"原始数据: {data_dict}")
+        logger.error(f"创建 OrderRequest 失败：缺少关键字段：{err} from data {data_dict}")
         return None
     except ValueError as err:
-        logger.error(f"创建 OrderRequest 失败：无效的枚举值：{err}")
-        logger.error(f"原始数据: {data_dict}")
+        logger.error(f"创建 OrderRequest 失败：无效的枚举值：{err} from data {data_dict}")
         return None
     except Exception as err:
-        logger.exception(f"创建 OrderRequest 时发生未知错误：{err}")
-        logger.error(f"原始数据: {data_dict}")
+        logger.exception(f"创建 OrderRequest 时发生未知错误：{err} from data {data_dict}")
         return None
 
-# --- Order Execution Gateway Service ---
-class OrderExecutionGatewayService:
+# --- Order Execution Gateway Service (RPC Mode) ---
+class OrderExecutionGatewayService(RpcServer):
+    """
+    Order execution gateway service using CtpGateway and RpcServer.
+    Handles order sending/canceling via RPC calls and publishes order/trade updates.
+    """
     def __init__(self):
         """Initializes the execution gateway service."""
-        self.logger = getLogger(__name__) # Get logger for this class
+        super().__init__()
+        self.logger = getLogger(__name__)
 
-        self.context = zmq.Context()
-
-        # Socket to receive order requests from strategies
-        self.order_puller = self.context.socket(zmq.PULL)
-        self.order_puller.bind(config.ORDER_REQUEST_PULL_URL)
-        self.logger.info(f"订单请求接收器绑定到: {config.ORDER_REQUEST_PULL_URL}")
-
-        # Socket to publish order/trade updates
-        self.report_publisher = self.context.socket(zmq.PUB)
-        self.report_publisher.bind(config.ORDER_REPORT_PUB_URL)
-        self.logger.info(f"订单/成交回报发布器绑定到: {config.ORDER_REPORT_PUB_URL}")
-
-        # +++ Add Command Socket (REP) +++
-        self.command_socket = self.context.socket(zmq.REP)
-        self.command_socket.bind(config.ORDER_GATEWAY_COMMAND_URL)
-        self.logger.info(f"指令接收器绑定到: {config.ORDER_GATEWAY_COMMAND_URL}")
-
-        # VNPY setup (similar to market data gateway)
+        # VNPY setup
         self.event_engine = EventEngine()
-        self.gateway: BaseGateway = CtpGateway(self.event_engine, "CTP_Execution") # Unique gateway name
+        self.gateway: BaseGateway = CtpGateway(self.event_engine, "CTP_Execution_RPC")
 
-        # CTP settings (primarily needs TD connection)
+        # CTP settings
         self.ctp_setting = {
             "userid": config.CTP_USER_ID,
             "password": config.CTP_PASSWORD,
             "broker_id": config.CTP_BROKER_ID,
             "td_address": config.CTP_TD_ADDRESS,
-            "md_address": config.CTP_MD_ADDRESS, # Often needed even for TD-only for contract query
+            "md_address": config.CTP_MD_ADDRESS,
             "appid": config.CTP_PRODUCT_INFO,
             "auth_code": config.CTP_AUTH_CODE,
             "env": config.CTP_ENV_TYPE
         }
 
-        self.running = False
-        self.req_thread = None # Thread for receiving ZMQ requests
         self.contracts: Dict[str, ContractData] = {}
-        self.command_thread = None # Thread for handling commands
-        self.last_account_data: AccountData | None = None # Store last account state
+        self.last_account_data: AccountData | None = None
+        self.last_account_log_time: float = 0.0 # Time of last log print for ANY account
+        self._last_account_key_values: Dict[str, Tuple[float, float]] = {} # Stores last logged (Balance, Available) per account
+        self.account_log_interval: int = 60 # Log at least every 60 seconds
 
-        # +++ 加载产品信息 +++
-        # 修正路径：从 zmq_services 目录出发，向上一级到项目根目录，再进入 config
+        # Load product info for commission calculation
         config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config'))
         info_filepath = os.path.join(config_dir, 'project_files', 'product_info.ini')
         self.logger.info(f"尝试从 {info_filepath} 加载产品信息...")
         self.commission_rules, self.contract_multipliers = load_product_info(info_filepath)
         if not self.commission_rules or not self.contract_multipliers:
              self.logger.warning("警告：未能成功加载手续费规则或合约乘数，手续费计算可能不准确！")
-        # +++ 结束加载 +++
 
-        self.logger.info("订单执行网关服务初始化完成。")
+        # Register RPC handlers
+        self.register(self.send_order)
+        self.register(self.cancel_order)
+        self.register(self.query_contracts)
+        self.register(self.query_account)
+        self.register(self.ping)
 
+        self.logger.info("订单执行网关服务(RPC模式)初始化完成。")
+
+    # --- RPC Handlers ---
+    def send_order(self, req_dict: Dict[str, Any]) -> str | None:
+        """
+        RPC handler for sending an order request.
+        Returns vt_orderid on success, None on failure.
+        """
+        self.logger.info(f"RPC: 收到 send_order 请求: {req_dict}")
+        order_request: OrderRequest | None = dict_to_order_request(req_dict)
+
+        if not order_request:
+            self.logger.error("RPC: send_order - 无法将请求转换为 OrderRequest。")
+            return None
+
+        vt_symbol = f"{order_request.symbol}.{order_request.exchange.value}"
+        contract = self.contracts.get(vt_symbol)
+        if not contract:
+            max_retries = 3
+            retry_delay = 0.2
+            for i in range(max_retries):
+                self.logger.warning(f"RPC: send_order - 合约 {vt_symbol} 尚未缓存，等待 {retry_delay} 秒后重试 ({i+1}/{max_retries})...")
+                time.sleep(retry_delay)
+                contract = self.contracts.get(vt_symbol)
+                if contract:
+                    self.logger.info(f"RPC: send_order - 重试成功，找到合约 {vt_symbol}。")
+                    break
+            if not contract:
+                self.logger.error(f"RPC: send_order - 错误: 合约 {vt_symbol} 信息不存在 (已重试)。订单无法发送。")
+                return None
+
+        try:
+            vt_orderid = self.gateway.send_order(order_request)
+            if vt_orderid:
+                self.logger.info(f"RPC: send_order - 订单已发送至 CTP: {order_request.symbol}, VT_OrderID: {vt_orderid}")
+                return vt_orderid
+            else:
+                self.logger.error(f"RPC: send_order - CTP 网关未能发送订单: {order_request.symbol}")
+                return None
+        except Exception as e:
+            self.logger.exception(f"RPC: send_order - 发送订单时 CTP 网关出错: {e}")
+            return None
+
+    def cancel_order(self, req_dict: Dict[str, Any]) -> Dict[str, str]:
+        """
+        RPC handler for cancelling an order.
+        Requires 'vt_orderid' in the request dictionary.
+        Returns a status dictionary.
+        """
+        vt_orderid = req_dict.get('vt_orderid')
+        self.logger.info(f"RPC: 收到 cancel_order 请求 for {vt_orderid}")
+        if not vt_orderid:
+            self.logger.error("RPC: cancel_order - 收到无效的撤单指令：缺少 'vt_orderid' 字段。")
+            return {"status": "error", "message": "Missing vt_orderid"}
+
+        try:
+            order_to_cancel = self.gateway.get_order(vt_orderid)
+            if not order_to_cancel:
+                self.logger.error(f"RPC: cancel_order - 尝试撤销失败：网关未找到订单 {vt_orderid}")
+                return {"status": "error", "message": f"Order {vt_orderid} not found in gateway"}
+
+            req = CancelRequest(
+                orderid=order_to_cancel.orderid,
+                symbol=order_to_cancel.symbol,
+                exchange=order_to_cancel.exchange,
+            )
+            self.gateway.cancel_order(req)
+            self.logger.info(f"RPC: cancel_order - 撤单请求已发送 for {vt_orderid}")
+            return {"status": "ok", "message": f"Cancel request sent for {vt_orderid}"}
+
+        except AttributeError:
+             self.logger.error("RPC: cancel_order - 当前网关对象不支持 get_order 方法。")
+             return {"status": "error", "message": "Gateway does not support get_order, cannot cancel."}
+        except Exception as e:
+            self.logger.exception(f"RPC: cancel_order - 处理撤单指令时出错 (vt_orderid: {vt_orderid}): {e}")
+            return {"status": "error", "message": f"Error processing cancel command: {e}"}
+
+    def query_contracts(self) -> Dict[str, Dict]:
+        """RPC handler to query available contracts."""
+        self.logger.info("RPC: 收到 query_contracts 请求")
+        return {vt_symbol: contract.to_dict() for vt_symbol, contract in self.contracts.items()}
+
+    def query_account(self) -> Dict | None:
+        """RPC handler to query the latest account data."""
+        self.logger.info("RPC: 收到 query_account 请求")
+        if self.last_account_data:
+            return self.last_account_data.to_dict()
+        else:
+            return None
+
+    # +++ Add ping method +++
+    def ping(self) -> str:
+        """Handles ping request from client."""
+        # self.logger.debug("Received ping request") # Optional: log ping
+        return "pong"
+    # +++ End add ping method +++
+
+    # --- Event Processing ---
     def process_vnpy_event(self, event: Event):
-        """Processes ORDER, TRADE, LOG, and CONTRACT events."""
+        """Processes events from the EventEngine and publishes them via RPC."""
         event_type = event.type
 
         if event_type == EVENT_ORDER:
             order: OrderData = event.data
-            self.publish_report(order, "ORDER_STATUS")
+            # self.publish(f"order.{order.vt_orderid}", order) # <-- Comment out
+            try:
+                topic_bytes = f"order.{order.vt_orderid}".encode('utf-8')
+                data_bytes = pickle.dumps(order)
+                self._socket_pub.send_multipart([topic_bytes, data_bytes])
+            except Exception as e:
+                self.logger.exception(f"手动发送 multipart Order 时出错: {e}")
+
         elif event_type == EVENT_TRADE:
             trade: TradeData = event.data
             calculated_commission = 0.0
-            
-            # +++ 使用加载的规则计算手续费 +++
             contract = self.contracts.get(trade.vt_symbol)
-            # 注意：手续费规则使用 symbol (e.g., "SA505"), 合约信息使用 vt_symbol
             rules = self.commission_rules.get(trade.symbol)
 
             if contract and rules:
-                # 获取乘数 (这里不再需要，因为计算时直接用 contract.size)
-                # multiplier = self.contract_multipliers.get(trade.symbol, 1) # 确保乘数存在
-                
                 turnover = trade.price * trade.volume * contract.size
                 rate = 0.0
                 fixed = 0.0
                 min_comm = rules.get('min_commission', 0.0)
-                
                 if trade.offset == Offset.OPEN:
                     rate = rules.get('open_rate', 0.0)
                     fixed = rules.get('open_fixed', 0.0)
-                elif trade.offset in [Offset.CLOSE, Offset.CLOSETODAY, Offset.CLOSEYESTERDAY]: 
+                elif trade.offset in [Offset.CLOSE, Offset.CLOSETODAY, Offset.CLOSEYESTERDAY]:
                     rate = rules.get('close_rate', 0.0)
                     fixed = rules.get('close_fixed', 0.0)
-                # else: # Assume default handling or log warning if offset is unexpected
-                #     self.logger.warning(f"未知的开平仓方向 {trade.offset} 用于手续费计算，默认按开仓处理。")
-                #     rate = rules.get('open_rate', 0.0)
-                #     fixed = rules.get('open_fixed', 0.0)
-
                 if fixed > 0:
                     calculated_commission = trade.volume * fixed
                 elif rate > 0:
                     calculated_commission = turnover * rate
-                
                 calculated_commission = max(calculated_commission, min_comm)
-                # print(f"收到成交回报: {trade.vt_tradeid}, 使用加载规则计算手续费: {calculated_commission:.2f}") # 更新日志
-
-                # Log the trade information
-                # self.logger.info(f"收到成交回报: TradeID={trade.vt_tradeid}, Symbol={trade.symbol}, Dir={trade.direction.value}, Off={trade.offset.value}, Px={trade.price}, Vol={trade.volume}, Commission={calculated_commission:.2f}")
-            
+                trade.calculated_commission = calculated_commission
             elif not contract:
                 self.logger.warning(f"未找到成交 {trade.vt_tradeid} 对应的合约信息 ({trade.vt_symbol})，手续费计为 0。")
             elif not rules:
                  self.logger.warning(f"未找到成交 {trade.vt_tradeid} 对应的手续费规则 ({trade.symbol})，手续费计为 0。")
-            # +++ 结束计算 +++
 
-            self.publish_report(trade, "TRADE", calculated_commission=calculated_commission)
+            # self.publish(f"trade.{trade.vt_symbol}", trade) # <-- Comment out
+            try:
+                topic_bytes = f"trade.{trade.vt_symbol}".encode('utf-8')
+                data_bytes = pickle.dumps(trade)
+                self._socket_pub.send_multipart([topic_bytes, data_bytes])
+            except Exception as e:
+                self.logger.exception(f"手动发送 multipart Trade 时出错: {e}")
+
         elif event_type == EVENT_LOG:
             log: LogData = event.data
-            # Map vnpy log level
-            level_map = {
-                logging.DEBUG: logging.DEBUG,
-                logging.INFO: logging.INFO,
-                logging.WARNING: logging.WARNING,
-                logging.ERROR: logging.ERROR,
-                logging.CRITICAL: logging.CRITICAL,
-            }
-            log_level_attr = getattr(log, 'level', logging.INFO)
-            log_level_value = log_level_attr
-            if hasattr(log_level_attr, 'value') and isinstance(log_level_attr.value, int):
-                log_level_value = log_level_attr.value
-            elif not isinstance(log_level_attr, int):
-                 log_level_value = logging.INFO
+            # self.publish("log", log) # <-- Comment out
+            level_map = { logging.DEBUG: logging.DEBUG, logging.INFO: logging.INFO, logging.WARNING: logging.WARNING, logging.ERROR: logging.ERROR, logging.CRITICAL: logging.CRITICAL }
+            log_level_value = getattr(log, 'level', logging.INFO)
+            if hasattr(log_level_value, 'value'): log_level_value = log_level_value.value
+            if not isinstance(log_level_value, int): log_level_value = logging.INFO
             logger_level = level_map.get(log_level_value, logging.INFO)
-
             gateway_name = getattr(log, 'gateway_name', 'UnknownGateway')
-            # Add ExecGW prefix to distinguish from MarketDataGateway logs if needed
-            self.logger.log(logger_level, f"[VNPY LOG - ExecGW] {gateway_name} - {log.msg}")
-        elif event_type == EVENT_ACCOUNT:
-             # --- Process AccountData only if key fields changed --- 
-             account: AccountData = event.data
-             has_key_fields_changed = False
-             if self.last_account_data is None:
-                 has_key_fields_changed = True
-             else:
-                 # Compare margin, frozen, commission - adjust fields as needed
-                 if (getattr(account, 'margin', None) != getattr(self.last_account_data, 'margin', None) or
-                     getattr(account, 'frozen', None) != getattr(self.last_account_data, 'frozen', None) or
-                     getattr(account, 'commission', None) != getattr(self.last_account_data, 'commission', None)):
-                      has_key_fields_changed = True
+            self.logger.log(logger_level, f"[VNPY LOG - ExecRPC] {gateway_name} - {log.msg}")
 
-             if has_key_fields_changed:
-                 self.last_account_data = account # Update stored data
-                 self.logger.info(f"账户关键信息更新 (GW): AccountID={account.accountid}, Balance={account.balance:.2f}, Available={account.available:.2f}, Margin={getattr(account, 'margin', 0.0):.2f}")
-                 self.publish_report(account, "ACCOUNT_DATA")
-             # --- End change check --- 
+            # ... (local logging logic remains the same) ...
+            try:
+                topic_bytes = b"log"
+                data_bytes = pickle.dumps(log)
+                self._socket_pub.send_multipart([topic_bytes, data_bytes])
+            except Exception as e:
+                 self.logger.exception(f"手动发送 multipart Log 时出错: {e}")
+
+        elif event_type == EVENT_ACCOUNT:
+            account: AccountData = event.data
+            self.last_account_data = account # Store the latest full data
+
+            # --- Throttle Account Update Logging ---
+            current_time = time.time()
+            accountid = getattr(account, 'accountid', 'N/A')
+            balance = getattr(account, 'balance', 0.0)
+            available = getattr(account, 'available', 0.0)
+            margin = getattr(account, 'margin', 0.0) # Keep for logging
+            frozen = getattr(account, 'frozen', 0.0) # Keep for logging
+
+            # Get last logged values for this specific account
+            last_balance, last_available = self._last_account_key_values.get(accountid, (None, None))
+
+            # Determine if logging is needed
+            log_due_to_time = (current_time - self.last_account_log_time) >= self.account_log_interval
+            log_due_to_change = (last_balance is None or balance != last_balance or available != last_available)
+
+            if log_due_to_change or log_due_to_time:
+                self.logger.info(
+                    f"账户关键信息更新 (RPC): AccountID={accountid}, "
+                    f"Balance={balance:.2f}, Available={available:.2f}, "
+                    f"Margin={margin:.2f}, Frozen={frozen:.2f}"
+                )
+                # Update last logged values and time
+                self._last_account_key_values[accountid] = (balance, available)
+                self.last_account_log_time = current_time # Reset time threshold after logging for any account
+            # --- End Throttle ---
+
+            # Publish account data regardless of logging
+            try:
+                topic_bytes = f"account.{account.accountid}".encode('utf-8')
+                data_bytes = pickle.dumps(account)
+                self._socket_pub.send_multipart([topic_bytes, data_bytes])
+            except Exception as e:
+                 self.logger.exception(f"手动发送 multipart Account 时出错: {e}")
+
         elif event_type == EVENT_CONTRACT:
              contract: ContractData = event.data
-             self.contracts[contract.vt_symbol] = contract # Store contract details
-             # print(f"收到合约信息: {contract.vt_symbol}") # Debug
+             self.contracts[contract.vt_symbol] = contract
+             # self.publish(f"contract.{contract.vt_symbol}", contract) # <-- Comment out
+             try:
+                 topic_bytes = f"contract.{contract.vt_symbol}".encode('utf-8')
+                 data_bytes = pickle.dumps(contract)
+                 self._socket_pub.send_multipart([topic_bytes, data_bytes])
+             except Exception as e:
+                 self.logger.exception(f"手动发送 multipart Contract 时出错: {e}")
 
-    def publish_report(self, data_object, report_type: str, calculated_commission: float = None):
-        """Serializes and publishes reports via ZeroMQ, adding calculated commission if provided."""
-        if isinstance(data_object, OrderData):
-            topic_str = f"ORDER_STATUS.{data_object.vt_symbol}"
-        elif isinstance(data_object, TradeData):
-            topic_str = f"TRADE.{data_object.vt_symbol}"
-        elif isinstance(data_object, AccountData):
-             topic_str = f"ACCOUNT_DATA.{data_object.accountid}"
-        else:
-            self.logger.warning(f"收到未知类型回报，无法发布: {type(data_object)}")
-            return
-
-        topic = topic_str.encode('utf-8')
-        serializable_data = vnpy_data_to_dict(data_object)
-
-        # +++ 添加计算出的手续费 +++
-        if report_type == "TRADE" and calculated_commission is not None:
-            serializable_data['calculated_commission'] = calculated_commission
-            # print(f"  添加 calculated_commission: {calculated_commission} 到回报数据") # Debug
-        # +++ 结束添加 +++
-
-        message = {
-            "topic": topic_str,
-            "type": report_type,
-            "source": "OrderExecutionGateway",
-            "timestamp": time.time_ns(),
-            "data": serializable_data
-        }
-
-        try:
-            packed_message = msgpack.packb(message, default=vnpy_data_to_dict, use_bin_type=True)
-            self.report_publisher.send_multipart([topic, packed_message])
-        except Exception as err:
-            self.logger.exception(f"序列化或发布回报时出错 ({topic_str})")
-            self.logger.exception(f"详细错误信息: {err}")
-            # Avoid logging full data object in production
-            # self.logger.debug(f"Failed report data (partial): {{'topic': '{topic_str}', 'type': '{report_type}', ...}}")
-
-    def _handle_cancel_order_command(self, command_data: dict) -> dict:
-        """Handles a cancel order command received via ZMQ."""
-        vt_orderid = command_data.get('vt_orderid')
-        if not vt_orderid:
-            self.logger.error("收到无效的撤单指令：缺少 'vt_orderid' 字段。")
-            return {"status": "error", "message": "Missing vt_orderid"}
-
-        # Find the original order request details (optional but good practice)
-        # This requires storing active orders or querying the gateway if possible
-        # For now, directly create CancelRequest using vt_orderid
-        
-        # We need symbol and exchange for CancelRequest. We might not have them readily.
-        # Hacky approach: Extract from vt_orderid if format is consistent (e.g., "GatewayName.OrderID")
-        # Better approach: Requires querying gateway for order details or storing order details locally.
-        # Assuming we cannot easily get symbol/exchange, we might need to adjust CancelRequest handling
-        # or how the Risk Manager sends the request.
-        # Let's try to infer from vt_orderid (assuming format "Gateway.Exchange.Symbol.LocalID")
-        # This is very fragile!
-        parts = vt_orderid.split('.')
-        if len(parts) < 3:
-             self.logger.error(f"无法从 vt_orderid '{vt_orderid}' 推断 symbol/exchange 来创建撤单请求。")
-             return {"status": "error", "message": f"Cannot parse vt_orderid: {vt_orderid}"}
-
-        # Inferring symbol and exchange (VERY FRAGILE - NEEDS REVIEW)
-        # Example: CTP.SHFE.rb2310.12345 -> exchange=SHFE, symbol=rb2310
-        try:
-            # We need the OrderData object associated with vt_orderid to get exact details.
-            # Let's search the gateway's orders (assuming it has a get_order method)
-            order_to_cancel = self.gateway.get_order(vt_orderid)
-            if not order_to_cancel:
-                self.logger.error(f"尝试撤销订单失败：在网关中未找到订单 {vt_orderid}")
-                return {"status": "error", "message": f"Order {vt_orderid} not found in gateway"}
-
-            req = CancelRequest(
-                orderid=order_to_cancel.orderid, # Use the gateway's internal order ID
-                symbol=order_to_cancel.symbol,
-                exchange=order_to_cancel.exchange,
-                # vt_orderid=vt_orderid # vt_orderid is usually not part of CancelRequest
-            )
-            self.logger.info(f"收到撤单指令，尝试撤销订单: {vt_orderid} (Symbol: {req.symbol}, Exchange: {req.exchange.value})")
-            self.gateway.cancel_order(req)
-            return {"status": "ok", "message": f"Cancel request sent for {vt_orderid}"}
-
-        except AttributeError:
-             self.logger.error("当前网关对象不支持 get_order 方法，无法获取撤单所需信息。")
-             return {"status": "error", "message": "Gateway does not support get_order"}
-        except Exception as err:
-            self.logger.exception(f"处理撤单指令时发生错误 (vt_orderid: {vt_orderid})")
-            return {"status": "error", "message": f"Error processing cancel command: {err}"}
-
-    def process_commands(self):
-        """Runs in a separate thread to process incoming ZMQ commands (REP socket)."""
-        self.logger.info("指令处理线程已启动。")
-        while self.running:
-            try:
-                # Blocking receive on REP socket
-                packed_request = self.command_socket.recv()
-                if not self.running: # Check again after recv returns
-                    break
-
-                command_msg = msgpack.unpackb(packed_request, raw=False)
-                command_type = command_msg.get('type', 'UNKNOWN')
-                command_data = command_msg.get('data', {})
-                self.logger.info(f"收到指令: Type={command_type}, Data={command_data}")
-
-                reply_data = {"status": "error", "message": "Unknown command type"}
-                if command_type == "CANCEL_ORDER":
-                    reply_data = self._handle_cancel_order_command(command_data)
-                # Add handlers for other command types here
-                elif command_type == "PING":
-                    self.logger.debug("Received PING, sending PONG") # Use debug level for frequent messages
-                    reply_data = {"status": "ok", "reply": "PONG"}
-
-                # Send reply back via REP socket
-                packed_reply = msgpack.packb(reply_data, use_bin_type=True)
-                self.command_socket.send(packed_reply)
-
-            except zmq.ZMQError as e:
-                if e.errno == zmq.ETERM or not self.running:
-                    self.logger.info("指令处理线程：ZMQ Context 已终止或服务停止。")
-                    break # Exit loop cleanly
-                else:
-                     self.logger.error(f"指令处理线程 ZMQ 错误: {e}")
-                     time.sleep(1)
-            except msgpack.UnpackException as e:
-                 self.logger.error(f"指令消息解码错误: {e}")
-            except Exception as err:
-                 self.logger.exception(f"处理指令时发生未知错误：{err}")
-                 # Send generic error reply if possible
-                 try:
-                     err_reply = {"status": "error", "message": "Internal server error"}
-                     self.command_socket.send(msgpack.packb(err_reply, use_bin_type=True))
-                 except Exception as send_err:
-                     self.logger.error(f"发送错误回复失败: {send_err}")
-                 time.sleep(1)
-
-        self.logger.info("指令处理线程已停止。")
-
-    def process_order_requests(self):
-        """Runs in a separate thread to process incoming ZMQ order requests."""
-        self.logger.info("订单请求处理线程已启动。")
-        while self.running:
-            try:
-                # Blocking recv on the PULL socket
-                packed_request = self.order_puller.recv()
-                if not self.running: # Check again after recv returns
-                    break
-
-                request_msg = msgpack.unpackb(packed_request, raw=False)
-                request_data = request_msg.get('data')
-                # self.logger.debug(f"收到订单请求消息: {request_data}") # Use debug for potentially large data
-                self.logger.info(f"收到订单请求: {request_data.get('symbol')}, {request_data.get('direction')}, Vol:{request_data.get('volume')}") # Log key info
-
-                if not request_data:
-                    self.logger.error("错误：收到的订单请求消息缺少 'data' 字段。")
-                    continue
-
-                # Convert dict to vnpy OrderRequest
-                order_request = dict_to_order_request(request_data)
-
-                if order_request:
-                    # +++ 检查合约是否存在 (带重试) +++
-                    vt_symbol = f"{order_request.symbol}.{order_request.exchange.value}"
-                    contract = self.contracts.get(vt_symbol)
-                    if not contract:
-                        # 如果合约不存在，稍等片刻重试几次
-                        max_retries = 5
-                        retry_delay = 0.2 # 秒
-                        for i in range(max_retries):
-                            self.logger.warning(f"合约 {vt_symbol} 尚未缓存，等待 {retry_delay} 秒后重试 ({i+1}/{max_retries})...")
-                            time.sleep(retry_delay)
-                            contract = self.contracts.get(vt_symbol)
-                            if contract:
-                                self.logger.info(f"信息: 重试成功，找到合约 {vt_symbol}。")
-                                break # 找到合约，跳出重试循环
-                        
-                        # 如果重试后仍然找不到
-                        if not contract:
-                            self.logger.error(f"错误: 尝试下单的合约 {vt_symbol} 信息不存在 (已重试 {max_retries} 次)。订单无法发送。")
-                            # 可以选择性地发送拒绝回报给策略
-                            # self.send_rejection_report(order_request, "合约不存在")
-                            continue # 跳过此订单
-                    # +++ 结束检查 +++
-
-                    vt_orderid = self.gateway.send_order(order_request)
-                    if vt_orderid:
-                        self.logger.info(f"订单请求已发送至 CTP 网关: {order_request.symbol}, 本地ID: {vt_orderid}")
-                    else:
-                        self.logger.error(f"CTP 网关未能发送订单请求: {order_request.symbol}")
-                        # Optionally publish a rejection status back?
-                else:
-                    self.logger.error("无法将收到的消息转换为有效的 OrderRequest。")
-                    # Optionally publish a rejection status back?
-
-            except zmq.ZMQError as err:
-                if err.errno == zmq.ETERM:
-                    self.logger.info(f"订单请求线程：ZMQ Context 已终止。：{err}")
-                    break # Exit loop cleanly
-                else:
-                     self.logger.error(f"订单请求线程 ZMQ 错误: {err}")
-                     time.sleep(1)
-            except msgpack.UnpackException as err:
-                 self.logger.error(f"订单请求消息解码错误: {err}")
-            except Exception as err:
-                 self.logger.exception(f"处理订单请求时发生未知错误: {err}")
-                 # Log traceback here in production
-                 time.sleep(1)
-
-        self.logger.info("订单请求处理线程已停止。")
-
+    # --- Lifecycle Management ---
     def start(self):
-        """Starts the event engine, connects the gateway, and starts the request thread."""
-        # 先加载配置
-        setting: dict = load_json("connect_ctp.json")
-        self.logger.info(f"Connecting to CTP server {setting["env"]} "
-                         f"td_address: {setting["td_address"]} "
-                         f"md_address: {setting["md_address"]}")
-        if self.running:
-            self.logger.warning("订单执行网关服务已在运行中。")
+        """Starts the RpcServer, EventEngine, and connects the gateway."""
+        if self.is_active():
+            self.logger.warning("订单执行网关服务(RPC模式)已在运行中。")
             return
 
-        self.logger.info("启动订单执行网关服务...")
-        self.running = True
+        self.logger.info("启动订单执行网关服务(RPC模式)...")
 
-        # Start vnpy event engine
+        try:
+            super().start(
+                rep_address=config.ORDER_GATEWAY_REP_ADDRESS,
+                pub_address=config.ORDER_GATEWAY_PUB_ADDRESS
+            )
+            self.logger.info(f"RPC 服务器已启动。 REP: {config.ORDER_GATEWAY_REP_ADDRESS}, PUB: {config.ORDER_GATEWAY_PUB_ADDRESS}")
+        except Exception as e:
+            self.logger.exception(f"启动 RPC 服务器失败: {e}")
+            return
+
         self.event_engine.register(EVENT_ORDER, self.process_vnpy_event)
         self.event_engine.register(EVENT_TRADE, self.process_vnpy_event)
         self.event_engine.register(EVENT_LOG, self.process_vnpy_event)
         self.event_engine.register(EVENT_CONTRACT, self.process_vnpy_event)
-        self.event_engine.register(EVENT_ACCOUNT, self.process_vnpy_event) # Register for account events
+        self.event_engine.register(EVENT_ACCOUNT, self.process_vnpy_event)
         self.event_engine.start()
         self.logger.info("事件引擎已启动。")
 
-        # Connect CTP gateway
+        self.logger.info("连接 CTP 网关...")
         try:
+            setting_json: dict = load_json("connect_ctp.json")
+            self.logger.info(f"CTP 连接配置 (JSON): Env={setting_json.get('env', 'N/A')}, "
+                             f"TD={setting_json.get('td_address', 'N/A')}, "
+                             f"MD={setting_json.get('md_address', 'N/A')}")
             self.gateway.connect(self.ctp_setting)
             self.logger.info("CTP 交易网关连接请求已发送。等待连接成功...")
-            # Ideally, wait for a connection success log/event
-            time.sleep(10) # Simple wait
-            self.logger.info("CTP 交易网关应已连接。")
-            self.logger.info("CTP 交易网关假定连接成功（基于延时）。") # Log assumption
+            # TODO: Implement event-based waiting for connection status
+            time.sleep(10)
+            self.logger.info("CTP 交易网关假定连接成功（基于延时）。")
+            # Removed incorrect calls to query_contract and query_account
+            # Contract and account data should arrive via events after connection
         except Exception as err:
-            self.logger.exception(f"连接 CTP 交易网关时发生严重错误: {err}")
+            self.logger.exception(f"连接或查询 CTP 交易网关时发生严重错误: {err}")
             self.stop()
             return
 
-        # Start the ZMQ request processing thread
-        self.req_thread = threading.Thread(target=self.process_order_requests)
-        self.req_thread.daemon = True # Allow main thread to exit even if this thread is running
-        self.req_thread.start()
-
-        # Start the command processing thread
-        self.command_thread = threading.Thread(target=self.process_commands)
-        self.command_thread.daemon = True
-        self.command_thread.start()
-
-        self.logger.info("订单执行网关服务启动完成。")
+        self.logger.info("订单执行网关服务(RPC模式)启动完成。")
 
     def stop(self):
-        """Stops the service and cleans up resources."""
-        if not self.running:
-            self.logger.warning("订单执行网关服务未运行。")
+        """Stops the EventEngine, CTP Gateway, and RpcServer."""
+        if not self.is_active():
+            self.logger.warning("订单执行网关服务(RPC模式)未运行。")
             return
 
-        self.logger.info("停止订单执行网关服务...")
-        self.running = False # 1. Signal threads to stop
+        self.logger.info("停止订单执行网关服务(RPC模式)...")
 
-        # 2. Stop Vnpy components first
         try:
-            # Use is_active() if available, fallback to _active
-            if hasattr(self.event_engine, 'is_active') and self.event_engine.is_active():
-                self.event_engine.stop()
-                self.logger.info("事件引擎已停止。")
-            elif hasattr(self.event_engine, '_active') and self.event_engine._active: # Fallback
+            if hasattr(self.event_engine, '_active') and self.event_engine._active:
                 self.event_engine.stop()
                 self.logger.info("事件引擎已停止。")
             else:
-                 self.logger.warning("无法确定事件引擎状态或引擎已停止。")
+                 self.logger.warning("事件引擎未运行或状态未知。")
         except Exception as e:
             self.logger.exception(f"停止事件引擎时出错: {e}")
 
@@ -605,83 +487,38 @@ class OrderExecutionGatewayService:
             except Exception as e:
                 self.logger.exception(f"关闭 CTP 网关时出错: {e}")
 
-        # 3. Terminate the ZMQ Context - This should unblock threads stuck in recv()
-        if self.context:
-            try:
-                self.logger.info("正在终止 ZeroMQ Context 以解除线程阻塞...")
-                # Check if context is already terminated to avoid errors on double term
-                if not self.context.closed:
-                    self.context.term()
-                    self.logger.info("ZeroMQ Context 已终止。")
-                else:
-                    self.logger.info("ZeroMQ Context 已被关闭。")
-            except zmq.ZMQError as err:
-                 # Log error but continue cleanup
-                 self.logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {err}")
-            # Optionally set self.context = None here if needed elsewhere
+        super().stop()
+        self.logger.info("RPC 服务器已停止。")
 
-        # 4. Join the threads - Wait for them to exit cleanly
-        if self.req_thread and self.req_thread.is_alive():
-            self.logger.info("等待订单请求处理线程退出...")
-            self.req_thread.join(timeout=5) # Wait for thread to finish
-            if self.req_thread.is_alive():
-                self.logger.warning("警告：订单请求处理线程未在超时内退出。")
-
-        if self.command_thread and self.command_thread.is_alive():
-            self.logger.info("等待指令处理线程退出...")
-            self.command_thread.join(timeout=5)
-            if self.command_thread.is_alive():
-                self.logger.warning("警告：指令处理线程未在超时内退出。")
-
-        # 5. Close the ZMQ Sockets LAST - Now safe as threads are joined and context is terminated
-        self.logger.info("正在关闭 ZeroMQ 套接字...")
-        if self.order_puller:
-             try:
-                 # LINGER option before closing is still recommended
-                 self.order_puller.setsockopt(zmq.LINGER, 0)
-                 self.order_puller.close()
-                 self.logger.info("ZeroMQ 订单请求接收器已关闭。")
-             except zmq.ZMQError as err:
-                 self.logger.error(f"关闭 order_puller 时出错 (可能已关闭或 Context 已终止): {err}")
-        if self.report_publisher:
-             try:
-                 self.report_publisher.setsockopt(zmq.LINGER, 0)
-                 self.report_publisher.close()
-                 self.logger.info("ZeroMQ 订单/成交回报发布器已关闭。")
-             except zmq.ZMQError as err:
-                  self.logger.error(f"关闭 report_publisher 时出错 (可能已关闭或 Context 已终止): {err}")
-        if self.command_socket:
-             try:
-                 self.command_socket.setsockopt(zmq.LINGER, 0)
-                 self.command_socket.close()
-                 self.logger.info("ZeroMQ 指令接收器已关闭。")
-             except zmq.ZMQError as err:
-                 self.logger.error(f"关闭 command_socket 时出错 (可能已关闭或 Context 已终止): {err}")
-
-        self.logger.info("订单执行网关服务已停止。")
+        self.logger.info("订单执行网关服务(RPC模式)已停止。")
 
 # --- Main execution block (for testing) ---
 if __name__ == "__main__":
-    logger_main = getLogger(__name__)
-    # Setup logging for direct execution test
     try:
-        setup_logging(service_name="OrderExecutionGateway_DirectRun")
+        setup_logging(service_name="OrderExecutionGateway_DirectRunRPC")
     except ImportError as log_err:
-        logger_main.critical(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
         sys.exit(1)
 
-    logger_main.info("Starting direct test run...")
+    logger_main = getLogger(__name__)
+    logger_main.info("Starting direct test run (RPC Mode)...")
+
+    if not hasattr(config, 'ORDER_GATEWAY_REP_ADDRESS') or \
+       not hasattr(config, 'ORDER_GATEWAY_PUB_ADDRESS'):
+        logger_main.critical("错误：配置文件 config.zmq_config 缺少 ORDER_GATEWAY_REP_ADDRESS 或 ORDER_GATEWAY_PUB_ADDRESS。")
+        sys.exit(1)
+
     gw_service = OrderExecutionGatewayService()
     gw_service.start()
 
     try:
-        # Keep main thread alive
-        while True:
+        while gw_service.is_active():
             time.sleep(1)
     except KeyboardInterrupt:
         logger_main.info("主程序接收到中断信号，正在停止...")
     except Exception as e:
         logger_main.exception(f"主测试循环发生未处理错误：{e}")
     finally:
+        logger_main.info("开始停止服务...")
         gw_service.stop()
-        logger_main.info("订单执行网关测试运行结束。")
+        logger_main.info("订单执行网关测试运行结束 (RPC Mode)。")
