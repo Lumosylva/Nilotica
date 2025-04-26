@@ -19,14 +19,14 @@ def main():
 
     logger.info("正在初始化数据记录器...")
 
-    # Get connection URLs and recording path from config
-    md_url = config.MARKET_DATA_PUB_URL.replace("*", "localhost")
-    report_url = config.ORDER_REPORT_PUB_URL.replace("*", "localhost")
+    # Get connection URLs and recording path from config using RPC addresses
+    md_pub_addr = config.MARKET_DATA_PUB_ADDRESS.replace("*", "localhost")
+    order_pub_addr = config.ORDER_GATEWAY_PUB_ADDRESS.replace("*", "localhost")
     rec_path = config.DATA_RECORDING_PATH
     # Ensure the path is absolute and uses correct OS separators
     rec_path = os.path.abspath(rec_path)
 
-    recorder = DataRecorderService(md_url, report_url, rec_path)
+    recorder = DataRecorderService(md_pub_addr, order_pub_addr, rec_path)
 
     logger.info("尝试启动数据记录器...")
     try:
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     # Now import logger setup
     try:
         from logger import setup_logging, getLogger
-        setup_logging(service_name="DataRecorderRunner") # Set service name
+        setup_logging(service_name="DataRecorderRunner", level="INFO") # <-- Change level to INFO
     except ImportError as log_err:
         print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
         sys.exit(1)
