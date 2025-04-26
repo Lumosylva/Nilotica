@@ -1,163 +1,101 @@
-import zmq
-import msgpack
 import time
-import threading
 from datetime import datetime
 import logging
 from logger import getLogger
-
-# VNPY imports - Adjust paths if necessary based on your project structure
-# Assuming zmq_services is at the same level as vnpy, vnpy_ctp etc.
 import sys
 import os
+import pickle
 
 from vnpy.trader.utility import load_json
-
 # Add project root to Python path to find vnpy modules
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# VNPY imports
 try:
     from vnpy.event import EventEngine, Event
     from vnpy.trader.gateway import BaseGateway
-    from vnpy.trader.object import TickData, SubscribeRequest, LogData
-    from vnpy.trader.event import EVENT_TICK, EVENT_LOG, EVENT_CONTRACT # Import necessary events
-    from vnpy.trader.setting import SETTINGS # Use vnpy's global settings if preferred
-    from vnpy_ctp import CtpGateway # Import the specific gateway
+    from vnpy.trader.object import TickData, SubscribeRequest, LogData, ContractData # Added ContractData
+    from vnpy.trader.event import EVENT_TICK, EVENT_LOG, EVENT_CONTRACT
+    # from vnpy.trader.setting import SETTINGS # Not used directly
+    from vnpy_ctp import CtpGateway
+    from vnpy.rpc import RpcServer # Import RpcServer
+    from vnpy.trader.constant import Exchange # Import Exchange here
 except ImportError as e:
-    print(f"Error importing vnpy modules: {e}")
-    print("Please ensure vnpy and vnpy_ctp are installed and accessible.")
-    print(f"CRITICAL: Project root added to path: {project_root}")
-    print(f"CRITICAL: Current sys.path: {sys.path}")
+    # Use logger if available, otherwise print
+    try:
+        getLogger(__name__).critical(f"Error importing vnpy modules: {e}", exc_info=True)
+    except Exception:
+        print(f"CRITICAL: Error importing vnpy modules: {e}")
+        print("Please ensure vnpy and vnpy_ctp are installed and accessible.")
+        print(f"CRITICAL: Project root added to path: {project_root}")
+        print(f"CRITICAL: Current sys.path: {sys.path}")
     sys.exit(1)
 
 # Import new config location
-from config import zmq_config as config
-
-# --- Helper Function for Serialization ---
-def vnpy_object_to_dict(obj):
-    """Converts specific vnpy objects to a dictionary suitable for msgpack."""
-    logger = getLogger('vnpy_object_to_dict') # Get logger for this helper function
-
-    if isinstance(obj, TickData):
-        # Explicitly list fields to include and handle conversions
-        dt_iso = obj.datetime.isoformat() if obj.datetime else None
-        lt_iso = obj.localtime.isoformat() if obj.localtime else None # Handle localtime if present
-        exchange_val = obj.exchange.value if hasattr(obj.exchange, 'value') else str(obj.exchange)
-
-        return {
-            "gateway_name": obj.gateway_name,
-            "symbol": obj.symbol,
-            "exchange": exchange_val, # Use converted value
-            "datetime": dt_iso,       # Use converted value
-            "name": obj.name,
-            "volume": obj.volume,
-            "turnover": obj.turnover,
-            "open_interest": obj.open_interest,
-            "last_price": obj.last_price,
-            "last_volume": obj.last_volume,
-            "limit_up": obj.limit_up,
-            "limit_down": obj.limit_down,
-            "open_price": obj.open_price,
-            "high_price": obj.high_price,
-            "low_price": obj.low_price,
-            "pre_close": obj.pre_close,
-            "bid_price_1": obj.bid_price_1,
-            "bid_price_2": obj.bid_price_2,
-            "bid_price_3": obj.bid_price_3,
-            "bid_price_4": obj.bid_price_4,
-            "bid_price_5": obj.bid_price_5,
-            "ask_price_1": obj.ask_price_1,
-            "ask_price_2": obj.ask_price_2,
-            "ask_price_3": obj.ask_price_3,
-            "ask_price_4": obj.ask_price_4,
-            "ask_price_5": obj.ask_price_5,
-            "bid_volume_1": obj.bid_volume_1,
-            "bid_volume_2": obj.bid_volume_2,
-            "bid_volume_3": obj.bid_volume_3,
-            "bid_volume_4": obj.bid_volume_4,
-            "bid_volume_5": obj.bid_volume_5,
-            "ask_volume_1": obj.ask_volume_1,
-            "ask_volume_2": obj.ask_volume_2,
-            "ask_volume_3": obj.ask_volume_3,
-            "ask_volume_4": obj.ask_volume_4,
-            "ask_volume_5": obj.ask_volume_5,
-            "localtime": lt_iso,      # Use converted value
-            "vt_symbol": obj.vt_symbol
-            # Add other fields from TickData if necessary and ensure they are serializable
-        }
-    # Add handling for other vnpy objects if needed (e.g., BarData, OrderData)
-    elif isinstance(obj, datetime): # Handle standalone datetime objects if they appear in data
-        return obj.isoformat()
-    # Add specific handlers for BarData, OrderData, PositionData etc. if you plan to publish them
-    # elif isinstance(obj, BarData): ...
-    else:
-        # Fallback for basic types that msgpack can handle directly
-        if isinstance(obj, (str, int, float, bool, list, tuple, dict, bytes, type(None))):
-            return obj
-        # Try generic __dict__ as a last resort, but might fail for complex types
-        try:
-            d = obj.__dict__
-            # Recursively convert nested objects (be careful with circular references)
-            # This is a simple recursion, might need improvement
-            for key, value in d.items():
-                 d[key] = vnpy_object_to_dict(value) # Apply conversion recursively
-            return d
-        except AttributeError:
-            # Final fallback for unhandled types
-            logger.warning(f"Unhandled type encountered during serialization: {type(obj)}. Converting to string.")
-            return str(obj)
-
+from config import zmq_config as config # Ensure this has REP and PUB addresses
 
 # --- Market Data Gateway Service ---
-class MarketDataGatewayService:
+# Inherit from RpcServer
+class MarketDataGatewayService(RpcServer):
+    """
+    Market data gateway service that uses CtpGateway for data collection
+    and RpcServer for publishing data.
+    """
     def __init__(self):
         """Initializes the gateway service."""
+        super().__init__() # Initialize the RpcServer base class
+
         self.logger = getLogger(__name__)
-        self.context = zmq.Context()
-        self.publisher = self.context.socket(zmq.PUB)
-        self.publisher.bind(config.MARKET_DATA_PUB_URL)
-        self.logger.info(f"行情发布器绑定到: {config.MARKET_DATA_PUB_URL}")
-        # 创建事件引擎
+
+        # Create EventEngine for the gateway
         self.event_engine = EventEngine()
-        # 创建CTP接口
-        self.gateway: BaseGateway = CtpGateway(self.event_engine, "CTP_MarketData") # Use a unique gateway name
+
+        # Create CTP gateway instance
+        # Gateway name is important if multiple gateways run via RPC
+        self.gateway: BaseGateway = CtpGateway(self.event_engine, "CTP_MarketData")
 
         # Prepare CTP gateway settings from config
         self.ctp_setting = {
             "userid": config.CTP_USER_ID,
             "password": config.CTP_PASSWORD,
             "broker_id": config.CTP_BROKER_ID,
-            "td_address": config.CTP_TD_ADDRESS, # Needed for login, even if only using MD
+            "td_address": config.CTP_TD_ADDRESS, # Needed for login
             "md_address": config.CTP_MD_ADDRESS,
             "appid": config.CTP_PRODUCT_INFO,
             "auth_code": config.CTP_AUTH_CODE,
             "env": config.CTP_ENV_TYPE
         }
-        # Map keys if vnpy_ctp expects different keys (check CtpGateway.connect)
-        # Example mapping if needed:
-        # self.ctp_setting = {
-        #     "userID": config.CTP_USER_ID,
-        #     "password": config.CTP_PASSWORD,
-        #     # ... map other keys ...
-        # }
 
-        self.running = False
-        self._subscribe_list = [] # Store pending subscriptions
+        self._subscribe_list = [] # Store successful subscriptions
 
-        self.logger.info("行情网关服务初始化完成。")
+        self.logger.info("行情网关服务(RPC模式)初始化完成。")
 
     def process_event(self, event: Event):
         """Processes events from the EventEngine."""
         event_type = event.type
         if event_type == EVENT_TICK:
             tick: TickData = event.data
-            # print(f"收到Tick: {tick.vt_symbol} - Price: {tick.last_price}") # Debug print
-            self.publish_data(tick)
+            # self.publish(f"tick.{tick.vt_symbol}", tick)  # <-- Commented out problematic call
+            self.logger.debug(f"发布Tick: {tick.vt_symbol} - Price: {tick.last_price}")
+            # --- Manually send multipart message ---
+            try:
+                topic_bytes = f"tick.{tick.vt_symbol}".encode('utf-8')
+                data_bytes = pickle.dumps(tick)
+                # Directly access self._socket_pub based on vnpy.rpc source
+                self._socket_pub.send_multipart([topic_bytes, data_bytes])
+                # self.logger.debug(f"手动发送 multipart Tick 成功 (主题: {topic_bytes.decode()})") # <-- 注释掉
+            except AttributeError:
+                 self.logger.error("AttributeError: 无法直接访问 self._socket_pub！RpcServer 内部可能已更改。")
+            except Exception as e_manual_send:
+                self.logger.exception(f"手动发送 multipart Tick 时出错: {e_manual_send}")
+            # --- End manual send ---
+
         elif event_type == EVENT_LOG:
             log: LogData = event.data
-            # Map vnpy log level to standard logging level
+            # self.publish(f"log", log) # <-- Commented out problematic call
+            # Log locally as well using the service's logger
             level_map = {
                 logging.DEBUG: logging.DEBUG,
                 logging.INFO: logging.INFO,
@@ -165,114 +103,104 @@ class MarketDataGatewayService:
                 logging.ERROR: logging.ERROR,
                 logging.CRITICAL: logging.CRITICAL,
             }
-            log_level_attr = getattr(log, 'level', logging.INFO) # Default to INFO
-            log_level_value = log_level_attr
-            if hasattr(log_level_attr, 'value') and isinstance(log_level_attr.value, int):
-                log_level_value = log_level_attr.value
-            elif not isinstance(log_level_attr, int):
-                 log_level_value = logging.INFO # Fallback if not enum or int
+            log_level_value = getattr(log, 'level', logging.INFO)
+            if hasattr(log_level_value, 'value'): # Handle Enum
+                log_level_value = log_level_value.value
+            if not isinstance(log_level_value, int):
+                 log_level_value = logging.INFO # Fallback
 
             logger_level = level_map.get(log_level_value, logging.INFO)
             gateway_name = getattr(log, 'gateway_name', 'UnknownGateway')
-            # Add MarketData prefix if needed to distinguish from other gateway logs
             self.logger.log(logger_level, f"[VNPY LOG - MDGW] {gateway_name} - {log.msg}")
+            # --- Manually send multipart message for log ---
+            try:
+                topic_bytes = b"log"
+                data_bytes = pickle.dumps(log)
+                # Directly access self._socket_pub
+                self._socket_pub.send_multipart([topic_bytes, data_bytes])
+                # self.logger.debug(f"手动发送 multipart Log 成功") # <-- 注释掉
+            except AttributeError:
+                 self.logger.error("AttributeError: 无法直接访问 self._socket_pub！RpcServer 内部可能已更改。")
+            except Exception as e_manual_log_send:
+                self.logger.exception(f"手动发送 multipart Log 时出错: {e_manual_log_send}")
+            # --- End manual send ---
+
         elif event_type == EVENT_CONTRACT:
-            # Handle contract data if needed, e.g., confirm subscriptions
-            pass # Placeholder
+            contract: ContractData = event.data
+            # self.publish(f"contract.{contract.vt_symbol}", contract) # <-- Commented out problematic call
+            # self.logger.debug(f"发布合约信息: {contract.vt_symbol}")
+            # --- Manually send multipart message for contract ---
+            try:
+                topic_bytes = f"contract.{contract.vt_symbol}".encode('utf-8')
+                data_bytes = pickle.dumps(contract)
+                 # Directly access self._socket_pub
+                self._socket_pub.send_multipart([topic_bytes, data_bytes])
+                # self.logger.debug(f"手动发送 multipart Contract 成功 (主题: {topic_bytes.decode()})") # <-- 注释掉
+            except AttributeError:
+                 self.logger.error("AttributeError: 无法直接访问 self._socket_pub！RpcServer 内部可能已更改。")
+            except Exception as e_manual_contract_send:
+                 self.logger.exception(f"手动发送 multipart Contract 时出错: {e_manual_contract_send}")
+             # --- End manual send ---
 
-    def publish_data(self, data_object):
-        """Serializes and publishes vnpy data object via ZeroMQ."""
-        if isinstance(data_object, TickData):
-            topic_str = f"TICK.{data_object.vt_symbol}"
-            message_type = "TICK"
-        # Add elif for BarData, etc. if needed
-        # elif isinstance(data_object, BarData):
-        #    topic_str = f"BAR.{data_object.vt_symbol}.{data_object.interval.value}" # Example
-        #    message_type = "BAR"
-        else:
-            self.logger.warning(f"收到未知类型数据，无法发布: {type(data_object)}")
-            return
-
-        topic = topic_str.encode('utf-8')
-
-        # Call the revised helper function BEFORE creating the final message dict
-        serializable_vnpy_data = vnpy_object_to_dict(data_object)
-
-        message = {
-            "topic": topic_str,
-            "type": message_type, # Added type field for easier filtering on subscriber side
-            "source": "MarketDataGateway",
-            "timestamp": time.time_ns(), # Use ns for higher precision if needed downstream
-            "data": serializable_vnpy_data # Use the pre-converted data
-        }
-
-        try:
-            # Pack the whole message. The 'default' might still catch edge cases if
-            # vnpy_object_to_dict's fallback is hit, or if other parts of 'message'
-            # contain unexpected types (less likely here).
-            # Consider removing 'default' if confident all types are pre-handled.
-            packed_message = msgpack.packb(message, default=vnpy_object_to_dict, use_bin_type=True)
-            self.publisher.send_multipart([topic, packed_message])
-            # print(f"发布: {topic_str}") # Debug print
-        except Exception as err:
-            self.logger.exception(f"序列化或发布消息时出错 ({topic_str})")
-            self.logger.exception(f"出错信息: {err}")
-            # Log relevant parts without potentially large data
-            self.logger.error(f"序列化或发布消息时出错: Topic={topic_str}, Type={message_type}, Source={message['source']}")
-            # If you still need to debug the data part:
-            # import json
-            # try:
-            #     print(f"可序列化数据 (JSON): {json.dumps(serializable_vnpy_data, indent=2)}")
-            # except Exception as json_e:
-            #     print(f"无法将数据转为JSON进行调试: {json_e}")
-
+    # publish_data method is no longer needed, RpcServer.publish is used directly
 
     def start(self):
-        """Starts the event engine and connects the gateway."""
-        # 先加载配置
-        setting: dict = load_json("connect_ctp.json")
-        self.logger.info(f"Connecting to CTP server {setting["env"]} "
-                         f"td_address: {setting["td_address"]} "
-                         f"md_address: {setting["md_address"]}")
-
-        if self.running:
-            self.logger.warning("行情网关服务已在运行中。")
+        """Starts the RpcServer, EventEngine, and connects the gateway."""
+        if self.is_active():
+            self.logger.warning("行情网关服务(RPC模式)已在运行中。")
             return
 
-        self.logger.info("启动行情网关服务...")
-        self.running = True
+        self.logger.info("启动行情网关服务(RPC模式)...")
+
+        # 1. Start the RpcServer (binds sockets, starts threads)
+        try:
+            # Use addresses from config
+            super().start(
+                rep_address=config.MARKET_DATA_REP_ADDRESS,
+                pub_address=config.MARKET_DATA_PUB_ADDRESS
+            )
+            self.logger.info(f"RPC 服务器已启动。 REP: {config.MARKET_DATA_REP_ADDRESS}, PUB: {config.MARKET_DATA_PUB_ADDRESS}")
+        except Exception as e:
+            self.logger.exception(f"启动 RPC 服务器失败: {e}")
+            return # Don't proceed if RPC server fails
+
+        # 2. Start the EventEngine
         self.event_engine.register(EVENT_TICK, self.process_event)
         self.event_engine.register(EVENT_LOG, self.process_event)
-        self.event_engine.register(EVENT_CONTRACT, self.process_event) # Listen for contract events if needed
+        self.event_engine.register(EVENT_CONTRACT, self.process_event)
         self.event_engine.start()
         self.logger.info("事件引擎已启动。")
 
+        # 3. Connect CTP Gateway
         self.logger.info("连接 CTP 网关...")
-        # Ensure the setting keys match what CtpGateway.connect expects
-        # You might need to inspect the CtpGateway code or vnpy documentation
-        # Common keys: userID, password, brokerID, tdAddress, mdAddress, productInfo, authCode
         try:
-            self.gateway.connect(self.ctp_setting) # Use the mapped dictionary
+            # Load connection settings from JSON (or directly use self.ctp_setting)
+            # Keep json loading for consistency if other parts rely on it
+            setting_json: dict = load_json("connect_ctp.json")
+            self.logger.info(f"CTP 连接配置 (JSON): Env={setting_json.get('env', 'N/A')}, "
+                             f"TD={setting_json.get('td_address', 'N/A')}, "
+                             f"MD={setting_json.get('md_address', 'N/A')}")
+            # Connect using the settings prepared in __init__
+            self.gateway.connect(self.ctp_setting)
             self.logger.info("CTP 网关连接请求已发送。等待连接成功...")
 
-            # Give some time for connection and login before subscribing
-            # A better approach is to wait for a connection status event if vnpy provides one
-            time.sleep(10) # Adjust sleep time as needed, or implement event-based waiting
-            self.logger.info("CTP 网关假定连接成功（基于延时）。") # Log assumption
+            # Wait for connection (replace sleep with event-driven logic if possible)
+            # TODO: Implement waiting for a specific CTP connection success event/log
+            time.sleep(10)
+            self.logger.info("CTP 网关假定连接成功（基于延时）。")
 
+            # 4. Subscribe to market data
             self.logger.info("订阅行情...")
-            self._subscribe_list = [] # Reset list before subscribing
+            self._subscribe_list = []
             for vt_symbol in config.SUBSCRIBE_SYMBOLS:
                 try:
                     symbol, exchange_str = vt_symbol.split('.')
-                    # Need to import Exchange from vnpy.trader.constant
-                    from vnpy.trader.constant import Exchange
-                    exchange = Exchange(exchange_str) # Convert string to Exchange enum
+                    exchange = Exchange(exchange_str)
                     req = SubscribeRequest(symbol=symbol, exchange=exchange)
                     self.gateway.subscribe(req)
-                    self._subscribe_list.append(vt_symbol) # Track successful subscriptions
+                    self._subscribe_list.append(vt_symbol)
                     self.logger.info(f"发送订阅请求: {vt_symbol}")
-                    time.sleep(0.5) # Avoid sending requests too fast
+                    time.sleep(0.5) # Avoid flood
                 except ValueError:
                      self.logger.error(f"错误的合约格式，跳过订阅: {vt_symbol} (应为 SYMBOL.EXCHANGE)")
                 except Exception as err:
@@ -281,69 +209,73 @@ class MarketDataGatewayService:
 
         except Exception as err:
             self.logger.exception(f"连接或订阅 CTP 网关时发生严重错误: {err}")
-            self.stop() # Stop if connection fails
+            self.stop() # Attempt to clean up if connection fails
+
+        self.logger.info("行情网关服务(RPC模式)启动流程完成。")
 
 
     def stop(self):
         """Stops the service and cleans up resources."""
-        if not self.running:
-            self.logger.warning("行情网关服务未运行。")
+        if not self.is_active():
+            self.logger.warning("行情网关服务(RPC模式)未运行。")
             return
 
-        self.logger.info("停止行情网关服务...")
-        self.running = False
+        self.logger.info("停止行情网关服务(RPC模式)...")
 
-        # Check if EventEngine has is_active() public method, otherwise use _active
-        # Adjust based on your vnpy version
+        # 1. Stop the EventEngine first to prevent new events processing
         try:
-             if self.event_engine.is_active(): # Prefer public method if exists
-                 self.event_engine.stop()
-                 self.logger.info("事件引擎已停止。")
-        except AttributeError:
-             if hasattr(self.event_engine, '_active') and self.event_engine._active: # Fallback to private
-                 self.event_engine.stop()
-                 self.logger.info("事件引擎已停止。")
-             else:
-                 self.logger.warning("无法确定事件引擎状态或引擎已停止。")
+            if self.event_engine._active: # Use _active attribute
+                self.event_engine.stop()
+                self.logger.info("事件引擎已停止。")
+        except Exception as err:
+            self.logger.exception(f"停止事件引擎时出错: {err}")
 
+        # 2. Close the CTP Gateway connection
         if self.gateway:
-            self.gateway.close()
-            self.logger.info("CTP 网关已关闭。")
+            try:
+                self.gateway.close()
+                self.logger.info("CTP 网关已关闭。")
+            except Exception as e:
+                self.logger.exception(f"关闭 CTP 网关时出错: {e}")
 
-        if self.publisher:
-            self.publisher.close()
-            self.logger.info("ZeroMQ 发布器已关闭。")
+        # 3. Stop the RpcServer (closes sockets, terminates context, joins threads)
+        super().stop()
+        self.logger.info("RPC 服务器已停止。")
 
-        if self.context:
-            self.context.term() # Use terminate() or term() based on pyzmq version, term() is common
-            self.logger.info("ZeroMQ Context 已终止。")
-
-        self.logger.info("行情网关服务已停止。")
+        self.logger.info("行情网关服务(RPC模式)已停止。")
 
 # --- Main execution block (for testing) ---
-# Usually, you'd run this from a separate run script.
 if __name__ == "__main__":
-    logger_main = getLogger(__name__)
-    # Setup logging for direct execution test
+    # Ensure logger is configured before use
     try:
-        from logger import setup_logging, getLogger
+        from logger import setup_logging
         setup_logging(service_name="MarketDataGateway_DirectRun")
     except ImportError as log_err:
-        logger_main.error(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
         sys.exit(1)
 
-    logger_main.info("Starting direct test run...")
+    logger_main = getLogger(__name__) # Get logger after setup
+
+    logger_main.info("Starting direct test run (RPC Mode)...")
     gateway_service = MarketDataGatewayService()
-    gateway_service.start()
+
+    # Check config for required addresses
+    if not hasattr(config, 'MARKET_DATA_REP_ADDRESS') or \
+       not hasattr(config, 'MARKET_DATA_PUB_ADDRESS'):
+        logger_main.critical("错误：配置文件 config.zmq_config 缺少 MARKET_DATA_REP_ADDRESS 或 MARKET_DATA_PUB_ADDRESS。")
+        sys.exit(1)
+
+    gateway_service.start() # Start the combined service
 
     try:
-        # Keep the main thread alive
-        while True:
+        # Keep the main thread alive while the RpcServer runs
+        while gateway_service.is_active(): # Use is_active() from RpcServer
             time.sleep(1)
     except KeyboardInterrupt:
         logger_main.info("接收到中断信号，正在停止服务...")
     except Exception as e:
         logger_main.exception(f"主测试循环发生未处理错误：{e}")
     finally:
+        logger_main.info("开始停止服务...")
         gateway_service.stop()
-        logger_main.info("服务已安全停止。") 
+        logger_main.info("服务已安全停止 (RPC Mode)。") 

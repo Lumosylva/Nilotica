@@ -12,7 +12,7 @@ from logger import setup_logging, getLogger # Now safe to import
 
 # 2. Setup Logging for this specific service
 # Call this early, before other imports that might log (like MarketDataGatewayService)
-setup_logging(service_name="MarketDataGatewayRunner") # Give a specific name
+setup_logging(service_name="MarketDataGatewayRunner", level="INFO") # <-- 改回 INFO
 # 3. Get a logger for this script
 logger = getLogger(__name__)
 
@@ -40,7 +40,7 @@ def main():
 
     try:
         # Keep the main thread alive while the service runs in background threads (EventEngine)
-        while gateway_service.running: # Check the running flag
+        while gateway_service.is_active(): # Use is_active() from RpcServer
             time.sleep(1) # Prevent busy-waiting
     except KeyboardInterrupt:
         logger.info("\n检测到 Ctrl+C，正在停止服务...")
