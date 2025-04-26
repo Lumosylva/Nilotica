@@ -45,7 +45,8 @@ dependencies = [
     "pathlib>=1.0.1",
     "pip>=25.0.1",
     "hatchling>=1.27.0",
-    "babel==2.17.0",
+    "babel>=2.17.0",
+    "polars>=1.26.0",
 ]
 
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
