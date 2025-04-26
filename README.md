@@ -96,9 +96,11 @@ TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
    .venv\Scripts\activate
    ```
 
-### **5. 构建流程**
+### **5. 编译VNPY_CTP**
 
-`hatch build` 命令会在 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，hatch_build.py 负责编译 C++ 扩展，构建钩子（hatch_build.py）会使用 pybind11-stubgen 为编译好的模块生成  `.pyi`存根文件，编译后的  `.pyd` 文件和  `.pyi` 文件会被包含在最终的 Wheel 包中，`hatch build`  将会生成最终的发布包。若您需要进行CTP编译，可进行此构建流程，否则无需进行。
+执行 `hatch build` 命令将会在 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，构建钩子 `hatch_build.py` 负责编译CTP C++  扩展，并使用 `pybind11-stubgen` 为编译好的模块生成  `.pyi` 存根文件，编译后的  `.pyd` 文件和  `.pyi` 文件会被包含在最终的 Wheel 包中。
+
+若需要对`vnpy_ctp`编译，可进行此构建流程。若需要对`vnpy_tts`编译，请修改`pyproject.toml`中`[tool.hatch.build.hooks.custom]`构建脚本的`path`为`hatch_build_tts.py`，再执行`hatch build`即可。
 
 #### **(1) 清理旧的构建**
 

@@ -92,9 +92,11 @@ Activate the virtual environment
 .venv\Scripts\activate
 ```
 
-### **5. Build Process**
+### **5. Compile VNPY_CTP**
 
-The `hatch build` command will compile the dynamic link library `.pyd` file of the market and transaction under vnpy_ctp\api\. hatch_build.py is responsible for compiling C++ extensions. The build hook (hatch_build.py) will use pybind11-stubgen to generate `.pyi` stub files for the compiled modules. The compiled `.pyd` and `.pyi` files will be included in the final Wheel package. `hatch build` will generate the final release package. If you need to perform CTP compilation, you can perform this build process, otherwise you do not need to do it.
+Executing the `hatch build` command will compile the dynamic link library `.pyd` files of market and trading under vnpy_ctp\api\. The build hook `hatch_build.py` is responsible for compiling CTP C++ extensions and using `pybind11-stubgen` to generate `.pyi` stub files for the compiled modules. The compiled `.pyd` and `.pyi` files will be included in the final Wheel package.
+
+If you need to compile `vnpy_ctp`, you can follow this build process. If you need to compile `vnpy_tts`, please modify the `path` of the `[tool.hatch.build.hooks.custom]` build script in `pyproject.toml` to `hatch_build_tts.py`, and then execute `hatch build`.
 
 #### **(1) Clean up old builds**
 
