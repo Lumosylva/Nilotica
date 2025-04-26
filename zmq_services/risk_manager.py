@@ -5,6 +5,7 @@ import msgpack
 import time
 import sys
 import os
+import pickle
 from datetime import datetime, time as dt_time
 import threading
 from collections import defaultdict
@@ -16,7 +17,7 @@ if project_root not in sys.path:
 
 from logger import setup_logging, getLogger # Now safe to import
 
-setup_logging(service_name="RiskManagerRunner") # Give a specific name
+setup_logging(service_name="RiskManager", level="INFO") # <-- 改回 INFO
 # 3. Get a logger for this script
 logger = getLogger(__name__)
 
@@ -57,7 +58,8 @@ class RiskManagerService:
 
         self.context = zmq.Context()
         self.command_socket = self.context.socket(zmq.REQ)
-        self._command_connect_url = self._get_connect_url(config.ORDER_GATEWAY_COMMAND_URL)
+        # Connect to the RPC gateway's REP address
+        self._command_connect_url = self._get_connect_url(config.ORDER_GATEWAY_REP_ADDRESS)
         self._setup_command_socket() # Setup initial command socket
 
         # Subscriber socket
@@ -69,17 +71,18 @@ class RiskManagerService:
         self.logger.info(f"数据订阅器连接到: {market_data_url}") # Generic name
         self.logger.info(f"数据订阅器连接到: {order_report_url}") # Generic name
 
-        # Subscribe to TICKs (optional, for market risk later), TRADEs, and Order Status/Account Data
-        tick_prefix = "TICK."
-        trade_prefix = "TRADE."
-        self.subscriber.subscribe(tick_prefix.encode('utf-8'))
-        self.subscriber.subscribe(trade_prefix.encode('utf-8'))
-        # Subscribe to Order Status and Account Data
-        order_status_prefix = "ORDER_STATUS."
-        account_prefix = "ACCOUNT_DATA."
-        self.subscriber.subscribe(order_status_prefix.encode('utf-8'))
-        self.subscriber.subscribe(account_prefix.encode('utf-8'))
-        self.logger.info(f"订阅主题前缀: {tick_prefix}, {trade_prefix}, {order_status_prefix}, {account_prefix}")
+        # Subscribe to relevant topics (lowercase prefixes)
+        prefixes_to_subscribe = [
+            "tick.",
+            "trade.",
+            "order.",     # Correct prefix for order updates
+            "account.",   # Correct prefix for account updates
+            "log.",       # Subscribe to logs as well
+            "contract."   # Subscribe to contracts
+        ]
+        for prefix in prefixes_to_subscribe:
+            self.subscriber.subscribe(prefix.encode('utf-8'))
+            self.logger.info(f"订阅主题前缀: {prefix}")
 
         # --- State ---
         self.positions = {} # vt_symbol -> net position (int)
@@ -93,14 +96,24 @@ class RiskManagerService:
         self.market_data_ok: bool = True
         # Assume we need ticks for symbols we might have limits for or defined in config
         # A more robust way might be to dynamically get subscribed symbols if possible
-        self.subscribed_symbols: set = set(config.SUBSCRIBE_SYMBOLS) 
+        self.subscribed_symbols: set = set(config.SUBSCRIBE_SYMBOLS)
         self.logger.info(f"将监控以下合约行情超时: {self.subscribed_symbols}")
 
         # Gateway Connection Status
         self.gateway_connected = True # Assume connected initially
         self.last_ping_time = time.time()
 
+        # +++ Initialize Account Log Throttle Variables +++
+        self.account_log_interval: float = 60.0 # Log every 60 seconds
+        self.last_account_log_time: float = 0.0
+        self.last_logged_account_key_info: tuple = (0.0, 0.0, 0.0, 0.0) # balance, available, margin, frozen
+        # +++ End Initialization +++
+
         self.running = False
+        # Remove the processing thread initialization, as processing is in the main loop
+        # self.processing_thread = threading.Thread(target=self._run_processing_loop)
+        # self.processing_thread.daemon = True # Allow main thread to exit even if this is running
+
         self.logger.info("风险管理器初始化完成。")
 
     def _get_connect_url(self, base_url: str) -> str:
@@ -336,22 +349,24 @@ class RiskManagerService:
             # Log only essential parts to avoid large log entries
             self.logger.error(f"出错消息内容 (部分): {{'type': msg_type, 'data_keys': list(msg_data.keys())}}")
 
-    def update_position(self, trade_data: dict):
+    def update_position(self, trade_data: TradeData):
         """Updates position based on trade data."""
-        vt_symbol = trade_data.get('vt_symbol')
-        direction = trade_data.get('direction')
-        volume = trade_data.get('volume') # Should be positive
-        offset = trade_data.get('offset') # Useful for more precise position logic (e.g., handling close today)
+        # Access attributes directly, not via .get()
+        vt_symbol = getattr(trade_data, 'vt_symbol', None)
+        direction = getattr(trade_data, 'direction', None) # Use getattr for robustness
+        volume = getattr(trade_data, 'volume', None)
+        offset = getattr(trade_data, 'offset', None)
 
-        if not all([vt_symbol, direction, volume]):
-            self.logger.error("错误：成交回报缺少关键字段 (vt_symbol, direction, volume)")
+        if not all([vt_symbol, direction is not None, volume is not None]):
+            self.logger.error(f"错误：成交回报缺少关键字段 (vt_symbol, direction, volume)。TradeData: {trade_data}")
             return None, None
 
         # Calculate position change
         pos_change = 0
-        if direction == Direction.LONG.value:
+        # Compare direction Enum directly
+        if direction == Direction.LONG:
             pos_change = volume
-        elif direction == Direction.SHORT.value:
+        elif direction == Direction.SHORT:
             pos_change = -volume
         else:
             self.logger.error(f"错误：未知的成交方向 '{direction}'")
@@ -361,7 +376,7 @@ class RiskManagerService:
         current_pos = self.positions.get(vt_symbol, 0)
         new_pos = current_pos + pos_change
         self.positions[vt_symbol] = new_pos
-        self.logger.info(f"持仓更新: {vt_symbol} | 旧: {current_pos} | 变动: {pos_change} | 新: {new_pos}")
+        self.logger.info(f"持仓更新: {vt_symbol} | 旧: {current_pos} | 变动: {pos_change} | 新: {new_pos}") # <-- Restore log
 
         return vt_symbol, new_pos
 
@@ -376,6 +391,7 @@ class RiskManagerService:
 
     def check_risk(self, vt_symbol: str = None, trigger_event: str = "UNKNOWN", current_position: int = None):
         """Checks various risk limits based on current state. Logs market data status."""
+        # self.logger.info(f"--- Entered check_risk (Trigger: {trigger_event}, Symbol: {vt_symbol}) ---") # <-- Commented out
 
         # Log market data status at the beginning of check
         if not self.market_data_ok:
@@ -448,13 +464,14 @@ class RiskManagerService:
             return
 
         self.logger.info(f"发送撤单指令给网关: {vt_orderid}")
-        command_msg = {
-            "type": "CANCEL_ORDER",
-            "data": {"vt_orderid": vt_orderid}
-        }
+        # Format according to vnpy.rpc: (method_name, args_tuple, kwargs_dict)
+        # cancel_order expects one positional argument: a dictionary
+        req_data = {"vt_orderid": vt_orderid}
+        req_tuple = ("cancel_order", (req_data,), {})
 
         try:
-            packed_request = msgpack.packb(command_msg, use_bin_type=True)
+            # Use pickle for REQ/REP communication
+            packed_request = pickle.dumps(req_tuple)
             self.command_socket.send(packed_request)
 
             # Wait for the reply with a timeout
@@ -466,7 +483,8 @@ class RiskManagerService:
 
             if self.command_socket in events:
                 packed_reply = self.command_socket.recv()
-                reply = msgpack.unpackb(packed_reply, raw=False)
+                # Use pickle for REQ/REP communication
+                reply = pickle.loads(packed_reply)
                 self.logger.info(f"收到撤单指令回复 ({vt_orderid}): {reply}")
             else:
                 self.logger.error(f"撤单指令 ({vt_orderid}) 请求超时 ({timeout_ms}ms)。")
@@ -488,7 +506,8 @@ class RiskManagerService:
         log_prefix = "[Ping]" if self.gateway_connected else "[Ping - Attempting Reconnect]"
         self.logger.debug(f"{log_prefix} Sending...")
 
-        ping_msg = {"type": "PING", "data": {}}
+        # Format according to vnpy.rpc: ("ping", (), {})
+        req_tuple = ("ping", (), {})
         current_time = time.time()
         self.last_ping_time = current_time # Update last ping attempt time
 
@@ -497,16 +516,18 @@ class RiskManagerService:
             poller = zmq.Poller()
             poller.register(self.command_socket, zmq.POLLOUT | zmq.POLLIN) # Check if writable and readable
 
-            # Send PING
-            packed_request = msgpack.packb(ping_msg, use_bin_type=True)
+            # Send PING using pickle with the correct format
+            packed_request = pickle.dumps(req_tuple)
             self.command_socket.send(packed_request) # Use blocking send, rely on timeout/error for issues
 
             # Wait for PONG reply with timeout
             readable = dict(poller.poll(PING_TIMEOUT_MS))
             if self.command_socket in readable and readable[self.command_socket] & zmq.POLLIN:
                 packed_reply = self.command_socket.recv(zmq.NOBLOCK)
-                reply = msgpack.unpackb(packed_reply, raw=False)
-                if reply.get("reply") == "PONG":
+                # Decode PONG using pickle - RpcServer's ping returns "pong"
+                reply = pickle.loads(packed_reply)
+                # Check for the RpcServer success format [True, "pong"]
+                if isinstance(reply, (list, tuple)) and len(reply) == 2 and reply[0] is True and reply[1] == "pong":
                     self.logger.debug("Received PONG successfully.")
                     if not self.gateway_connected:
                          self.logger.info("与订单执行网关的连接已恢复。")
@@ -548,40 +569,71 @@ class RiskManagerService:
             # Optional: Trigger reconnection on unknown errors too?
 
     def start(self):
-        """Starts listening for messages and performing risk checks."""
+        """Starts the risk manager service loop."""
         if self.running:
             self.logger.warning("风险管理器已在运行中。")
             return
 
         self.logger.info("启动风险管理器服务...")
-        self.running = True        
+        self.running = True
+        # Start processing thread if needed (example implementation)
+        # self.processing_thread = threading.Thread(target=self._run_processing_loop)
+        # self.processing_thread.daemon = True
+        # self.processing_thread.start()
+
         self.logger.info("风险管理器服务已启动，开始监听消息...")
-        
-        # --- Main Loop --- 
+
         while self.running:
-            # Use Poller for non-blocking receive on subscriber
+            # Poll subscriber socket with a timeout
             poller = zmq.Poller()
             poller.register(self.subscriber, zmq.POLLIN)
-            # Poll with a timeout (e.g., 1 second) to allow for other checks
-            poll_timeout_ms = 1000 
-            socks = dict(poller.poll(poll_timeout_ms)) 
+            poll_timeout_ms = 1000 # Check every second
+            socks = dict(poller.poll(poll_timeout_ms))
 
             try:
-                # Process incoming subscription messages if any
+                # --- Process incoming PUB/SUB messages ---
                 if self.subscriber in socks and socks[self.subscriber] == zmq.POLLIN:
-                    topic, packed_message = self.subscriber.recv_multipart(zmq.NOBLOCK)
+                    # --- Modified receive logic (from strategy subscriber) ---
+                    parts = self.subscriber.recv_multipart(zmq.NOBLOCK)
+                    self.logger.debug(f"[RM] Received Raw multipart: Count={len(parts)}") # Simplified log
 
-                    # Check running flag *after* potentially blocking recv returns
-                    if not self.running:
-                        break 
+                    if len(parts) == 2:
+                        topic_bytes, data_bytes = parts
+                    else:
+                        self.logger.warning(f"[RM] 收到包含意外部分数量 ({len(parts)}) 的消息: {parts}")
+                        continue # Skip processing
+                    # --- End modified receive logic ---
+
+                    if not self.running: break
 
                     try:
-                        message = msgpack.unpackb(packed_message, raw=False)
-                        self._process_message(topic, message)
-                    except msgpack.UnpackException as e:
-                        self.logger.error(f"Msgpack 解码错误: {e}. Topic: {topic.decode('utf-8', errors='ignore')}")
+                        topic_str = topic_bytes.decode('utf-8', errors='ignore')
+                        data_obj = pickle.loads(data_bytes)
+                        self.logger.debug(f"[RM] Received Correct: Topic='{topic_str}', Type='{type(data_obj)}'") # Add RM marker
 
-                # --- Periodic Heartbeat Check --- 
+                        # Process based on topic
+                        if topic_str.startswith("tick."):
+                            vt_symbol = topic_str[len("tick."):]
+                            self.process_tick(vt_symbol, data_obj)
+                        elif topic_str.startswith("order."):
+                            self.process_order_update(data_obj)
+                        elif topic_str.startswith("trade."):
+                            self.process_trade_update(data_obj)
+                        elif topic_str.startswith("account."):
+                            self.process_account_update(data_obj)
+                        elif topic_str == "log": # Match exact 'log' topic
+                            self.process_log(data_obj)
+                        elif topic_str.startswith("contract."):
+                            self.process_contract(data_obj)
+                        else:
+                             self.logger.warning(f"[RM] 未知的消息主题: {topic_str}")
+
+                    except pickle.UnpicklingError as e:
+                        self.logger.error(f"[RM] Pickle 解码错误: {e}. Topic: {topic_bytes.decode('utf-8', errors='ignore')}")
+                    except Exception as msg_proc_e:
+                        self.logger.exception(f"[RM] 处理订阅消息时出错 (Topic: {topic_bytes.decode('utf-8', errors='ignore')}): {msg_proc_e}")
+
+                # --- Periodic Health Checks (moved from _run_processing_loop) ---
                 current_time = time.time()
                 if current_time - self.last_ping_time >= PING_INTERVAL:
                      self._send_ping()
@@ -663,6 +715,65 @@ class RiskManagerService:
             except zmq.ZMQError as e:
                  self.logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
         self.logger.info("风险管理器已停止。")
+
+    def process_tick(self, vt_symbol, tick):
+        self.last_tick_time[vt_symbol] = time.time()
+        # Add specific market risk logic here if needed
+
+    def process_order_update(self, order: OrderData):
+        # self.logger.info("--- Entered process_order_update ---") # <-- Commented out
+        if getattr(order, 'is_active', lambda: False)():
+            self.active_orders[order.vt_orderid] = order
+        else:
+            if order.vt_orderid in self.active_orders:
+                del self.active_orders[order.vt_orderid]
+        self.check_risk(vt_symbol=order.vt_symbol, trigger_event="ORDER_UPDATE")
+
+    def process_trade_update(self, trade: TradeData):
+        # self.logger.info("--- Entered process_trade_update ---") # <-- Commented out
+        symbol, updated_pos = self.update_position(trade)
+        self.check_risk(vt_symbol=trade.vt_symbol, trigger_event="TRADE", current_position=updated_pos)
+
+    def process_account_update(self, account: AccountData):
+        # self.logger.info("--- Entered process_account_update ---") # <-- Commented out
+        # Only log if key fields have changed OR enough time has passed
+        current_time = time.time()
+        accountid = getattr(account, 'accountid', 'N/A')
+        balance = getattr(account, 'balance', 0.0)
+        available = getattr(account, 'available', 0.0)
+        margin = getattr(account, 'margin', 0.0)
+        frozen = getattr(account, 'frozen', 0.0)
+        current_key_info = (balance, available, margin, frozen)
+
+        log_due_to_time = (current_time - self.last_account_log_time) >= self.account_log_interval
+        log_due_to_change = current_key_info != self.last_logged_account_key_info
+
+        # Always update internal state for risk check
+        self.account_data = account
+
+        # Log only if condition met
+        if log_due_to_time or log_due_to_change:
+            self.logger.info(f"[RM] Account Update: ID={accountid}, Avail={available:.2f}, Margin={margin:.2f}, Frozen={frozen:.2f}")
+            self.last_account_log_time = current_time
+            self.last_logged_account_key_info = current_key_info
+            # Trigger risk check only when logging the update
+            self.check_risk(trigger_event="ACCOUNT_UPDATE")
+        # else: # Optional debug log for skipped updates
+        #    self.logger.debug(f"Skipped logging account update for {accountid}. Time since last: {current_time - self.last_account_log_time:.1f}s, Changed: {log_due_to_change}")
+
+    def process_log(self, log):
+        """Processes log messages."""
+        gateway_name = getattr(log, 'gateway_name', 'UnknownGW')
+        msg = getattr(log, 'msg', '')
+        self.logger.debug(f"[RM GW LOG - {gateway_name}] {msg}")
+
+    def process_contract(self, contract):
+         """Processes contract messages."""
+         vt_symbol = getattr(contract, 'vt_symbol', None)
+         if vt_symbol:
+             self.logger.debug(f"[RM] Received contract data for {vt_symbol}")
+         else:
+            self.logger.warning("[RM] Received contract data without vt_symbol")
 
 # --- Main execution block (for testing) ---
 if __name__ == "__main__":

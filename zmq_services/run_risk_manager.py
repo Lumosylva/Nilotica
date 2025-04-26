@@ -20,8 +20,9 @@ def main():
     logger.info("正在初始化风险管理器...")
 
     # Get connection URLs and limits from config
-    md_url = config.MARKET_DATA_PUB_URL.replace("*", "localhost")
-    report_url = config.ORDER_REPORT_PUB_URL.replace("*", "localhost")
+    # Use the correct RPC PUB addresses
+    md_url = config.MARKET_DATA_PUB_ADDRESS.replace("*", "localhost")
+    report_url = config.ORDER_GATEWAY_PUB_ADDRESS.replace("*", "localhost")
     limits = config.MAX_POSITION_LIMITS
 
     risk_manager = RiskManagerService(md_url, report_url, limits)
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     # Now import logger setup
     try:
         from logger import setup_logging, getLogger
-        setup_logging(service_name="RiskManagerRunner") # Set service name
+        setup_logging(service_name="RiskManagerRunner", level="INFO") # <-- Change back to INFO
     except ImportError as log_err:
         print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
         sys.exit(1)
