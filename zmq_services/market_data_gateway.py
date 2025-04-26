@@ -10,6 +10,9 @@ from logger import getLogger
 # Assuming zmq_services is at the same level as vnpy, vnpy_ctp etc.
 import sys
 import os
+
+from vnpy.trader.utility import load_json
+
 # Add project root to Python path to find vnpy modules
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
@@ -103,7 +106,6 @@ def vnpy_object_to_dict(obj):
             return d
         except AttributeError:
             # Final fallback for unhandled types
-            print(f"Warning: Unhandled type encountered during serialization: {type(obj)}. Converting to string.")
             logger.warning(f"Unhandled type encountered during serialization: {type(obj)}. Converting to string.")
             return str(obj)
 
@@ -117,20 +119,21 @@ class MarketDataGatewayService:
         self.publisher = self.context.socket(zmq.PUB)
         self.publisher.bind(config.MARKET_DATA_PUB_URL)
         self.logger.info(f"行情发布器绑定到: {config.MARKET_DATA_PUB_URL}")
-
+        # 创建事件引擎
         self.event_engine = EventEngine()
+        # 创建CTP接口
         self.gateway: BaseGateway = CtpGateway(self.event_engine, "CTP_MarketData") # Use a unique gateway name
 
         # Prepare CTP gateway settings from config
         self.ctp_setting = {
-            "用户名": config.CTP_USER_ID,
-            "密码": config.CTP_PASSWORD,
-            "经纪商代码": config.CTP_BROKER_ID,
-            "交易服务器": config.CTP_TD_ADDRESS, # Needed for login, even if only using MD
-            "行情服务器": config.CTP_MD_ADDRESS,
-            "产品名称": config.CTP_PRODUCT_INFO,
-            "授权编码": config.CTP_AUTH_CODE,
-            # Add other CTP settings if required by your vnpy_ctp version
+            "userid": config.CTP_USER_ID,
+            "password": config.CTP_PASSWORD,
+            "broker_id": config.CTP_BROKER_ID,
+            "td_address": config.CTP_TD_ADDRESS, # Needed for login, even if only using MD
+            "md_address": config.CTP_MD_ADDRESS,
+            "appid": config.CTP_PRODUCT_INFO,
+            "auth_code": config.CTP_AUTH_CODE,
+            "env": config.CTP_ENV_TYPE
         }
         # Map keys if vnpy_ctp expects different keys (check CtpGateway.connect)
         # Example mapping if needed:
@@ -187,7 +190,6 @@ class MarketDataGatewayService:
         #    topic_str = f"BAR.{data_object.vt_symbol}.{data_object.interval.value}" # Example
         #    message_type = "BAR"
         else:
-            print(f"收到未知类型数据，无法发布: {type(data_object)}")
             self.logger.warning(f"收到未知类型数据，无法发布: {type(data_object)}")
             return
 
@@ -212,10 +214,9 @@ class MarketDataGatewayService:
             packed_message = msgpack.packb(message, default=vnpy_object_to_dict, use_bin_type=True)
             self.publisher.send_multipart([topic, packed_message])
             # print(f"发布: {topic_str}") # Debug print
-        except Exception as e:
+        except Exception as err:
             self.logger.exception(f"序列化或发布消息时出错 ({topic_str})")
-            # Avoid printing potentially huge raw data in production, maybe log relevant parts
-            print(f"原始消息结构 (部分): {{'topic': '{topic_str}', 'type': '{message_type}', 'source': '{message['source']}', ...}}")
+            self.logger.exception(f"出错信息: {err}")
             # Log relevant parts without potentially large data
             self.logger.error(f"序列化或发布消息时出错: Topic={topic_str}, Type={message_type}, Source={message['source']}")
             # If you still need to debug the data part:
@@ -228,6 +229,12 @@ class MarketDataGatewayService:
 
     def start(self):
         """Starts the event engine and connects the gateway."""
+        # 先加载配置
+        setting: dict = load_json("connect_ctp.json")
+        self.logger.info(f"Connecting to CTP server {setting["env"]} "
+                         f"td_address: {setting["td_address"]} "
+                         f"md_address: {setting["md_address"]}")
+
         if self.running:
             self.logger.warning("行情网关服务已在运行中。")
             return
@@ -244,20 +251,8 @@ class MarketDataGatewayService:
         # Ensure the setting keys match what CtpGateway.connect expects
         # You might need to inspect the CtpGateway code or vnpy documentation
         # Common keys: userID, password, brokerID, tdAddress, mdAddress, productInfo, authCode
-        vnpy_settings = {
-            "用户名": config.CTP_USER_ID,
-            "密码": config.CTP_PASSWORD,
-            "经纪商代码": config.CTP_BROKER_ID,
-            "交易服务器": config.CTP_TD_ADDRESS,
-            "行情服务器": config.CTP_MD_ADDRESS,
-            "产品名称": config.CTP_PRODUCT_INFO,
-            "授权编码": config.CTP_AUTH_CODE,
-            # Add other required fields with default values if needed
-             "环境": "实盘" # Or "仿真" based on your brokerID/setup
-        }
         try:
-            self.gateway.connect(vnpy_settings) # Use the mapped dictionary
-            print("CTP 网关连接请求已发送。等待连接成功...")
+            self.gateway.connect(self.ctp_setting) # Use the mapped dictionary
             self.logger.info("CTP 网关连接请求已发送。等待连接成功...")
 
             # Give some time for connection and login before subscribing
@@ -265,7 +260,6 @@ class MarketDataGatewayService:
             time.sleep(10) # Adjust sleep time as needed, or implement event-based waiting
             self.logger.info("CTP 网关假定连接成功（基于延时）。") # Log assumption
 
-            print("订阅行情...")
             self.logger.info("订阅行情...")
             self._subscribe_list = [] # Reset list before subscribing
             for vt_symbol in config.SUBSCRIBE_SYMBOLS:
@@ -277,21 +271,16 @@ class MarketDataGatewayService:
                     req = SubscribeRequest(symbol=symbol, exchange=exchange)
                     self.gateway.subscribe(req)
                     self._subscribe_list.append(vt_symbol) # Track successful subscriptions
-                    print(f"  发送订阅请求: {vt_symbol}")
                     self.logger.info(f"发送订阅请求: {vt_symbol}")
                     time.sleep(0.5) # Avoid sending requests too fast
                 except ValueError:
-                     print(f"  错误的合约格式，跳过订阅: {vt_symbol} (应为 SYMBOL.EXCHANGE)")
                      self.logger.error(f"错误的合约格式，跳过订阅: {vt_symbol} (应为 SYMBOL.EXCHANGE)")
-                except Exception as e:
-                     print(f"  订阅 {vt_symbol} 时出错: {e}")
-                     self.logger.exception(f"订阅 {vt_symbol} 时出错")
-            print(f"已发送 {len(self._subscribe_list)} 个合约的订阅请求。")
+                except Exception as err:
+                     self.logger.exception(f"订阅 {vt_symbol} 时出错: {err}")
             self.logger.info(f"已发送 {len(self._subscribe_list)} 个合约的订阅请求。")
 
-        except Exception as e:
-            print(f"连接或订阅 CTP 网关时发生严重错误: {e}")
-            self.logger.exception("连接或订阅 CTP 网关时发生严重错误")
+        except Exception as err:
+            self.logger.exception(f"连接或订阅 CTP 网关时发生严重错误: {err}")
             self.stop() # Stop if connection fails
 
 
@@ -315,9 +304,7 @@ class MarketDataGatewayService:
                  self.event_engine.stop()
                  self.logger.info("事件引擎已停止。")
              else:
-                 print("无法确定事件引擎状态或引擎已停止。")
                  self.logger.warning("无法确定事件引擎状态或引擎已停止。")
-
 
         if self.gateway:
             self.gateway.close()
@@ -336,15 +323,14 @@ class MarketDataGatewayService:
 # --- Main execution block (for testing) ---
 # Usually, you'd run this from a separate run script.
 if __name__ == "__main__":
+    logger_main = getLogger(__name__)
     # Setup logging for direct execution test
     try:
         from logger import setup_logging, getLogger
         setup_logging(service_name="MarketDataGateway_DirectRun")
     except ImportError as log_err:
-        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+        logger_main.error(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
         sys.exit(1)
-
-    logger_main = getLogger(__name__)
 
     logger_main.info("Starting direct test run...")
     gateway_service = MarketDataGatewayService()
@@ -357,7 +343,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger_main.info("接收到中断信号，正在停止服务...")
     except Exception as e:
-        logger_main.exception("主测试循环发生未处理错误")
+        logger_main.exception(f"主测试循环发生未处理错误：{e}")
     finally:
         gateway_service.stop()
         logger_main.info("服务已安全停止。") 

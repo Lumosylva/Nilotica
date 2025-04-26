@@ -7,6 +7,12 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from logger import setup_logging, getLogger
+
+setup_logging(service_name="OrderGatewayRunner") # Set service name
+# Get logger instance
+logger = getLogger(__name__)
+
 # Import the service class
 try:
     from zmq_services.order_execution_gateway import OrderExecutionGatewayService
@@ -19,9 +25,6 @@ except ImportError as e:
 
 def main():
     """Runs the order execution gateway service."""
-    # Get logger instance
-    logger = getLogger(__name__)
-
     logger.info("正在初始化订单执行网关服务...")
     gateway_service = OrderExecutionGatewayService()
 
@@ -36,26 +39,13 @@ def main():
         while gateway_service.running:
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("主程序检测到 Ctrl+C，正在停止服务...")
-    except Exception as e:
-        logger.exception(f"服务运行时发生意外错误: {e}")
+        logger.info("\n检测到 Ctrl+C，正在停止服务...")
+    except Exception as err:
+        logger.exception(f"服务运行时发生意外错误: {err}")
     finally:
         # Ensure graceful shutdown
         gateway_service.stop()
         logger.info("订单执行网关服务已退出。")
 
 if __name__ == "__main__":
-    # --- Setup Logging --- 
-    # Add project root first
-    project_root_setup = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    if project_root_setup not in sys.path:
-        sys.path.insert(0, project_root_setup)
-    # Now import logger setup
-    try:
-        from logger import setup_logging, getLogger
-        setup_logging(service_name="OrderGatewayRunner") # Set service name
-    except ImportError as log_err:
-        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
-        sys.exit(1)
-
     main()

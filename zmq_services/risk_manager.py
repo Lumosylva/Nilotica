@@ -1,3 +1,5 @@
+from typing import Dict
+
 import zmq
 import msgpack
 import time
@@ -12,9 +14,14 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from logger import setup_logging, getLogger # Now safe to import
+
+setup_logging(service_name="RiskManagerRunner") # Give a specific name
+# 3. Get a logger for this script
+logger = getLogger(__name__)
+
 # Import new config location
 from config import zmq_config as config
-from logger import getLogger
 
 # Import necessary vnpy constants
 try:
@@ -162,6 +169,7 @@ class RiskManagerService:
 
     def _process_message(self, topic_bytes: bytes, message: dict):
         """Processes a received message (Tick or Trade)."""
+        topic_str = ""
         try:
             topic_str = topic_bytes.decode('utf-8', errors='ignore')
             msg_type = message.get('type', 'UNKNOWN')
@@ -231,13 +239,13 @@ class RiskManagerService:
                     # Only update, log, and check risk if key fields have changed
                     if has_key_fields_changed:
                         self.account_data = account # Update stored data
-                        self.logger.info(f"[{pretty_time}] 账户关键信息更新: AccountID={account.accountid}, Balance={account.balance:.2f}, Available={account.available:.2f}, Margin={getattr(account, 'margin', 0.0):.2f}, Frozen={getattr(account, 'frozen', 0.0):.2f}")
+                        self.logger.info(f"账户关键信息更新: AccountID={account.accountid}, Balance={account.balance:.2f}, Available={account.available:.2f}, Margin={getattr(account, 'margin', 0.0):.2f}, Frozen={getattr(account, 'frozen', 0.0):.2f}")
                         self.check_risk(trigger_event="ACCOUNT_UPDATE")
 
                 except KeyError as e:
                     self.logger.error(f"重建 AccountData 时缺少关键字段: {e}。 Data Keys: {list(msg_data.keys())}")
                 except Exception as e_rec:
-                    self.logger.exception(f"重建 AccountData 对象时发生未知错误。")
+                    self.logger.exception(f"重建 AccountData 对象时发生未知错误：{e_rec}")
                     self.logger.error(f"原始数据: {msg_data}")
 
             elif msg_type == "ORDER_STATUS":
@@ -320,11 +328,11 @@ class RiskManagerService:
                 except ValueError as e: # Handle Enum conversion errors
                     self.logger.error(f"重建 OrderData 时枚举转换错误: {e}。 Data: {msg_data}")
                 except Exception as e_rec:
-                    self.logger.exception(f"重建 OrderData 对象时发生未知错误。")
+                    self.logger.exception(f"重建 OrderData 对象时发生未知错误。：{e_rec}")
                     self.logger.error(f"原始数据: {msg_data}")
 
         except Exception as e:
-            self.logger.exception(f"处理消息时出错 (Topic: {topic_str})")
+            self.logger.exception(f"处理消息时出错 (Topic: {topic_str})：{e}")
             # Log only essential parts to avoid large log entries
             self.logger.error(f"出错消息内容 (部分): {{'type': msg_type, 'data_keys': list(msg_data.keys())}}")
 
@@ -472,7 +480,7 @@ class RiskManagerService:
             self.logger.error(f"发送撤单指令 ({vt_orderid}) 时 ZMQ 错误: {e}")
             # Consider reconnecting or handling specific errors
         except Exception as e:
-            self.logger.exception(f"发送或处理撤单指令 ({vt_orderid}) 回复时出错")
+            self.logger.exception(f"发送或处理撤单指令 ({vt_orderid}) 回复时出错：{e}")
 
     def _send_ping(self):
         """Sends a PING request to the Order Gateway and handles the reply."""
@@ -532,10 +540,10 @@ class RiskManagerService:
 
         except Exception as e:
             # Handle other unexpected errors
-            self.logger.exception(f"{log_prefix} 发送或处理 PING/PONG 时发生未知错误")
+            self.logger.exception(f"{log_prefix} 发送或处理 PING/PONG 时发生未知错误：{e}")
             # Mark as disconnected (if not already)
             if self.gateway_connected: # Log error only on first detection
-                self.logger.error("与订单执行网关的连接丢失 (Unknown Error)! ")
+                self.logger.error("与订单执行网关的连接丢失 (Unknown Error)!")
                 self.gateway_connected = False
             # Optional: Trigger reconnection on unknown errors too?
 
@@ -608,19 +616,19 @@ class RiskManagerService:
                         self.market_data_ok = True
                 # --- End Market Data Timeout Check --- 
 
-            except zmq.ZMQError as e:
+            except zmq.ZMQError as err:
                 # Check if the error occurred because we are stopping
-                if not self.running or e.errno == zmq.ETERM:
-                    self.logger.info(f"ZMQ 错误 ({e.errno}) 发生在服务停止期间或Context终止，正常退出循环。")
+                if not self.running or err.errno == zmq.ETERM:
+                    self.logger.info(f"ZMQ 错误 ({err.errno}) 发生在服务停止期间或Context终止，正常退出循环。")
                     break # Exit loop cleanly
                 else:
-                    self.logger.error(f"意外的 ZMQ 错误: {e}")
+                    self.logger.error(f"意外的 ZMQ 错误: {err}")
                     self.running = False # Stop on other ZMQ errors
             except KeyboardInterrupt:
                 self.logger.info("检测到中断信号，开始停止...")
                 self.running = False
-            except Exception as e:
-                self.logger.exception("主循环处理消息时发生未知错误")
+            except Exception as err:
+                self.logger.exception(f"主循环处理消息时发生未知错误：{err}")
                 # Avoid rapid looping on persistent errors
                 time.sleep(1) 
 
@@ -668,8 +676,8 @@ if __name__ == "__main__":
     try:
         risk_manager.start()
     except KeyboardInterrupt:
-        print("\n主程序接收到中断信号。")
+        logger.info("\n主程序接收到中断信号。")
     finally:
         if risk_manager.running:
             risk_manager.stop()
-        print("风险管理器测试运行结束。")
+        logger.info("风险管理器测试运行结束。")

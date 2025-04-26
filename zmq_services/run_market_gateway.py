@@ -44,8 +44,8 @@ def main():
             time.sleep(1) # Prevent busy-waiting
     except KeyboardInterrupt:
         logger.info("\n检测到 Ctrl+C，正在停止服务...")
-    except Exception as e:
-        logger.exception(f"服务运行时发生意外错误: {e}")
+    except Exception as err:
+        logger.exception(f"服务运行时发生意外错误: {err}")
     finally:
         gateway_service.stop()
         logger.info("行情网关服务已退出。")

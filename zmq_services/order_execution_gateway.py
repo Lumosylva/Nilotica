@@ -7,15 +7,16 @@ import os
 from datetime import datetime
 from typing import Dict, Tuple
 import configparser
-# Import standard logging
 import logging
-# Import logger
-from logger import getLogger
+
+from vnpy.trader.utility import load_json
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
+
+from logger import setup_logging, getLogger
 
 # VNPY imports
 try:
@@ -55,8 +56,8 @@ def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
 
     try:
         parser.read(filepath, encoding='utf-8')
-    except Exception as e:
-        logger.exception(f"错误：读取产品信息文件 {filepath} 时出错")
+    except Exception as err:
+        logger.exception(f"错误：读取产品信息文件 {filepath} 时出错：{err}")
         return {}, {}
 
     commission_rules = {}
@@ -82,10 +83,10 @@ def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
             }
             commission_rules[symbol] = rule
             # logger.debug(f"加载 {symbol}: Multiplier={multiplier}, Rules={rule}")
-        except ValueError as e:
-            logger.warning(f"警告：解析文件 {filepath} 中 [{symbol}] 的数值时出错: {e}，跳过此合约。")
-        except Exception as e:
-            logger.warning(f"警告：处理文件 {filepath} 中 [{symbol}] 时发生未知错误: {e}，跳过此合约。")
+        except ValueError as err:
+            logger.warning(f"警告：解析文件 {filepath} 中 [{symbol}] 的数值时出错: {err}，跳过此合约。")
+        except Exception as err:
+            logger.warning(f"警告：处理文件 {filepath} 中 [{symbol}] 时发生未知错误: {err}，跳过此合约。")
             
     logger.info(f"从 {filepath} 加载了 {len(contract_multipliers)} 个合约的乘数和 {len(commission_rules)} 个合约的手续费规则。")
     return commission_rules, contract_multipliers
@@ -94,6 +95,7 @@ def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
 # --- Helper Functions for Serialization/Deserialization ---
 
 def vnpy_data_to_dict(obj):
+    logger = getLogger('vnpy_data_to_dict')
     """Converts OrderData or TradeData to a dictionary suitable for msgpack."""
     if isinstance(obj, (OrderData, TradeData)): # Add TickData if needed here too
         d = obj.__dict__
@@ -125,7 +127,7 @@ def vnpy_data_to_dict(obj):
                  d[key] = vnpy_data_to_dict(value)
              return d
         except AttributeError:
-            print(f"Warning: Unhandled type in vnpy_data_to_dict: {type(obj)}. Converting to string.")
+            logger.warning(f"Warning: Unhandled type in vnpy_data_to_dict: {type(obj)}. Converting to string.")
             return str(obj)
 
 def dict_to_order_request(data_dict):
@@ -149,16 +151,16 @@ def dict_to_order_request(data_dict):
             reference=data_dict.get('reference', "zmq_gw") # Add a reference
         )
         return req
-    except KeyError as e:
-        logger.error(f"创建 OrderRequest 失败：缺少关键字段 {e}")
+    except KeyError as err:
+        logger.error(f"创建 OrderRequest 失败：缺少关键字段：{err}")
         logger.error(f"原始数据: {data_dict}")
         return None
-    except ValueError as e:
-        logger.error(f"创建 OrderRequest 失败：无效的枚举值 {e}")
+    except ValueError as err:
+        logger.error(f"创建 OrderRequest 失败：无效的枚举值：{err}")
         logger.error(f"原始数据: {data_dict}")
         return None
-    except Exception as e:
-        logger.exception(f"创建 OrderRequest 时发生未知错误")
+    except Exception as err:
+        logger.exception(f"创建 OrderRequest 时发生未知错误：{err}")
         logger.error(f"原始数据: {data_dict}")
         return None
 
@@ -191,14 +193,14 @@ class OrderExecutionGatewayService:
 
         # CTP settings (primarily needs TD connection)
         self.ctp_setting = {
-            "用户名": config.CTP_USER_ID,
-            "密码": config.CTP_PASSWORD,
-            "经纪商代码": config.CTP_BROKER_ID,
-            "交易服务器": config.CTP_TD_ADDRESS,
-            "行情服务器": config.CTP_MD_ADDRESS, # Often needed even for TD-only for contract query
-            "产品名称": config.CTP_PRODUCT_INFO,
-            "授权编码": config.CTP_AUTH_CODE,
-            "环境": "实盘" # Or "仿真"
+            "userid": config.CTP_USER_ID,
+            "password": config.CTP_PASSWORD,
+            "broker_id": config.CTP_BROKER_ID,
+            "td_address": config.CTP_TD_ADDRESS,
+            "md_address": config.CTP_MD_ADDRESS, # Often needed even for TD-only for contract query
+            "appid": config.CTP_PRODUCT_INFO,
+            "auth_code": config.CTP_AUTH_CODE,
+            "env": config.CTP_ENV_TYPE
         }
 
         self.running = False
@@ -267,10 +269,8 @@ class OrderExecutionGatewayService:
                 # self.logger.info(f"收到成交回报: TradeID={trade.vt_tradeid}, Symbol={trade.symbol}, Dir={trade.direction.value}, Off={trade.offset.value}, Px={trade.price}, Vol={trade.volume}, Commission={calculated_commission:.2f}")
             
             elif not contract:
-                print(f"警告: 未找到成交 {trade.vt_tradeid} 对应的合约信息 ({trade.vt_symbol})，手续费计为 0。")
                 self.logger.warning(f"未找到成交 {trade.vt_tradeid} 对应的合约信息 ({trade.vt_symbol})，手续费计为 0。")
             elif not rules:
-                 print(f"警告: 未找到成交 {trade.vt_tradeid} 对应的手续费规则 ({trade.symbol})，手续费计为 0。")
                  self.logger.warning(f"未找到成交 {trade.vt_tradeid} 对应的手续费规则 ({trade.symbol})，手续费计为 0。")
             # +++ 结束计算 +++
 
@@ -311,8 +311,7 @@ class OrderExecutionGatewayService:
 
              if has_key_fields_changed:
                  self.last_account_data = account # Update stored data
-                 pretty_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                 self.logger.info(f"[{pretty_time}] 账户关键信息更新 (GW): AccountID={account.accountid}, Balance={account.balance:.2f}, Available={account.available:.2f}, Margin={getattr(account, 'margin', 0.0):.2f}")
+                 self.logger.info(f"账户关键信息更新 (GW): AccountID={account.accountid}, Balance={account.balance:.2f}, Available={account.available:.2f}, Margin={getattr(account, 'margin', 0.0):.2f}")
                  self.publish_report(account, "ACCOUNT_DATA")
              # --- End change check --- 
         elif event_type == EVENT_CONTRACT:
@@ -329,7 +328,6 @@ class OrderExecutionGatewayService:
         elif isinstance(data_object, AccountData):
              topic_str = f"ACCOUNT_DATA.{data_object.accountid}"
         else:
-            print(f"收到未知类型回报，无法发布: {type(data_object)}")
             self.logger.warning(f"收到未知类型回报，无法发布: {type(data_object)}")
             return
 
@@ -353,8 +351,9 @@ class OrderExecutionGatewayService:
         try:
             packed_message = msgpack.packb(message, default=vnpy_data_to_dict, use_bin_type=True)
             self.report_publisher.send_multipart([topic, packed_message])
-        except Exception as e:
+        except Exception as err:
             self.logger.exception(f"序列化或发布回报时出错 ({topic_str})")
+            self.logger.exception(f"详细错误信息: {err}")
             # Avoid logging full data object in production
             # self.logger.debug(f"Failed report data (partial): {{'topic': '{topic_str}', 'type': '{report_type}', ...}}")
 
@@ -404,9 +403,9 @@ class OrderExecutionGatewayService:
         except AttributeError:
              self.logger.error("当前网关对象不支持 get_order 方法，无法获取撤单所需信息。")
              return {"status": "error", "message": "Gateway does not support get_order"}
-        except Exception as e:
+        except Exception as err:
             self.logger.exception(f"处理撤单指令时发生错误 (vt_orderid: {vt_orderid})")
-            return {"status": "error", "message": f"Error processing cancel command: {e}"}
+            return {"status": "error", "message": f"Error processing cancel command: {err}"}
 
     def process_commands(self):
         """Runs in a separate thread to process incoming ZMQ commands (REP socket)."""
@@ -444,8 +443,8 @@ class OrderExecutionGatewayService:
                      time.sleep(1)
             except msgpack.UnpackException as e:
                  self.logger.error(f"指令消息解码错误: {e}")
-            except Exception as e:
-                 self.logger.exception("处理指令时发生未知错误")
+            except Exception as err:
+                 self.logger.exception(f"处理指令时发生未知错误：{err}")
                  # Send generic error reply if possible
                  try:
                      err_reply = {"status": "error", "message": "Internal server error"}
@@ -472,7 +471,6 @@ class OrderExecutionGatewayService:
                 self.logger.info(f"收到订单请求: {request_data.get('symbol')}, {request_data.get('direction')}, Vol:{request_data.get('volume')}") # Log key info
 
                 if not request_data:
-                    print("错误：收到的订单请求消息缺少 'data' 字段。")
                     self.logger.error("错误：收到的订单请求消息缺少 'data' 字段。")
                     continue
 
@@ -497,7 +495,6 @@ class OrderExecutionGatewayService:
                         
                         # 如果重试后仍然找不到
                         if not contract:
-                            print(f"错误: 尝试下单的合约 {vt_symbol} 信息不存在 (已重试 {max_retries} 次)。订单无法发送。")
                             self.logger.error(f"错误: 尝试下单的合约 {vt_symbol} 信息不存在 (已重试 {max_retries} 次)。订单无法发送。")
                             # 可以选择性地发送拒绝回报给策略
                             # self.send_rejection_report(order_request, "合约不存在")
@@ -506,32 +503,25 @@ class OrderExecutionGatewayService:
 
                     vt_orderid = self.gateway.send_order(order_request)
                     if vt_orderid:
-                        print(f"  订单请求已发送至 CTP 网关: {order_request.symbol}, 本地ID: {vt_orderid}")
                         self.logger.info(f"订单请求已发送至 CTP 网关: {order_request.symbol}, 本地ID: {vt_orderid}")
                     else:
-                        print(f"  错误: CTP 网关未能发送订单请求: {order_request.symbol}")
                         self.logger.error(f"CTP 网关未能发送订单请求: {order_request.symbol}")
                         # Optionally publish a rejection status back?
                 else:
-                    print("  错误: 无法将收到的消息转换为有效的 OrderRequest。")
                     self.logger.error("无法将收到的消息转换为有效的 OrderRequest。")
                     # Optionally publish a rejection status back?
 
-            except zmq.ZMQError as e:
-                if e.errno == zmq.ETERM:
-                    print("订单请求线程：ZMQ Context 已终止。")
-                    self.logger.info("订单请求线程：ZMQ Context 已终止。")
+            except zmq.ZMQError as err:
+                if err.errno == zmq.ETERM:
+                    self.logger.info(f"订单请求线程：ZMQ Context 已终止。：{err}")
                     break # Exit loop cleanly
                 else:
-                     print(f"订单请求线程 ZMQ 错误: {e}")
-                     self.logger.error(f"订单请求线程 ZMQ 错误: {e}")
+                     self.logger.error(f"订单请求线程 ZMQ 错误: {err}")
                      time.sleep(1)
-            except msgpack.UnpackException as e:
-                 print(f"订单请求消息解码错误: {e}")
-                 self.logger.error(f"订单请求消息解码错误: {e}")
-            except Exception as e:
-                 print(f"处理订单请求时发生未知错误: {e}")
-                 self.logger.exception("处理订单请求时发生未知错误")
+            except msgpack.UnpackException as err:
+                 self.logger.error(f"订单请求消息解码错误: {err}")
+            except Exception as err:
+                 self.logger.exception(f"处理订单请求时发生未知错误: {err}")
                  # Log traceback here in production
                  time.sleep(1)
 
@@ -539,6 +529,11 @@ class OrderExecutionGatewayService:
 
     def start(self):
         """Starts the event engine, connects the gateway, and starts the request thread."""
+        # 先加载配置
+        setting: dict = load_json("connect_ctp.json")
+        self.logger.info(f"Connecting to CTP server {setting["env"]} "
+                         f"td_address: {setting["td_address"]} "
+                         f"md_address: {setting["md_address"]}")
         if self.running:
             self.logger.warning("订单执行网关服务已在运行中。")
             return
@@ -553,7 +548,6 @@ class OrderExecutionGatewayService:
         self.event_engine.register(EVENT_CONTRACT, self.process_vnpy_event)
         self.event_engine.register(EVENT_ACCOUNT, self.process_vnpy_event) # Register for account events
         self.event_engine.start()
-        print("事件引擎已启动。")
         self.logger.info("事件引擎已启动。")
 
         # Connect CTP gateway
@@ -562,10 +556,10 @@ class OrderExecutionGatewayService:
             self.logger.info("CTP 交易网关连接请求已发送。等待连接成功...")
             # Ideally, wait for a connection success log/event
             time.sleep(10) # Simple wait
-            print("CTP 交易网关应已连接。")
+            self.logger.info("CTP 交易网关应已连接。")
             self.logger.info("CTP 交易网关假定连接成功（基于延时）。") # Log assumption
-        except Exception as e:
-            print(f"连接 CTP 交易网关时发生严重错误: {e}")
+        except Exception as err:
+            self.logger.exception(f"连接 CTP 交易网关时发生严重错误: {err}")
             self.stop()
             return
 
@@ -588,30 +582,49 @@ class OrderExecutionGatewayService:
             return
 
         self.logger.info("停止订单执行网关服务...")
-        self.running = False
+        self.running = False # 1. Signal threads to stop
 
-        # Stop ZMQ request thread first
-        # Send a dummy message or close socket to unblock recv?
-        # Or rely on self.running flag check within the loop
-        # Closing sockets before thread join might be cleaner
+        # 2. Stop Vnpy components first
+        try:
+            # Use is_active() if available, fallback to _active
+            if hasattr(self.event_engine, 'is_active') and self.event_engine.is_active():
+                self.event_engine.stop()
+                self.logger.info("事件引擎已停止。")
+            elif hasattr(self.event_engine, '_active') and self.event_engine._active: # Fallback
+                self.event_engine.stop()
+                self.logger.info("事件引擎已停止。")
+            else:
+                 self.logger.warning("无法确定事件引擎状态或引擎已停止。")
+        except Exception as e:
+            self.logger.exception(f"停止事件引擎时出错: {e}")
 
-        if self.order_puller:
-             self.order_puller.close()
-             print("ZeroMQ 订单请求接收器已关闭。")
-             self.logger.info("ZeroMQ 订单请求接收器已关闭。")
-        if self.report_publisher:
-             self.report_publisher.close()
-             self.logger.info("ZeroMQ 订单/成交回报发布器已关闭。")
-        if self.command_socket:
-             self.command_socket.close()
-             self.logger.info("ZeroMQ 指令接收器已关闭。")
+        if self.gateway:
+            try:
+                self.gateway.close()
+                self.logger.info("CTP 交易网关已关闭。")
+            except Exception as e:
+                self.logger.exception(f"关闭 CTP 网关时出错: {e}")
 
+        # 3. Terminate the ZMQ Context - This should unblock threads stuck in recv()
+        if self.context:
+            try:
+                self.logger.info("正在终止 ZeroMQ Context 以解除线程阻塞...")
+                # Check if context is already terminated to avoid errors on double term
+                if not self.context.closed:
+                    self.context.term()
+                    self.logger.info("ZeroMQ Context 已终止。")
+                else:
+                    self.logger.info("ZeroMQ Context 已被关闭。")
+            except zmq.ZMQError as err:
+                 # Log error but continue cleanup
+                 self.logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {err}")
+            # Optionally set self.context = None here if needed elsewhere
+
+        # 4. Join the threads - Wait for them to exit cleanly
         if self.req_thread and self.req_thread.is_alive():
-            print("等待订单请求处理线程退出...")
             self.logger.info("等待订单请求处理线程退出...")
             self.req_thread.join(timeout=5) # Wait for thread to finish
             if self.req_thread.is_alive():
-                print("警告：订单请求处理线程未在超时内退出。")
                 self.logger.warning("警告：订单请求处理线程未在超时内退出。")
 
         if self.command_thread and self.command_thread.is_alive():
@@ -620,49 +633,42 @@ class OrderExecutionGatewayService:
             if self.command_thread.is_alive():
                 self.logger.warning("警告：指令处理线程未在超时内退出。")
 
-        # Stop vnpy components
-        try:
-            if self.event_engine.is_active():
-                self.event_engine.stop()
-                print("事件引擎已停止。")
-                self.logger.info("事件引擎已停止。")
-        except AttributeError:
-            if hasattr(self.event_engine, '_active') and self.event_engine._active:
-                self.event_engine.stop()
-                print("事件引擎已停止。")
-                self.logger.info("事件引擎已停止。")
-
-        if self.gateway:
-            self.gateway.close()
-            print("CTP 交易网关已关闭。")
-            self.logger.info("CTP 交易网关已关闭。")
-
-        if self.context:
-             # Check if context is already terminated before terminating again
-             # if not self.context.closed:
-             #    self.context.term()
-             # Simplified: assume term() is idempotent or handles errors
+        # 5. Close the ZMQ Sockets LAST - Now safe as threads are joined and context is terminated
+        self.logger.info("正在关闭 ZeroMQ 套接字...")
+        if self.order_puller:
              try:
-                 self.context.term()
-                 print("ZeroMQ Context 已终止。")
-                 self.logger.info("ZeroMQ Context 已终止。")
-             except zmq.ZMQError as e:
-                  print(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
-                  self.logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
+                 # LINGER option before closing is still recommended
+                 self.order_puller.setsockopt(zmq.LINGER, 0)
+                 self.order_puller.close()
+                 self.logger.info("ZeroMQ 订单请求接收器已关闭。")
+             except zmq.ZMQError as err:
+                 self.logger.error(f"关闭 order_puller 时出错 (可能已关闭或 Context 已终止): {err}")
+        if self.report_publisher:
+             try:
+                 self.report_publisher.setsockopt(zmq.LINGER, 0)
+                 self.report_publisher.close()
+                 self.logger.info("ZeroMQ 订单/成交回报发布器已关闭。")
+             except zmq.ZMQError as err:
+                  self.logger.error(f"关闭 report_publisher 时出错 (可能已关闭或 Context 已终止): {err}")
+        if self.command_socket:
+             try:
+                 self.command_socket.setsockopt(zmq.LINGER, 0)
+                 self.command_socket.close()
+                 self.logger.info("ZeroMQ 指令接收器已关闭。")
+             except zmq.ZMQError as err:
+                 self.logger.error(f"关闭 command_socket 时出错 (可能已关闭或 Context 已终止): {err}")
 
         self.logger.info("订单执行网关服务已停止。")
 
 # --- Main execution block (for testing) ---
 if __name__ == "__main__":
+    logger_main = getLogger(__name__)
     # Setup logging for direct execution test
     try:
-        from logger import setup_logging, getLogger
         setup_logging(service_name="OrderExecutionGateway_DirectRun")
     except ImportError as log_err:
-        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+        logger_main.critical(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
         sys.exit(1)
-
-    logger_main = getLogger(__name__)
 
     logger_main.info("Starting direct test run...")
     gw_service = OrderExecutionGatewayService()
@@ -675,7 +681,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger_main.info("主程序接收到中断信号，正在停止...")
     except Exception as e:
-        logger_main.exception("主测试循环发生未处理错误")
+        logger_main.exception(f"主测试循环发生未处理错误：{e}")
     finally:
         gw_service.stop()
         logger_main.info("订单执行网关测试运行结束。")
