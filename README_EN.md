@@ -134,7 +134,7 @@ build.bat
 or
 
 ```bash
-install.sh
+build.sh
 ```
 
 Method 2:

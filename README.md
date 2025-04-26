@@ -138,7 +138,7 @@ build.bat
 或者
 
 ```bash
-install.sh
+build.sh
 ```
 
 方式二：
