@@ -139,13 +139,13 @@ class CtpGateway(BaseGateway):
     default_name: str = "CTP"
 
     default_setting: dict[str, str] = {
-        "用户名": "",
-        "密码": "",
-        "经纪商代码": "",
-        "交易服务器": "",
-        "行情服务器": "",
-        "产品名称": "",
-        "授权编码": ""
+        "userid": "",
+        "password": "",
+        "broker_id": "",
+        "td_address": "",
+        "md_address": "",
+        "appid": "",
+        "auth_code": ""
     }
 
     exchanges: list[str] = list(EXCHANGE_CTP2VT.values())
@@ -161,13 +161,13 @@ class CtpGateway(BaseGateway):
 
     def connect(self, setting: dict) -> None:
         """连接交易接口"""
-        userid: str = setting["用户名"]
-        password: str = setting["密码"]
-        brokerid: str = setting["经纪商代码"]
-        td_address: str = setting["交易服务器"]
-        md_address: str = setting["行情服务器"]
-        appid: str = setting["产品名称"]
-        auth_code: str = setting["授权编码"]
+        userid: str = setting["userid"]  # 用户名
+        password: str = setting["password"]  # 密码
+        brokerid: str = setting["broker_id"]  # 经纪商代码
+        td_address: str = setting["td_address"]  # 交易服务器
+        md_address: str = setting["md_address"]  # 行情服务器
+        appid: str = setting["appid"]  # 产品名称
+        auth_code: str = setting["auth_code"]  # 授权编码
 
         if (
             (not td_address.startswith("tcp://"))
