@@ -2,5 +2,6 @@
 title run_market_gateway
 :: ¥Ú”°–≈œ¢
 call .venv\Scripts\activate
+echo %CD%
 python zmq_services/run_market_gateway.py
 pause

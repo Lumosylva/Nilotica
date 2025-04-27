@@ -2,5 +2,6 @@
 title run_data_recorder
 :: ¥Ú”°–≈œ¢
 call .venv\Scripts\activate
+echo %CD%
 python zmq_services/run_data_recorder.py
 pause
