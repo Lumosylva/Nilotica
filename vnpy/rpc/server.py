@@ -71,8 +71,27 @@ class RpcServer:
         if not self._active:
             return
 
-        # Stop RpcServer status
+        # Stop RpcServer status first to signal the run loop to exit
         self._active = False
+
+        # Close sockets immediately to prevent issues during thread termination
+        try:
+            self._socket_rep.close()
+        except Exception:
+            pass # Ignore exceptions during close
+
+        try:
+            self._socket_pub.close()
+        except Exception:
+            pass # Ignore exceptions during close
+
+        # Terminate the ZMQ context to release resources
+        try:
+            self._context.term()
+        except Exception as e:
+            # Log error or pass if context termination fails
+            # print(f"Error terminating ZMQ context: {e}") # Example direct print
+            pass
 
     def join(self) -> None:
         # Wait for RpcServer thread to exit
