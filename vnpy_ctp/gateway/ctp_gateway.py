@@ -2,6 +2,7 @@ import sys
 from datetime import datetime
 from time import sleep
 from pathlib import Path
+import traceback
 
 from vnpy.event import EventEngine, Event
 from vnpy.trader.constant import (
@@ -440,7 +441,6 @@ class CtpTdApi(TdApi):
     def onFrontConnected(self) -> None:
         """服务器连接成功回报"""
         self.gateway.write_log("交易服务器连接成功")
-
         if self.auth_code:
             self.authenticate()
         else:
@@ -453,35 +453,27 @@ class CtpTdApi(TdApi):
 
     def onRspAuthenticate(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """用户授权验证回报"""
-        if not error['ErrorID']:
+        if not error.get('ErrorID'):
             self.auth_status = True
             self.gateway.write_log("交易服务器授权验证成功")
             self.login()
         else:
-            # 如果是授权码错误，则禁止再次发起认证
-            if error['ErrorID'] == 63:
+            if error.get('ErrorID') == 63:
                 self.auth_failed = True
-
             self.gateway.write_error("交易服务器授权验证失败", error)
 
     def onRspUserLogin(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """用户登录请求回报"""
-        if not error["ErrorID"]:
+        if not error.get("ErrorID"):
             self.frontid = data["FrontID"]
             self.sessionid = data["SessionID"]
             self.login_status = True
             self.gateway.write_log("交易服务器登录成功")
-
-            # 自动确认结算单
-            ctp_req: dict = {
-                "BrokerID": self.brokerid,
-                "InvestorID": self.userid
-            }
+            ctp_req: dict = {"BrokerID": self.brokerid, "InvestorID": self.userid}
             self.reqid += 1
             self.reqSettlementInfoConfirm(ctp_req, self.reqid)
         else:
             self.login_failed = True
-
             self.gateway.write_error("交易服务器登录失败", error)
 
     def onRspOrderInsert(self, data: dict, error: dict, reqid: int, last: bool) -> None:
@@ -514,79 +506,77 @@ class CtpTdApi(TdApi):
     def onRspSettlementInfoConfirm(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """确认结算单回报"""
         self.gateway.write_log("结算信息确认成功")
-
-        # 由于流控，单次查询可能失败，通过while循环持续尝试，直到成功发出请求
         while True:
             self.reqid += 1
             n: int = self.reqQryInstrument({}, self.reqid)
-
             if not n:
                 break
             else:
+                self.gateway.write_log(f"CtpTdApi: reqQryInstrument failed with code {n}, retrying...")
                 sleep(1)
 
     def onRspQryInvestorPosition(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """持仓查询回报"""
-        if not data:
-            return
+        if last or (error and 'ErrorID' in error and error['ErrorID']):
+            if not data:
+                return
 
-        # 必须已经收到了合约信息后才能处理
-        symbol: str = data["InstrumentID"]
-        contract: ContractData = symbol_contract_map.get(symbol, None)
+            # 必须已经收到了合约信息后才能处理
+            symbol: str = data["InstrumentID"]
+            contract: ContractData = symbol_contract_map.get(symbol, None)
 
-        if contract:
-            # 获取之前缓存的持仓数据缓存
-            key: str = f"{data['InstrumentID'], data['PosiDirection']}"
-            position: PositionData = self.positions.get(key, None)
-            if not position:
-                position = PositionData(
-                    symbol=data["InstrumentID"],
-                    exchange=contract.exchange,
-                    direction=DIRECTION_CTP2VT[data["PosiDirection"]],
-                    gateway_name=self.gateway_name
-                )
-                self.positions[key] = position
+            if contract:
+                # 获取之前缓存的持仓数据缓存
+                key: str = f"{data['InstrumentID'], data['PosiDirection']}"
+                position: PositionData = self.positions.get(key, None)
+                if not position:
+                    position = PositionData(
+                        symbol=data["InstrumentID"],
+                        exchange=contract.exchange,
+                        direction=DIRECTION_CTP2VT[data["PosiDirection"]],
+                        gateway_name=self.gateway_name
+                    )
+                    self.positions[key] = position
 
-            # 对于上期所昨仓需要特殊处理
-            if position.exchange in {Exchange.SHFE, Exchange.INE}:
-                if data["YdPosition"] and not data["TodayPosition"]:
-                    position.yd_volume = data["Position"]
-            # 对于其他交易所昨仓的计算
-            else:
-                position.yd_volume = data["Position"] - data["TodayPosition"]
+                # 对于上期所昨仓需要特殊处理
+                if position.exchange in {Exchange.SHFE, Exchange.INE}:
+                    if data["YdPosition"] and not data["TodayPosition"]:
+                        position.yd_volume = data["Position"]
+                # 对于其他交易所昨仓的计算
+                else:
+                    position.yd_volume = data["Position"] - data["TodayPosition"]
 
-            # 获取合约的乘数信息
-            size: int = contract.size
+                # 获取合约的乘数信息
+                size: int = contract.size
 
-            # 计算之前已有仓位的持仓总成本
-            cost: float = position.price * position.volume * size
+                # 计算之前已有仓位的持仓总成本
+                cost: float = position.price * position.volume * size
 
-            # 累加更新持仓数量和盈亏
-            position.volume += data["Position"]
-            position.pnl += data["PositionProfit"]
+                # 累加更新持仓数量和盈亏
+                position.volume += data["Position"]
+                position.pnl += data["PositionProfit"]
 
-            # 计算更新后的持仓总成本和均价
-            if position.volume and size:
-                cost += data["PositionCost"]
-                position.price = cost / (position.volume * size)
+                # 计算更新后的持仓总成本和均价
+                if position.volume and size:
+                    cost += data["PositionCost"]
+                    position.price = cost / (position.volume * size)
 
-            # 更新仓位冻结数量
-            if position.direction == Direction.LONG:
-                position.frozen += data["ShortFrozen"]
-            else:
-                position.frozen += data["LongFrozen"]
+                # 更新仓位冻结数量
+                if position.direction == Direction.LONG:
+                    position.frozen += data["ShortFrozen"]
+                else:
+                    position.frozen += data["LongFrozen"]
 
-        if last:
-            for position in self.positions.values():
-                self.gateway.on_position(position)
+            if last:
+                for position in self.positions.values():
+                    self.gateway.on_position(position)
 
-            self.positions.clear()
+                self.positions.clear()
 
     def onRspQryTradingAccount(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """资金查询回报"""
         if "AccountID" not in data:
             return
-
         account: AccountData = AccountData(
             accountid=data["AccountID"],
             balance=data["Balance"],
@@ -594,11 +584,12 @@ class CtpTdApi(TdApi):
             gateway_name=self.gateway_name
         )
         account.available = data["Available"]
-
         self.gateway.on_account(account)
 
     def onRspQryInstrument(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """合约查询回报"""
+        if last or error.get("ErrorID"):
+            self.gateway.write_log(f"CtpTdApi: onRspQryInstrument finished. Last: {last}, ErrorID: {error.get('ErrorID', 'N/A')}")
         product: Product = PRODUCT_CTP2VT.get(data["ProductClass"], None)
         if product:
             contract: ContractData = ContractData(
@@ -738,16 +729,32 @@ class CtpTdApi(TdApi):
 
         if not self.connect_status:
             path: Path = get_folder_path(self.gateway_name.lower())
-            self.createFtdcTraderApi((str(path) + "\\Td").encode("GBK"))
+            api_path_str = str(path) + "\\Td"
+            self.gateway.write_log(f"CtpTdApi: Attempting to create API with path: {api_path_str}")
+            try:
+                self.createFtdcTraderApi(api_path_str.encode("GBK").decode("utf-8"))
+                self.gateway.write_log("CtpTdApi: createFtdcTraderApi called successfully.")
+            except Exception as e_create:
+                self.gateway.write_log(f"CtpTdApi: createFtdcTraderApi FAILED! Error: {e_create}")
+                self.gateway.write_log(f"CtpTdApi: createFtdcTraderApi Traceback:\n{traceback.format_exc()}")
+                return
 
             self.subscribePrivateTopic(0)
             self.subscribePublicTopic(0)
 
             self.registerFront(address)
-            self.init()
+            self.gateway.write_log(f"CtpTdApi: Attempting to init API with address: {address}...")
+            try:
+                self.init()
+                self.gateway.write_log("CtpTdApi: init called successfully.")
+            except Exception as e_init:
+                self.gateway.write_log(f"CtpTdApi: init FAILED! Error: {e_init}")
+                self.gateway.write_log(f"CtpTdApi: init Traceback:\n{traceback.format_exc()}")
+                return
 
             self.connect_status = True
         else:
+            self.gateway.write_log("CtpTdApi: Already connected, attempting authentication.")
             self.authenticate()
 
     def authenticate(self) -> None:
