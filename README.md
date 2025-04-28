@@ -44,21 +44,22 @@ Language: [ENGLISH](README_EN.md)
 
 ### **3. 说明**
 
-为了防止与本机中其它vnpy项目共存时用同一用户配置目录发生冲突，本项目修改了`vnpy`库中文件：
+本项目修改了`vnpy`库中文件
 
 1. vnpy/trader/utility.py：
 
-```python
-TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
-```
+    ```python
+    TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+    ```
+防止与本机中其它vnpy项目共存时用同一用户配置目录发生冲突
 
 2. vnpy_ctp/gateway/ctp_gateway.py：
 
-在 connect 函数中添加 try...except... 以捕获异常
+   在 connect 函数中添加 try...except... 以捕获异常
 
 3. vnpy/rpc/server.py：
 
-stop 函数添加了 self._socket_rep.close()、self.socket_pub.close() 和 self._context.term()，这些函数在关闭套接字后调用，以终止 ZMQ 上下文。
+   stop 函数添加了 self._socket_rep.close()、self.socket_pub.close() 和 self._context.term()，这些函数在关闭套接字后调用，以终止 ZMQ 上下文。
 
 ### **4. 环境配置**
 

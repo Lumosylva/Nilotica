@@ -40,17 +40,19 @@ The functions currently implemented by the system are:
 
 ### **3. Description**
 
-In order to prevent conflicts with other vnpy projects on the local machine when using the same user configuration directory, this project modifies the files in the `vnpy` library:
+This project modifies the files in the `vnpy` library
 
 1. vnpy/trader/utility.py:
 
-```Python
-TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
-```
+    ```python
+    TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
+    ```
+
+​		Prevent conflicts with other vnpy projects on the local machine when using the same user configuration directory
 
 2. vnpy_ctp/gateway/ctp_gateway.py:
 
-   Add try...except... to the connect function to catch exceptions
+   Add try...except... in the connect function to catch exceptions
 
 3. vnpy/rpc/server.py:
 
@@ -62,35 +64,35 @@ This project uses `uv` to manage Python virtual environments and dependent packa
 
 1. UV installation
 
-On Linux
+   On Linux
 
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
 
-On Windows
+   On Windows
 
-```bash
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
+   ```bash
+   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
 
 2. Use the `uv sync` command to let `uv` automatically create a Python virtual environment and download dependent packages according to the configuration in `pyproject.toml`
 
-```bash
-uv sync
-```
+   ```bash
+   uv sync
+   ```
 
-Or do not use the `uv sync` command and manually create a virtual environment
+   Or do not use the `uv sync` command and manually create a virtual environment
 
-```bash
-uv venv --python 3.12.9 .venv
-```
+   ```bash
+   uv venv --python 3.12.9 .venv
+   ```
 
-Activate the virtual environment
+   Activate the virtual environment
 
-```bash
-.venv\Scripts\activate
-```
+   ```bash
+   .venv\Scripts\activate
+   ```
 
 ### **5. Compile VNPY_CTP**
 
