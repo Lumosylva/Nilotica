@@ -58,15 +58,16 @@ class MarketDataGatewayService(RpcServer):
 
         # Prepare CTP gateway settings from config
         self.ctp_setting = {
-            "userid": config.CTP_USER_ID,
-            "password": config.CTP_PASSWORD,
-            "broker_id": config.CTP_BROKER_ID,
-            "td_address": config.CTP_TD_ADDRESS, # Needed for login
-            "md_address": config.CTP_MD_ADDRESS,
-            "appid": config.CTP_PRODUCT_INFO,
-            "auth_code": config.CTP_AUTH_CODE,
-            "env": config.CTP_ENV_TYPE
+            "userid": "",
+            "password": "",
+            "broker_id": "",
+            "td_address": "", # Needed for login
+            "md_address": "",
+            "appid": "",
+            "auth_code": "",
+            "env": ""
         }
+        self.ctp_setting: dict = load_json("connect_ctp.json")
 
         self._subscribe_list = [] # Store successful subscriptions
 
@@ -144,7 +145,7 @@ class MarketDataGatewayService(RpcServer):
 
     # publish_data method is no longer needed, RpcServer.publish is used directly
 
-    def start(self):
+    def start(self, rep_address=None, pub_address=None):
         """Starts the RpcServer, EventEngine, and connects the gateway."""
         if self.is_active():
             self.logger.warning("行情网关服务(RPC模式)已在运行中。")
@@ -176,10 +177,10 @@ class MarketDataGatewayService(RpcServer):
         try:
             # Load connection settings from JSON (or directly use self.ctp_setting)
             # Keep json loading for consistency if other parts rely on it
-            setting_json: dict = load_json("connect_ctp.json")
-            self.logger.info(f"CTP 连接配置 (JSON): Env={setting_json.get('env', 'N/A')}, "
-                             f"TD={setting_json.get('td_address', 'N/A')}, "
-                             f"MD={setting_json.get('md_address', 'N/A')}")
+            self.logger.info(f"CTP 连接配置 (JSON): Env={self.ctp_setting['env']}")
+            self.logger.info(f"使用配置连接 CTP: UserID={self.ctp_setting['userid']}, "
+                             f"BrokerID={self.ctp_setting['broker_id']}, "
+                             f"TD={self.ctp_setting['td_address']}")
             # Connect using the settings prepared in __init__
             self.gateway.connect(self.ctp_setting)
             self.logger.info("CTP 网关连接请求已发送。等待连接成功...")
