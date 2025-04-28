@@ -1,6 +1,7 @@
 import time
 import sys
 import os
+import argparse # Import argparse
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -34,11 +35,27 @@ except ImportError as e:
 
 def main():
     """Runs the order execution gateway service (RPC Mode)."""
-    logger.info("正在初始化订单执行网关服务(RPC模式)...")
-    # Rename variable for clarity
-    gw_service = OrderExecutionGatewayService()
 
-    logger.info("尝试启动服务(RPC模式)...")
+    # +++ Add Argument Parser +++
+    parser = argparse.ArgumentParser(description="Run the Order Execution Gateway Service for a specific CTP environment.")
+    # Make --env optional with a default value
+    parser.add_argument(
+        "--env", 
+        default="simnow", 
+        help="The CTP environment name (e.g., 'simnow', 'simnow7x24') defined in connect_ctp.json. Defaults to 'simnow'."
+    )
+    args = parser.parse_args()
+
+    # Log if default environment is used
+    if args.env == "simnow" and '--env' not in sys.argv:
+        logger.info("No --env specified, using default environment: simnow")
+    # --- End Argument Parser Modifications ---
+
+    logger.info(f"正在初始化订单执行网关服务(RPC模式) for environment: [{args.env}]...")
+    # Pass the environment name to the service constructor
+    gw_service = OrderExecutionGatewayService(environment_name=args.env)
+
+    logger.info(f"尝试启动服务(RPC模式) for [{args.env}]...")
     gw_service.start()
 
     try:
@@ -47,14 +64,14 @@ def main():
         while gw_service.is_active():
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("\n检测到 Ctrl+C，正在停止服务...")
+        logger.info(f"\n检测到 Ctrl+C，正在停止服务 [{args.env}]...")
     except Exception as err:
         logger.exception(f"服务运行时发生意外错误: {err}")
     finally:
         # Ensure graceful shutdown
-        logger.info("开始停止服务(RPC模式)...")
+        logger.info(f"开始停止服务(RPC模式) for [{args.env}]...")
         gw_service.stop()
-        logger.info("订单执行网关服务(RPC模式)已退出。")
+        logger.info(f"订单执行网关服务(RPC模式) for [{args.env}] 已退出。")
 
 if __name__ == "__main__":
     main()
