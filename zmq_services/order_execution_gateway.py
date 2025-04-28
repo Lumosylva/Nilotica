@@ -43,6 +43,8 @@ except ImportError as e:
 
 # Import new config location
 from config import zmq_config as config
+# Import constants from config
+from config.zmq_config import PUBLISH_BATCH_SIZE, CHINA_TZ # HEARTBEAT_INTERVAL_S likely unused
 
 # +++ 添加函数：加载产品信息 +++
 def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
@@ -150,10 +152,10 @@ def dict_to_order_request(data_dict: Dict[str, Any]) -> OrderRequest | None:
         logger.exception(f"创建 OrderRequest 时发生未知错误：{err} from data {data_dict}")
         return None
 
-# --- Constants ---
-HEARTBEAT_INTERVAL_S = 1.0 # 发送心跳间隔（秒）
-PUBLISH_BATCH_SIZE = 1000 # 一次处理的最大消息数量
-CHINA_TZ = ZoneInfo("Asia/Shanghai") # Define China timezone
+# --- Constants (Removed local definitions) ---
+# HEARTBEAT_INTERVAL_S = 1.0
+# PUBLISH_BATCH_SIZE = 1000 
+# CHINA_TZ = ZoneInfo("Asia/Shanghai") 
 
 # --- Order Execution Gateway Service (RPC Mode) ---
 class OrderExecutionGatewayService(RpcServer):
