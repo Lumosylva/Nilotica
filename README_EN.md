@@ -42,19 +42,19 @@ The functions currently implemented by the system are:
 
 In order to prevent conflicts with other vnpy projects on the local machine when using the same user configuration directory, this project modifies the files in the `vnpy` library:
 
-vnpy/trader/utility.py
-
-Original code:
-
-```Python
-TRADER_DIR, TEMP_DIR = _get_trader_dir(".vntrader")
-```
-
-After the change:
+1. vnpy/trader/utility.py:
 
 ```Python
 TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
 ```
+
+2. vnpy_ctp/gateway/ctp_gateway.py:
+
+   Add try...except... to the connect function to catch exceptions
+
+3. vnpy/rpc/server.py:
+
+   The stop function adds self._socket_rep.close(), self.socket_pub.close(), and self._context.term(), which are called after closing the socket to terminate the ZMQ context.
 
 ### **4. Environment Configuration**
 
