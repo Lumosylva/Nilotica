@@ -1,4 +1,4 @@
-from typing import Dict, Any, Set
+from typing import Dict, Any, Set, Optional
 
 import zmq
 import msgpack
@@ -31,6 +31,9 @@ from datetime import datetime, time as dt_time # For trading hours check
 MARKET_DATA_TIMEOUT = 30.0 # seconds
 PING_INTERVAL = 5.0      # seconds
 PING_TIMEOUT_MS = 2500   # milliseconds
+RPC_TIMEOUT_MS = 3000    # RPC timeout setting
+RPC_RETRIES = 1          # RPC retry count
+HEARTBEAT_TIMEOUT_S = 10.0 # 心跳超时秒数 (e.g., 10 seconds)
 
 # 2. Setup Logging for this specific service
 # Call this early, before other imports that might log (like MarketDataGatewayService)
@@ -100,6 +103,8 @@ class StrategyEngine: # Renamed class
                 }
         """
         self.logger = getLogger(__name__) # Use instance logger
+        self.logger.setLevel(logging.INFO)
+        self.logger.info(f"StrategyEngine logger level set to: {logging.getLevelName(self.logger.getEffectiveLevel())}")
         self.context = zmq.Context()
 
         # --- ZMQ Socket Setup (Same as before) ---
@@ -187,7 +192,8 @@ class StrategyEngine: # Renamed class
         self.subscribe_topics = []
         topic_map = {
             "tick": "tick.", "trade": "trade.", "order": "order.",
-            "account": "account.", "contract": "contract.", "log": "log"
+            "account": "account.", "contract": "contract.", "log": "log",
+            "heartbeat_ordergw": "heartbeat.ordergw" # 添加心跳主题
         }
 
         if not self.subscribed_symbols:
@@ -195,32 +201,33 @@ class StrategyEngine: # Renamed class
         else:
             for vt_symbol in self.subscribed_symbols:
                 tick_topic = f"{topic_map['tick']}{vt_symbol}"
-                # Subscribe to trades related to the symbol might be less efficient than generic prefix
-                # trade_topic = f"{topic_map['trade']}{vt_symbol}"
                 contract_topic = f"{topic_map['contract']}{vt_symbol}"
-
                 self.subscriber.subscribe(tick_topic.encode('utf-8'))
-                # self.subscriber.subscribe(trade_topic.encode('utf-8')) # Subscribe to specific trades
                 self.subscriber.subscribe(contract_topic.encode('utf-8'))
-                self.subscribe_topics.extend([tick_topic, contract_topic]) # Removed trade_topic here
+                self.subscribe_topics.extend([tick_topic, contract_topic])
                 self.logger.info(f"  订阅特定合约主题: {tick_topic}, {contract_topic}")
 
-        # Subscribe to generic topics (orders, accounts, logs, trades)
-        self.subscriber.subscribe(f"{topic_map['order']}".encode('utf-8')) # Prefix for all orders
-        self.subscriber.subscribe(f"{topic_map['trade']}".encode('utf-8')) # Prefix for all trades
-        self.subscriber.subscribe(f"{topic_map['account']}".encode('utf-8')) # Prefix for all accounts
-        self.subscriber.subscribe(topic_map['log'].encode('utf-8')) # Global logs
-        self.subscribe_topics.extend([f"{topic_map['order']}", f"{topic_map['trade']}", f"{topic_map['account']}", topic_map['log']])
-        self.logger.info(f"  订阅通用主题前缀: {topic_map['order']}*, {topic_map['trade']}*, {topic_map['account']}*, {topic_map['log']}")
+        # Subscribe to generic topics
+        self.subscriber.subscribe(f"{topic_map['order']}".encode('utf-8'))
+        self.subscriber.subscribe(f"{topic_map['trade']}".encode('utf-8'))
+        self.subscriber.subscribe(f"{topic_map['account']}".encode('utf-8'))
+        self.subscriber.subscribe(topic_map['log'].encode('utf-8'))
+        self.subscriber.subscribe(topic_map['heartbeat_ordergw'].encode('utf-8')) # 订阅心跳
+        self.subscribe_topics.extend([
+            f"{topic_map['order']}", f"{topic_map['trade']}", f"{topic_map['account']}",
+            topic_map['log'], topic_map['heartbeat_ordergw']
+        ])
+        self.logger.info(f"  订阅通用主题前缀: {topic_map['order']}*, {topic_map['trade']}*, {topic_map['account']}*, {topic_map['log']}, {topic_map['heartbeat_ordergw']}")
 
         self.logger.info(f"最终订阅 {len(self.subscribe_topics)} 个主题/前缀。")
         # --- End Subscription Logic ---
 
         # --- Health Status Flags & Timers (Mostly unchanged) ---
         self.market_data_ok = True
-        self.gateway_connected = True # Assumed initially, verified by ping
+        self.gateway_connected = False # 初始状态设为 False，等待第一次心跳或 Ping 成功
         self.last_tick_time: Dict[str, float] = {} # Tracks last tick time per symbol
         self.last_ping_time = time.time()
+        self.last_ordergw_heartbeat_time = 0.0 # 初始化上次心跳时间
         # --- End Health Status ---
 
         self.running = False
@@ -234,6 +241,103 @@ class StrategyEngine: # Renamed class
         for strategy in self.strategies.values():
              strategy._init_strategy() # Call internal init method
         self.logger.info("所有策略初始化完成。")
+
+        # Set a smaller high water mark for the subscriber socket
+        self.subscriber.set(zmq.RCVHWM, 5)
+
+    # --- RPC Helper --- 
+    def _send_rpc_request(self, request_tuple: tuple, timeout_ms: int = RPC_TIMEOUT_MS, retries: int = RPC_RETRIES) -> Any | None:
+        """
+        Helper method to send an RPC request via REQ socket with timeout and retries.
+
+        Args:
+            request_tuple: The tuple representing the RPC call (method_name, args, kwargs).
+            timeout_ms: Timeout in milliseconds for waiting for a reply.
+            retries: Number of times to retry after a timeout.
+
+        Returns:
+            The result from the RPC reply if successful (content of reply[1]),
+            None if the request failed after all retries or due to other errors.
+        """
+        if not self.running:
+             self.logger.warning("Engine not running, cannot send RPC request.")
+             return None
+        if not hasattr(self, 'order_requester') or not self.order_requester or self.order_requester.closed:
+             self.logger.error("Order requester socket is not available or closed.")
+             self.gateway_connected = False # Mark as disconnected if socket issue
+             return None
+
+        method_name = request_tuple[0] if request_tuple else "Unknown"
+        attempt = 0
+        max_attempts = 1 + retries # Initial attempt + retries
+
+        while attempt < max_attempts:
+            attempt += 1
+            log_prefix = f"[RPC-{method_name} Att.{attempt}/{max_attempts}]"
+            try:
+                # Use Poller for non-blocking send/recv with timeout check
+                poller = zmq.Poller()
+                poller.register(self.order_requester, zmq.POLLIN)
+
+                # Serialize and send request
+                packed_request = pickle.dumps(request_tuple)
+                self.logger.debug(f"{log_prefix} Sending request...")
+                self.order_requester.send(packed_request)
+
+                # Wait for reply with timeout
+                readable = dict(poller.poll(timeout_ms))
+                if self.order_requester in readable and readable[self.order_requester] & zmq.POLLIN:
+                    packed_reply = self.order_requester.recv()
+                    reply = pickle.loads(packed_reply)
+
+                    # Check RpcServer reply format [True/False, result/traceback]
+                    if isinstance(reply, (list, tuple)) and len(reply) == 2:
+                        if reply[0] is True: # Success
+                            self.logger.debug(f"{log_prefix} Received successful reply.")
+                            # Mark gateway as connected on successful PING reply
+                            if not self.gateway_connected and method_name == "ping":
+                                 self.logger.info("与订单执行网关的连接已恢复 (RPC)。")
+                                 self.gateway_connected = True
+                            return reply[1] # Return the actual result
+                        else: # Application-level error reported by server
+                            error_msg = reply[1]
+                            self.logger.error(f"{log_prefix} RPC 调用失败 (网关回复): {error_msg}")
+                            return None # Indicate failure
+                    else:
+                        self.logger.error(f"{log_prefix} 收到来自订单网关的意外回复格式: {reply}")
+                        return None # Indicate failure (format error)
+                else:
+                    # Timeout waiting for reply
+                    self.logger.warning(f"{log_prefix} 请求超时 ({timeout_ms}ms).")
+                    if attempt >= max_attempts:
+                         self.logger.error(f"与订单执行网关的连接丢失 (RPC Timeout after {max_attempts} attempts)!")
+                         self.gateway_connected = False
+                         return None # Indicate failure after all retries
+                    # Continue to next retry attempt
+
+            except zmq.ZMQError as e:
+                self.logger.error(f"{log_prefix} 发送或接收 RPC 时 ZMQ 错误: {e}")
+                # Assume connection is lost on ZMQ errors
+                if self.gateway_connected:
+                     self.logger.error(f"与订单执行网关的连接丢失 (ZMQ Error {e.errno})!")
+                self.gateway_connected = False
+                return None # Indicate failure
+            except pickle.PicklingError as e:
+                 self.logger.exception(f"{log_prefix} 序列化 RPC 请求时出错: {e}")
+                 return None # Indicate failure
+            except pickle.UnpicklingError as e:
+                 self.logger.exception(f"{log_prefix} 反序列化 RPC 回复时出错: {e}")
+                 return None # Indicate failure
+            except Exception as e:
+                self.logger.exception(f"{log_prefix} 处理 RPC 时发生未知错误：{e}")
+                # Assume connection might be compromised
+                if self.gateway_connected:
+                    self.logger.error("与订单执行网关的连接可能丢失 (未知 RPC 错误)!")
+                self.gateway_connected = False
+                return None # Indicate failure
+
+        # Should not be reached if loop logic is correct, but as a safeguard
+        return None
 
     # --- Helper Methods for Health Checks (adapted from RiskManager) --- 
 
@@ -270,72 +374,45 @@ class StrategyEngine: # Renamed class
 
     # --- Update _send_ping to use order_requester and pickle/RPC format ---
     def _send_ping(self):
-        """Sends a PING request to the Order Gateway via RPC and handles the reply."""
-        log_prefix = "[Ping OrderGW]" if self.gateway_connected else "[Ping OrderGW - Reconnecting]"
-        self.logger.debug(f"{log_prefix} Sending...")
+        """Sends a PING request to the Order Gateway via RPC to check/restore connectivity."""
+        log_prefix = "[Ping OrderGW]"
+        # self.logger.debug(f"{log_prefix} Sending...") # Reduce noise, debug log inside helper
 
         # Format according to vnpy.rpc: ("ping", (), {})
         req_tuple = ("ping", (), {})
         current_time = time.time()
-        self.last_ping_time = current_time
+        self.last_ping_time = current_time # Update last ping attempt time
 
-        try:
-            # Use Poller for non-blocking send/recv with timeout check
-            poller = zmq.Poller()
-            poller.register(self.order_requester, zmq.POLLIN)
+        # Use the helper method with specific ping timeout and no retries for ping itself
+        result = self._send_rpc_request(req_tuple, timeout_ms=PING_TIMEOUT_MS, retries=0)
 
-            # Send PING using pickle with the correct format
-            packed_request = pickle.dumps(req_tuple)
-            self.order_requester.send(packed_request) # Use blocking send on REQ
-
-            # Wait for PONG reply with timeout
-            readable = dict(poller.poll(PING_TIMEOUT_MS))
-            if self.order_requester in readable and readable[self.order_requester] & zmq.POLLIN:
-                packed_reply = self.order_requester.recv() # Use blocking recv on REQ
-                # Decode PONG using pickle - expecting [True, "pong"]
-                reply = pickle.loads(packed_reply)
-
-                # Check for the RpcServer success format [True, "pong"]
-                if isinstance(reply, (list, tuple)) and len(reply) == 2 and reply[0] is True and reply[1] == "pong":
-                    self.logger.debug("Received PONG successfully from OrderGW.")
-                    if not self.gateway_connected:
-                        self.logger.info("与订单执行网关的连接已恢复。")
-                        self.gateway_connected = True
-                else:
-                    self.logger.warning(f"Received unexpected reply to PING from OrderGW: {reply}")
-                    if self.gateway_connected:
-                        self.logger.error("与订单执行网关的连接可能存在问题 (Unexpected PING reply)! ")
-                        self.gateway_connected = False
-            else:
-                # Timeout waiting for reply
-                self.logger.warning(f"{log_prefix} PING request timed out after {PING_TIMEOUT_MS}ms.")
-                if self.gateway_connected:
-                    self.logger.error(f"与订单执行网关的连接丢失 (PING timeout)!")
-                self.gateway_connected = False
-                # No automatic socket reset needed for REQ on timeout, just mark disconnected
-
-        except zmq.ZMQError as e:
-            self.logger.error(f"{log_prefix} 发送 PING 或接收 PONG 时 ZMQ 错误: {e}")
-            if self.gateway_connected:
-                self.logger.error(f"与订单执行网关的连接丢失 ({e})! ")
-            self.gateway_connected = False
-        except Exception as e:
-            self.logger.exception(f"{log_prefix} 发送或处理 PING/PONG 时发生未知错误：{e}")
-            if self.gateway_connected:
-                self.logger.error("与订单执行网关的连接丢失 (Unknown Error)!")
-            self.gateway_connected = False
+        if result == "pong":
+            # Success is handled inside _send_rpc_request by setting gateway_connected=True
+            # self.logger.debug("Received PONG successfully from OrderGW.")
+             pass # No further action needed here
+        elif result is None:
+             # Failure (timeout or error) is handled inside _send_rpc_request
+             # by setting gateway_connected=False and logging errors.
+             pass # No further action needed here
+        else:
+            # Unexpected result content (should be caught by _send_rpc_request format check ideally)
+             self.logger.warning(f"{log_prefix} Received unexpected result for PING: {result}")
+             if self.gateway_connected:
+                 self.logger.error("与订单执行网关的连接可能存在问题 (Unexpected PING result)! ")
+                 self.gateway_connected = False
 
     # --- End update _send_ping ---
 
-    # --- Update send_limit_order to use order_requester and pickle/RPC format ---
-    def send_limit_order(self, symbol: str, exchange: Exchange, direction: Direction, price: float, volume: float, offset: Offset = Offset.NONE):
+    # --- Trading Interface Methods (Called by Strategy Instances) ---
+    def send_limit_order(self, symbol: str, exchange: Exchange, direction: Direction, price: float, volume: float, offset: Offset = Offset.NONE) -> Optional[str]:
         """Sends a limit order request to the Order Execution Gateway via RPC."""
+        # --- Connection Check ---
         if not self.gateway_connected:
             self.logger.error(f"无法发送订单 ({symbol} {direction.value} {volume} @ {price}): 与订单执行网关失去连接。")
             return None # Indicate failure
 
-        # Apply cooling down period
-        cool_down_period = config.ORDER_COOL_DOWN_SECONDS
+        # Apply cooling down period (logic remains the same)
+        cool_down_period = getattr(config, 'ORDER_COOL_DOWN_SECONDS', 1) # Get from config with default
         last_sent = self.last_order_time.get(symbol, 0)
         if time.time() - last_sent < cool_down_period:
             self.logger.warning(f"订单发送冷却中 ({symbol}): 距离上次发送不足 {cool_down_period} 秒。")
@@ -352,68 +429,40 @@ class StrategyEngine: # Renamed class
             "volume": float(volume),
             "price": float(price),
             "offset": offset.value, # Send enum value
-            "reference": "StrategySub" # Optional reference
+            "reference": "StrategyEngine" # Updated reference
         }
 
         # Format according to vnpy.rpc: (method_name, args_tuple, kwargs_dict)
         req_tuple = ("send_order", (order_req_dict,), {})
 
-        try:
-            packed_request = pickle.dumps(req_tuple)
-            self.order_requester.send(packed_request)
+        # --- Use RPC Helper ---
+        # Use default timeout and retries from constants
+        vt_orderid = self._send_rpc_request(req_tuple)
 
-            # Wait for the reply
-            poller = zmq.Poller()
-            poller.register(self.order_requester, zmq.POLLIN)
-            timeout_ms = 5000 # 5 seconds timeout
-            events = dict(poller.poll(timeout_ms))
-
-            if self.order_requester in events:
-                packed_reply = self.order_requester.recv()
-                reply = pickle.loads(packed_reply)
-
-                # Check RpcServer reply format [True/False, result/traceback]
-                if isinstance(reply, (list, tuple)) and len(reply) == 2:
-                    if reply[0] is True: # Success
-                        vt_orderid = reply[1]
-                        self.logger.info(f"订单发送成功 (网关回复): {symbol}, VT_OrderID: {vt_orderid}")
-                        self.last_order_time[symbol] = time.time() # Update cool down timer
-                        return vt_orderid # Return the order ID
-                    else: # Failure
-                        error_msg = reply[1]
-                        self.logger.error(f"订单发送失败 (网关回复): {symbol}. 错误: {error_msg}")
-                        return None
-                else:
-                    self.logger.error(f"收到来自订单网关的意外回复格式: {reply}")
-                    return None
-            else:
-                self.logger.error(f"发送订单 ({symbol}) 请求超时 ({timeout_ms}ms)。")
-                # Mark gateway as disconnected after timeout
-                if self.gateway_connected:
-                     self.logger.error("与订单执行网关的连接丢失 (Order Send Timeout)!")
-                     self.gateway_connected = False
-                return None
-
-        except zmq.ZMQError as e:
-            self.logger.error(f"发送订单 ({symbol}) 时 ZMQ 错误: {e}")
-            if self.gateway_connected:
-                 self.logger.error(f"与订单执行网关的连接丢失 (ZMQ Error on Send)!")
-                 self.gateway_connected = False
+        if vt_orderid:
+            # Ensure vt_orderid is a string before logging/returning
+            if not isinstance(vt_orderid, str):
+                 self.logger.error(f"从订单网关收到的 vt_orderid 不是字符串: {vt_orderid} (类型: {type(vt_orderid)})。订单可能已发送但ID无效。")
+                 # Decide how to handle - maybe return None or a special value?
+                 return None
+            self.logger.info(f"订单发送成功 (RPC确认): {symbol}, VT_OrderID: {vt_orderid}")
+            self.last_order_time[symbol] = time.time() # Update cool down timer
+            return vt_orderid # Return the order ID
+        else:
+            # Failure logged within _send_rpc_request
+            self.logger.error(f"订单发送失败 (RPC调用未成功或网关返回错误): {symbol}")
             return None
-        except Exception as e:
-            self.logger.exception(f"发送或处理订单 ({symbol}) 回复时出错：{e}")
-            return None
-    # --- End update send_limit_order ---
+        # --- End Use RPC Helper ---
 
-    # +++ Add cancel_limit_order method using RPC +++
-    def cancel_limit_order(self, vt_orderid: str):
+    def cancel_limit_order(self, vt_orderid: str) -> bool: # Return bool for success/failure
         """Sends a cancel order request to the Order Execution Gateway via RPC."""
+         # --- Connection Check ---
         if not self.gateway_connected:
             self.logger.error(f"无法发送撤单指令 ({vt_orderid}): 与订单执行网关失去连接。")
             return False # Indicate failure
 
-        if not vt_orderid:
-            self.logger.error("尝试发送空 vt_orderid 的撤单请求。")
+        if not vt_orderid or not isinstance(vt_orderid, str):
+            self.logger.error(f"尝试发送无效 vt_orderid ({vt_orderid}) 的撤单请求。")
             return False
 
         self.logger.info(f"准备发送撤单指令: {vt_orderid}")
@@ -424,52 +473,22 @@ class StrategyEngine: # Renamed class
         # Format according to vnpy.rpc: (method_name, args_tuple, kwargs_dict)
         req_tuple = ("cancel_order", (cancel_req_dict,), {})
 
-        try:
-            packed_request = pickle.dumps(req_tuple)
-            self.order_requester.send(packed_request)
+        # --- Use RPC Helper ---
+        # Use default timeout and retries
+        result_dict = self._send_rpc_request(req_tuple)
 
-            # Wait for the reply
-            poller = zmq.Poller()
-            poller.register(self.order_requester, zmq.POLLIN)
-            timeout_ms = 5000 # 5 seconds timeout
-            events = dict(poller.poll(timeout_ms))
-
-            if self.order_requester in events:
-                packed_reply = self.order_requester.recv()
-                reply = pickle.loads(packed_reply)
-
-                # Check RpcServer reply format [True/False, result/traceback]
-                if isinstance(reply, (list, tuple)) and len(reply) == 2:
-                    if reply[0] is True: # Success (result is the status dict)
-                        status_dict = reply[1]
-                        self.logger.info(f"撤单指令发送成功 (网关回复): {vt_orderid}. 回复: {status_dict}")
-                        return True
-                    else: # Failure
-                        error_msg = reply[1]
-                        self.logger.error(f"撤单指令发送失败 (网关回复): {vt_orderid}. 错误: {error_msg}")
-                        return False
-                else:
-                    self.logger.error(f"收到来自订单网关的意外撤单回复格式: {reply}")
-                    return False
-            else:
-                self.logger.error(f"发送撤单指令 ({vt_orderid}) 请求超时 ({timeout_ms}ms)。")
-                # Mark gateway as disconnected after timeout
-                if self.gateway_connected:
-                     self.logger.error("与订单执行网关的连接丢失 (Cancel Send Timeout)!")
-                     self.gateway_connected = False
-                return False
-
-        except zmq.ZMQError as e:
-            self.logger.error(f"发送撤单指令 ({vt_orderid}) 时 ZMQ 错误: {e}")
-            if self.gateway_connected:
-                 self.logger.error(f"与订单执行网关的连接丢失 (ZMQ Error on Cancel)!")
-                 self.gateway_connected = False
+        # Check the result structure carefully
+        if isinstance(result_dict, dict) and result_dict.get("status") == "ok":
+            self.logger.info(f"撤单指令发送成功 (RPC确认): {vt_orderid}. 回复: {result_dict}")
+            return True
+        else:
+            # Failure (or unexpected result) logged within _send_rpc_request or here
+            if result_dict is None: # RPC call failed
+                 self.logger.error(f"撤单指令发送失败 (RPC调用未成功): {vt_orderid}")
+            else: # Gateway returned an error status or unexpected format
+                 self.logger.error(f"撤单指令发送失败 (网关回复错误或格式无效): {vt_orderid}. 回复: {result_dict}")
             return False
-        except Exception as e:
-            self.logger.exception(f"发送或处理撤单指令 ({vt_orderid}) 回复时出错：{e}")
-            return False
-    # +++ End add cancel_limit_order +++
-
+        # --- End Use RPC Helper ---
 
     def start(self):
         """Starts listening for messages and running the strategy logic."""
@@ -488,6 +507,9 @@ class StrategyEngine: # Renamed class
         for strategy in self.strategies.values():
             strategy._start_strategy() # Call internal start method
         self.logger.info("所有策略已启动。")
+
+        # Set initial heartbeat time on start to avoid immediate timeout detection
+        self.last_ordergw_heartbeat_time = time.time()
 
         self.logger.info("策略引擎服务已启动，开始监听消息...")
 
@@ -517,8 +539,10 @@ class StrategyEngine: # Renamed class
                         # Assuming RpcServer pickled the vnpy objects directly
                         data_obj = pickle.loads(data_bytes)
 
-                        # --- Event Dispatching ---
-                        if topic_str.startswith("tick."):
+                        # --- Event Dispatching (Add heartbeat handling) ---
+                        if topic_str == "heartbeat.ordergw":
+                            self.process_ordergw_heartbeat(data_obj)
+                        elif topic_str.startswith("tick."):
                             vt_symbol = topic_str[len("tick."):]
                             if isinstance(data_obj, TickData):
                                 self.process_tick(vt_symbol, data_obj)
@@ -559,11 +583,23 @@ class StrategyEngine: # Renamed class
                     except Exception as msg_proc_e:
                         self.logger.exception(f"处理订阅消息时出错 (Topic: {topic_bytes.decode('utf-8', errors='ignore')}): {msg_proc_e}")
 
-                # --- Periodic Health Checks (logic remains the same) ---
+                # --- Periodic Health Checks (Add heartbeat check) ---
                 current_time = time.time()
+
+                # 1. Check Order Gateway Heartbeat Timeout
+                # Check only if last heartbeat time is initialized (i.e., after start)
+                if self.last_ordergw_heartbeat_time > 0 and \
+                   (current_time - self.last_ordergw_heartbeat_time > HEARTBEAT_TIMEOUT_S):
+                    if self.gateway_connected: # Only log error once when connection is lost
+                        self.logger.error(f"订单网关心跳超时 ({HEARTBEAT_TIMEOUT_S:.1f}s)! 标记为断开连接。 (Last HB: {datetime.fromtimestamp(self.last_ordergw_heartbeat_time).isoformat()})")
+                        self.gateway_connected = False
+                # Note: Connection is marked True only when a heartbeat is received or ping succeeds
+
+                # 2. Send periodic PING via RPC
                 if current_time - self.last_ping_time >= PING_INTERVAL:
                     self._send_ping()
 
+                # 3. Check market data timeout
                 if self._is_trading_hours():
                     # Market data timeout check logic...
                     found_stale_symbol = False
@@ -700,60 +736,49 @@ class StrategyEngine: # Renamed class
 
         log_func(f"[GW LOG - {gateway_name}] {msg}")
 
+    def process_ordergw_heartbeat(self, heartbeat_ts: float):
+        """Processes heartbeat message (float timestamp) from OrderExecutionGateway."""
+        try:
+            # No longer need pickle.loads here
+            now_ts = time.time()
+            # Log received timestamp (DEBUG level) - Use correct parameter name
+            self.logger.debug(f"(DEBUG HB Recv) TS={datetime.fromtimestamp(heartbeat_ts).isoformat()}, NOW={datetime.fromtimestamp(now_ts).isoformat()}")
+
+            # Record reception time - Use current time to detect timeouts based on reception interval
+            self.last_ordergw_heartbeat_time = now_ts
+
+            # Mark as connected upon receiving any heartbeat
+            # Log only the first time connection is established via heartbeat
+            if not self.gateway_connected:
+                self.logger.info("接收到订单网关心跳，标记为已连接。")
+            self.gateway_connected = True # Set unconditionally on receiving heartbeat
+
+            # Warn if received timestamp is too old (potential clock skew or major delay)
+            # Use the global constant HEARTBEAT_TIMEOUT_S - Use correct parameter name
+            if (now_ts - heartbeat_ts) > (HEARTBEAT_TIMEOUT_S / 2):
+                 self.logger.warning(
+                     f"收到过期的 OrderGW 心跳 (Timestamp: {datetime.fromtimestamp(heartbeat_ts).isoformat()}, "
+                     f"Now: {datetime.fromtimestamp(now_ts).isoformat()}) - 可能存在时钟不同步或延迟。"
+                 )
+        except Exception as e:
+            self.logger.exception(f"处理 OrderGW 心跳消息时出错: {e}")
 
     def stop(self):
-        """Stops the engine and all loaded strategies."""
+        """Stops the strategy engine and all strategies."""
         if not self.running:
-            # self.logger.warning("策略引擎未运行。") # Can be noisy if called multiple times
             return
 
-        self.logger.info("正在停止策略引擎服务...")
+        self.logger.info("开始停止策略引擎服务...")
         self.running = False # Signal loops to stop
 
-        # Stop all loaded strategies first
-        self.logger.info("正在停止所有已加载的策略...")
+        # Stop all strategies
+        self.logger.info("正在停止所有策略...")
         for strategy in self.strategies.values():
-             strategy._stop_strategy() # Call internal stop method
+             try:
+                 strategy._stop_strategy() # Call internal stop
+             except Exception as e:
+                 self.logger.exception(f"停止策略 {strategy.strategy_name} 时出错: {e}")
         self.logger.info("所有策略已停止。")
 
-
-        # Close sockets and context (same as before)
-        self.logger.info("关闭 ZMQ sockets 和 context...")
-        for socket_attr in ['subscriber', 'order_requester']:
-            socket = getattr(self, socket_attr, None)
-            if socket:
-                try:
-                    # Check if context is terminated before closing socket
-                    if self.context and not self.context.closed:
-                         socket.close(linger=0)
-                         self.logger.info(f"ZeroMQ socket '{socket_attr}' 已关闭。")
-                    else:
-                         self.logger.warning(f"Context terminated, skipping close for socket '{socket_attr}'.")
-                except Exception as e_close:
-                     self.logger.warning(f"关闭 socket '{socket_attr}' 时出错: {e_close}")
-
-        if self.context and not self.context.closed:
-            try:
-                self.context.term()
-                self.logger.info("ZeroMQ Context 已终止。")
-            except zmq.ZMQError as e:
-                 self.logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
-        self.logger.info("策略引擎已停止。")
-
-# --- Main execution block (for testing, now handled by run_strategy_subscriber.py) ---
-# if __name__ == "__main__":
-#     # Example Usage (Adapt URLs and symbols as needed)
-#     md_url = "tcp://localhost:5555"
-#     order_req_url = "tcp://localhost:5556"
-#     order_report_url = "tcp://localhost:5557"
-#     symbols = ["SA505.CZCE"] # Example symbol
-#
-#     subscriber = StrategySubscriber(md_url, order_req_url, order_report_url, symbols)
-#
-#     try:
-#         subscriber.start()
-#     except KeyboardInterrupt:
-#         print("\nKeyboardInterrupt detected. Stopping subscriber...")
-#     finally:
-#         subscriber.stop()
-#         print("Subscriber stopped.")
+        # Close sockets
+        # ... (rest of stop method and class) ...
