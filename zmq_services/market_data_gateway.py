@@ -43,35 +43,37 @@ class MarketDataGatewayService(RpcServer):
     Market data gateway service that uses CtpGateway for data collection
     and RpcServer for publishing data.
     """
-    def __init__(self):
-        """Initializes the gateway service."""
+    def __init__(self, environment_name: str):
+        """Initializes the gateway service for a specific environment."""
         super().__init__() # Initialize the RpcServer base class
-
         self.logger = getLogger(__name__)
+        self.logger.info(f"Initializing MarketDataGatewayService for environment: [{environment_name}]...")
+        self.environment_name = environment_name
 
         # Create EventEngine for the gateway
         self.event_engine = EventEngine()
 
         # Create CTP gateway instance
-        # Gateway name is important if multiple gateways run via RPC
-        self.gateway: BaseGateway = CtpGateway(self.event_engine, "CTP_MarketData")
+        self.gateway: BaseGateway = CtpGateway(self.event_engine, f"CTP_MD_{environment_name}")
 
-        # Prepare CTP gateway settings from config
-        self.ctp_setting = {
-            "userid": "",
-            "password": "",
-            "broker_id": "",
-            "td_address": "", # Needed for login
-            "md_address": "",
-            "appid": "",
-            "auth_code": "",
-            "env": ""
-        }
-        self.ctp_setting: dict = load_json("connect_ctp.json")
+        # --- Load and Select CTP Settings --- 
+        self.ctp_setting: dict | None = None
+        try:
+            all_ctp_settings = load_json("connect_ctp.json")
+            if environment_name in all_ctp_settings:
+                self.ctp_setting = all_ctp_settings[environment_name]
+                self.logger.info(f"Loaded CTP settings for environment: [{environment_name}]")
+            else:
+                self.logger.error(f"Environment '{environment_name}' not found in connect_ctp.json! Cannot connect CTP.")
+        except FileNotFoundError:
+            self.logger.error("connect_ctp.json not found! Cannot connect CTP.")
+        except Exception as e:
+            self.logger.exception(f"Error loading or parsing connect_ctp.json: {e}")
+        # --- End Load and Select --- 
 
-        self._subscribe_list = [] # Store successful subscriptions
+        self._subscribe_list = []
 
-        self.logger.info("行情网关服务(RPC模式)初始化完成。")
+        self.logger.info(f"行情网关服务(RPC模式) for [{environment_name}] 初始化完成。")
 
     def process_event(self, event: Event):
         """Processes events from the EventEngine."""
@@ -148,10 +150,10 @@ class MarketDataGatewayService(RpcServer):
     def start(self, rep_address=None, pub_address=None):
         """Starts the RpcServer, EventEngine, and connects the gateway."""
         if self.is_active():
-            self.logger.warning("行情网关服务(RPC模式)已在运行中。")
+            self.logger.warning(f"行情网关服务(RPC模式) for [{self.environment_name}] 已在运行中。")
             return
 
-        self.logger.info("启动行情网关服务(RPC模式)...")
+        self.logger.info(f"启动行情网关服务(RPC模式) for [{self.environment_name}]...")
 
         # 1. Start the RpcServer (binds sockets, starts threads)
         try:
@@ -173,15 +175,13 @@ class MarketDataGatewayService(RpcServer):
         self.logger.info("事件引擎已启动。")
 
         # 3. Connect CTP Gateway
-        self.logger.info("连接 CTP 网关...")
+        self.logger.info(f"连接 CTP 网关 for [{self.environment_name}]...")
+        if not self.ctp_setting:
+            self.logger.error("CTP settings not loaded or environment invalid, cannot connect CTP gateway.")
+            return
         try:
-            # Load connection settings from JSON (or directly use self.ctp_setting)
-            # Keep json loading for consistency if other parts rely on it
-            self.logger.info(f"CTP 连接配置 (JSON): Env={self.ctp_setting['env']}")
-            self.logger.info(f"使用配置连接 CTP: UserID={self.ctp_setting['userid']}, "
-                             f"BrokerID={self.ctp_setting['broker_id']}, "
-                             f"TD={self.ctp_setting['td_address']}")
-            # Connect using the settings prepared in __init__
+            self.logger.info(f"CTP 连接配置 (Env: {self.environment_name}): UserID={self.ctp_setting.get('userid')}, "
+                             f"BrokerID={self.ctp_setting.get('broker_id')}, MD={self.ctp_setting.get('md_address')}")
             self.gateway.connect(self.ctp_setting)
             self.logger.info("CTP 网关连接请求已发送。等待连接成功...")
 
@@ -209,19 +209,19 @@ class MarketDataGatewayService(RpcServer):
             self.logger.info(f"已发送 {len(self._subscribe_list)} 个合约的订阅请求。")
 
         except Exception as err:
-            self.logger.exception(f"连接或订阅 CTP 网关时发生严重错误: {err}")
+            self.logger.exception(f"连接或订阅 CTP 网关时发生严重错误 (Env: {self.environment_name}): {err}")
             self.stop() # Attempt to clean up if connection fails
 
-        self.logger.info("行情网关服务(RPC模式)启动流程完成。")
+        self.logger.info(f"行情网关服务(RPC模式) for [{self.environment_name}] 启动流程完成。")
 
 
     def stop(self):
         """Stops the service and cleans up resources."""
         if not self.is_active():
-            self.logger.warning("行情网关服务(RPC模式)未运行。")
+            self.logger.warning(f"行情网关服务(RPC模式) for [{self.environment_name}] 未运行。")
             return
 
-        self.logger.info("停止行情网关服务(RPC模式)...")
+        self.logger.info(f"停止行情网关服务(RPC模式) for [{self.environment_name}]...")
 
         # 1. Stop the EventEngine first to prevent new events processing
         try:
@@ -243,7 +243,7 @@ class MarketDataGatewayService(RpcServer):
         super().stop()
         self.logger.info("RPC 服务器已停止。")
 
-        self.logger.info("行情网关服务(RPC模式)已停止。")
+        self.logger.info(f"行情网关服务(RPC模式) for [{self.environment_name}] 已停止。")
 
 # --- Main execution block (for testing) ---
 if __name__ == "__main__":
@@ -258,7 +258,7 @@ if __name__ == "__main__":
     logger_main = getLogger(__name__) # Get logger after setup
 
     logger_main.info("Starting direct test run (RPC Mode)...")
-    gateway_service = MarketDataGatewayService()
+    gateway_service = MarketDataGatewayService("test")
 
     # Check config for required addresses
     if not hasattr(config, 'MARKET_DATA_REP_ADDRESS') or \
