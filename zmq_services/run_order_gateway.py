@@ -41,8 +41,6 @@ def main():
     logger.info("尝试启动服务(RPC模式)...")
     gw_service.start()
 
-    logger.info("订单执行网关服务(RPC模式)正在运行。按 Ctrl+C 停止。")
-
     try:
         # Keep the main thread alive while the service runs
         # Use is_active() from RpcServer
