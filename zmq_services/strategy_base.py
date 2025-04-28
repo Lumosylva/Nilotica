@@ -6,7 +6,7 @@ import logging
 
 # Import necessary vnpy types
 from vnpy.trader.object import TickData, OrderData, TradeData
-from vnpy.trader.constant import Direction, Offset, Exchange
+from vnpy.trader.constant import Direction, Offset, Exchange, Status
 
 # Type hint for the engine/interface, avoid circular import
 if TYPE_CHECKING:
