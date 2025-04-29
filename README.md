@@ -2,7 +2,7 @@
 
 Language: [ENGLISH](README_EN.md)
 
-![Nilotica](banner.png)
+![Nilotica](https://github.com/Lumosylva/Nilotica/blob/main/banner.png)
 
 ​																						**基于vnpy的期货量化交易系统**
 
