@@ -36,9 +36,9 @@ def main():
 
     # Log environment being used
     if args.env == "simnow" and '--env' not in sys.argv:
-        logger.info("No --env specified, using default environment: simnow (informational)")
+        logger.info(f"No --env specified, using default environment: simnow")
     else:
-        logger.info(f"Running Risk Manager for environment: {args.env} (informational)")
+        logger.info(f"Running Risk Manager for environment: {args.env}")
 
     logger.info("正在初始化风险管理器...")
 

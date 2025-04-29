@@ -59,9 +59,9 @@ def main():
 
     # Log environment being used
     if args.env == "simnow" and '--env' not in sys.argv:
-        logger.info("No --env specified, using default environment: simnow (informational)")
+        logger.info("No --env specified, using default environment: simnow")
     else:
-        logger.info(f"Running Strategy Engine for environment: {args.env} (informational)")
+        logger.info(f"Running Strategy Engine for environment: {args.env}")
 
     logger.info("正在初始化策略引擎...")
 
