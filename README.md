@@ -2,7 +2,7 @@
 
 Language: [ENGLISH](README_EN.md)
 
-![Nilotica](logo.png)
+![Nilotica](banner.png)
 
 ​																						**基于vnpy的期货量化交易系统**
 

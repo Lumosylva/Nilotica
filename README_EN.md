@@ -2,7 +2,7 @@
 
 Language: [CHINESE](README.md)
 
-![Nilotica](logo.png)
+![Nilotica](banner.png)
 
 **A futures quantitative trading system based on vnpy**
 
