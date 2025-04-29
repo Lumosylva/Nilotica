@@ -2,27 +2,17 @@ import time
 import sys
 import os
 import logging
+import argparse
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import the renamed service class and config
 from zmq_services.strategy_subscriber import StrategyEngine
 from config import zmq_config as config
-# Import new logger
 from utils.logger import setup_logging, logger
 
-# Import logger setup after adding path (Removed - Moved to main)
-# try:
-#     from logger import setup_logging, getLogger
-#     # Setup logging for this runner script
-#     # Keep level INFO for runner itself, engine/strategies might have different levels
-#     setup_logging(service_name="StrategyEngineRunner", level="INFO")
-# except ImportError as log_err:
-#     print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
-#     sys.exit(1)
 
 # --- Define Strategy Configuration ---
 # This dictionary defines which strategies to load and their parameters.
@@ -48,10 +38,30 @@ STRATEGIES_CONFIG = {
 
 def main():
     """Runs the strategy engine service."""
-    # Setup logging at the beginning of main
-    setup_logging(service_name="StrategyEngineRunner", level="INFO")
+    # --- Argument Parsing ---
+    parser = argparse.ArgumentParser(description="Run the Strategy Engine Service.")
+    parser.add_argument(
+        "--env",
+        default="simnow", # Keep consistent default, though engine might not use it
+        help="The CTP environment name (e.g., 'simnow'). Currently informational for Strategy Engine."
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the minimum logging level."
+    )
+    args = parser.parse_args()
+    # --- End Argument Parsing ---
 
-    # logger = getLogger(__name__) # Removed getLogger
+    # Setup logging at the beginning of main
+    setup_logging(service_name=f"StrategyEngineRunner[{args.env}]", level=args.log_level.upper())
+
+    # Log environment being used
+    if args.env == "simnow" and '--env' not in sys.argv:
+        logger.info("No --env specified, using default environment: simnow (informational)")
+    else:
+        logger.info(f"Running Strategy Engine for environment: {args.env} (informational)")
 
     logger.info("正在初始化策略引擎...")
 
