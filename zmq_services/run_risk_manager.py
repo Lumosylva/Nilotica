@@ -1,5 +1,6 @@
 import sys
 import os
+import argparse
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -13,7 +14,32 @@ from utils.logger import setup_logging, logger
 
 def main():
     """Runs the risk manager service."""
-    setup_logging(service_name="RiskManagerRunner", level="INFO")
+    # --- Argument Parsing --- 
+    parser = argparse.ArgumentParser(description="Run the Risk Manager Service.")
+    parser.add_argument(
+        "--env",
+        default="simnow", # Keep consistent default, though RM might not use it yet
+        help="The CTP environment name (e.g., 'simnow'). Currently informational for Risk Manager."
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the minimum logging level."
+    )
+    args = parser.parse_args()
+    # --- End Argument Parsing ---
+
+    # --- Setup Logging --- 
+    setup_logging(service_name=f"RiskManagerRunner[{args.env}]", level=args.log_level.upper())
+    # --- End Logging Setup --- 
+
+    # Log environment being used
+    if args.env == "simnow" and '--env' not in sys.argv:
+        logger.info("No --env specified, using default environment: simnow (informational)")
+    else:
+        logger.info(f"Running Risk Manager for environment: {args.env} (informational)")
+
     logger.info("正在初始化风险管理器...")
 
     # Get connection URLs and limits from config

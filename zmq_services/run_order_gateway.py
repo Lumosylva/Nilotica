@@ -24,7 +24,6 @@ if not hasattr(config, 'ORDER_GATEWAY_REP_ADDRESS') or \
 
 def main():
     """Runs the order execution gateway service (RPC Mode)."""
-    # +++ Add Argument Parser +++
     parser = argparse.ArgumentParser(description="Run the Order Execution Gateway Service for a specific CTP environment.")
     # Make --env optional with a default value
     parser.add_argument(
@@ -39,38 +38,33 @@ def main():
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         help="Set the minimum logging level."
     )
-    # +++ End add log-level +++
     args = parser.parse_args()
 
-    # --- Setup Logging (Moved here) ---
-    setup_logging(service_name="OrderGatewayRunner", level=args.log_level.upper())
-    # --- End Logging Setup ---
+    setup_logging(service_name=f"OrderGatewayRunner[{args.env}]", level=args.log_level.upper())
 
     # Log if default environment is used
     if args.env == "simnow" and '--env' not in sys.argv:
         logger.info("No --env specified, using default environment: simnow")
     # --- End Argument Parser Modifications ---
-
+    gateway_service = None
     logger.info(f"正在初始化订单执行网关服务(RPC模式) for environment: [{args.env}]...")
-    # Pass the environment name to the service constructor
-    gw_service = OrderExecutionGatewayService(environment_name=args.env)
-
-    logger.info(f"尝试启动服务(RPC模式) for [{args.env}]...")
-    gw_service.start()
-
     try:
+        gateway_service = OrderExecutionGatewayService(environment_name=args.env)
+        logger.info(f"尝试启动服务(RPC模式) for [{args.env}]...")
+        gateway_service.start()
+        logger.info(f"订单执行网关 for [{args.env}] 正在运行。按 Ctrl+C 停止。")
+
         # Keep the main thread alive while the service runs
-        # Use is_active() from RpcServer
-        while gw_service.is_active():
+        while gateway_service.is_active():
             time.sleep(1)
     except KeyboardInterrupt:
         logger.info(f"\n检测到 Ctrl+C，正在停止服务 [{args.env}]...")
     except Exception as err:
         logger.exception(f"服务运行时发生意外错误: {err}")
     finally:
-        # Ensure graceful shutdown
         logger.info(f"开始停止服务(RPC模式) for [{args.env}]...")
-        gw_service.stop()
+        if gateway_service:
+            gateway_service.stop()
         logger.info(f"订单执行网关服务(RPC模式) for [{args.env}] 已退出。")
 
 if __name__ == "__main__":

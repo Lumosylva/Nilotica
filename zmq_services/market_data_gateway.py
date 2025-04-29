@@ -11,15 +11,13 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from utils.logger import logger # Added
+from utils.logger import logger
 
 from vnpy.trader.utility import load_json
 # Add project root to Python path to find vnpy modules
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
-# from utils.logger import setup_logging, logger
 
 # VNPY imports
 try:
@@ -50,8 +48,6 @@ class MarketDataGatewayService(RpcServer):
     def __init__(self, environment_name: str):
         """Initializes the gateway service for a specific environment."""
         super().__init__() # Initialize the RpcServer base class
-        # Restore logger assignment
-        # self.logger = getLogger(__name__) # Removed
 
         logger.info(f"Initializing MarketDataGatewayService for environment: [{environment_name}]...") # Changed self.logger to logger
         self.environment_name = environment_name
@@ -60,7 +56,7 @@ class MarketDataGatewayService(RpcServer):
         self.event_engine = EventEngine()
 
         # Create CTP gateway instance
-        self.gateway: BaseGateway = CtpGateway(self.event_engine, f"CTP_MD_{environment_name}")
+        self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_MD_{environment_name}")
 
         # --- Load and Select CTP Settings --- 
         self.ctp_setting: dict | None = None
@@ -154,10 +150,10 @@ class MarketDataGatewayService(RpcServer):
     def start(self, rep_address=None, pub_address=None):
         """Starts the RpcServer, EventEngine, and connects the gateway."""
         if self.is_active():
-            logger.warning(f"行情网关服务(RPC模式) for [{self.environment_name}] 已在运行中。") # Changed self.logger to logger
+            logger.warning(f"行情网关服务(RPC模式) for [{self.environment_name}] 已在运行中。")
             return
 
-        logger.info(f"启动行情网关服务(RPC模式) for [{self.environment_name}]...") # Changed self.logger to logger
+        logger.info(f"启动行情网关服务(RPC模式) for [{self.environment_name}]...")
 
         # 1. Start the RpcServer (binds sockets, starts threads)
         try:
@@ -246,5 +242,4 @@ class MarketDataGatewayService(RpcServer):
 
         # 3. Stop the RpcServer (closes sockets, terminates context, joins threads)
         super().stop()
-        logger.info("RPC 服务器已停止。") # Changed self.logger to logger
-        logger.info(f"行情网关服务(RPC模式) for [{self.environment_name}] 已停止。") # Changed self.logger to logger
+        logger.info(f"行情网关服务(RPC模式) for [{self.environment_name}] 已停止。")

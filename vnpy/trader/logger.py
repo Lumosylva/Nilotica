@@ -20,7 +20,7 @@ __all__ = [
 
 
 # Log format
-format: str = (
+format_ft: str = (
     "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> "
     "| <level>{level}</level> "
     "| <cyan>{extra[gateway_name]}</cyan> "
@@ -38,7 +38,7 @@ logger.remove()
 
 # Add console output
 if SETTINGS["log.console"]:
-    logger.add(sink=sys.stdout, level=level, format=format)
+    logger.add(sink=sys.stdout, level=level, format=format_ft)
 
 
 # Add file output
@@ -48,4 +48,4 @@ if SETTINGS["log.file"]:
     log_path: Path = get_folder_path("log")
     file_path: Path = log_path.joinpath(filename)
 
-    logger.add(sink=file_path, level=level, format=format)
+    logger.add(sink=file_path, level=level, format=format_ft)

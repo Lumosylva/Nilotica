@@ -621,7 +621,7 @@ name = "importlib-metadata"
 version = "8.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp", marker = "python_full_version < '3.12'" },
+    { name = "zipp" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/08/c1395a292bb23fd03bdf572a1357c5a733d3eecbab877641ceacab23db6e/importlib_metadata-8.6.1.tar.gz", hash = "sha256:310b41d755445d74569f993ccfc22838295d9fe005425094fad953d7f15c8580", size = 55767 }
 wheels = [
@@ -1130,6 +1130,7 @@ dependencies = [
     { name = "deap" },
     { name = "hatch" },
     { name = "hatchling" },
+    { name = "importlib-metadata" },
     { name = "loguru" },
     { name = "msgpack" },
     { name = "nbformat" },
@@ -1139,6 +1140,7 @@ dependencies = [
     { name = "peewee" },
     { name = "pip" },
     { name = "plotly" },
+    { name = "polars" },
     { name = "pybind11" },
     { name = "pybind11-stubgen" },
     { name = "pyqtgraph" },
@@ -1152,6 +1154,7 @@ dependencies = [
     { name = "tushare" },
     { name = "tzdata" },
     { name = "tzlocal" },
+    { name = "websocket-client" },
 ]
 
 [package.optional-dependencies]
@@ -1177,7 +1180,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "babel", specifier = "==2.17.0" },
+    { name = "babel", specifier = ">=2.17.0" },
     { name = "babel", marker = "extra == 'dev'", specifier = ">=2.17.0" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.12.0" },
     { name = "deap", specifier = ">=1.4.2" },
@@ -1185,6 +1188,7 @@ requires-dist = [
     { name = "hatch", specifier = ">=1.14.1" },
     { name = "hatchling", specifier = ">=1.27.0" },
     { name = "hatchling", marker = "extra == 'dev'", specifier = ">=1.27.0" },
+    { name = "importlib-metadata", specifier = ">=8.6.1" },
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "msgpack", specifier = "==1.1.0" },
@@ -1196,6 +1200,7 @@ requires-dist = [
     { name = "peewee", specifier = "==3.17.9" },
     { name = "pip", specifier = ">=25.0.1" },
     { name = "plotly", specifier = ">=6.0.0" },
+    { name = "polars", specifier = ">=1.26.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "pybind11", specifier = ">=2.9.0" },
     { name = "pybind11-stubgen", specifier = ">=2.5.3" },
@@ -1216,6 +1221,7 @@ requires-dist = [
     { name = "tushare", specifier = "==1.4.21" },
     { name = "tzdata", specifier = ">=2025.2" },
     { name = "tzlocal", specifier = ">=5.3.1" },
+    { name = "websocket-client", specifier = ">=1.8.0" },
 ]
 provides-extras = ["dev", "docs"]
 
@@ -1436,6 +1442,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/96/2d/02d4312c973c6050a18b314a5ad0b3210edb65a906f868e31c111dede4a6/pluggy-1.5.0.tar.gz", hash = "sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1", size = 67955 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl", hash = "sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669", size = 20556 },
+]
+
+[[package]]
+name = "polars"
+version = "1.26.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/c2/56a750b82e74c5af7b821215eab3ee992d9ef11310dad353f5b2086ef7db/polars-1.26.0.tar.gz", hash = "sha256:b5492d38e5ec2ae6a8853833c5a31549194a361b901134fc5f2f57b49bd563ea", size = 4522991 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/99/ce4427576a6134504e6dd58f5d411d55b228a05950c5fff5b75e90263cb1/polars-1.26.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:2afefcd356608981b2e15d46df9ddaa6e77f36095ebeb73c3261e198bd51c925", size = 34767938 },
+    { url = "https://files.pythonhosted.org/packages/e3/0a/5c9455ff271c3583bf0fd505911e5787ca7bc0f247968853cb6dcfbedffb/polars-1.26.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:587eb3c5000423eb20be998f523e605ddba0d3c598ba4a7e2a4d0b92b1fd2a7e", size = 31612374 },
+    { url = "https://files.pythonhosted.org/packages/6c/0a/c9e388b35533fc1827eaeb0f3940ba0a1058511bf77aaa689ebb1b0bef88/polars-1.26.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:66c30f4b7e060c2e7f3a45d6ac94ab3b179831a2f1e629401bf7912d54311529", size = 35404704 },
+    { url = "https://files.pythonhosted.org/packages/e6/eb/b420131563a42ac0866224aa6284a356107d036c32d825c5478767a1446e/polars-1.26.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:110d6987d37ae954a5ef16d739fb717df9d39b144790d12d98fb3e72ed35621c", size = 32569800 },
+    { url = "https://files.pythonhosted.org/packages/e9/8d/b28ae5d63a4bafdfe81d132efc6b8d076ef2c866ecbf5d24ca3b1f53b88b/polars-1.26.0-cp39-abi3-win_amd64.whl", hash = "sha256:189a58aaf393003515fa6d83e2dea815a2b448265f2007a926274ed12672583c", size = 35617074 },
+    { url = "https://files.pythonhosted.org/packages/af/21/7a76c58203f0806cb5b1155e4994693e618d4de5ca6a34388ae85267ccc4/polars-1.26.0-cp39-abi3-win_arm64.whl", hash = "sha256:58db2dce39cad5f8fc8e8c5c923a250eb21eff4146b03514d570d1c205a4874c", size = 31895936 },
 ]
 
 [[package]]

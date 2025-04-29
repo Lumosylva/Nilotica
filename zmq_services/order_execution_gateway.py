@@ -170,11 +170,14 @@ class OrderExecutionGatewayService(RpcServer):
         # +++ Add timestamp for timed account logging +++
         self._last_account_log_time: float = 0.0 
         # +++ End Add +++
+        # +++ Add cache for active orders +++
+        self.order_cache: Dict[str, OrderData] = {}
+        # +++ End Add +++
 
         # VNPY setup
         self.event_engine = EventEngine()
         # Add env name to gateway name for potential clarity if running multiple
-        self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_Exec_{environment_name}")
+        self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_TD_{environment_name}")
 
         # --- Load and Select CTP Settings --- 
         self.ctp_setting: dict | None = None
@@ -265,13 +268,18 @@ class OrderExecutionGatewayService(RpcServer):
             return {"status": "error", "message": "Missing vt_orderid"}
 
         try:
-            order_to_cancel = self.gateway.get_order(vt_orderid)
+            # +++ Replace self.gateway.get_order with cache lookup +++
+            # order_to_cancel = self.gateway.get_order(vt_orderid) # Original line - Error
+            order_to_cancel = self.order_cache.get(vt_orderid)
+            # +++ End Replace +++
+
             if not order_to_cancel:
-                logger.error(f"RPC: cancel_order - 尝试撤销失败：网关未找到订单 {vt_orderid}")
-                return {"status": "error", "message": f"Order {vt_orderid} not found in gateway"}
+                # logger.error(f"RPC: cancel_order - 尝试撤销失败：网关未找到订单 {vt_orderid}") # Original error message
+                logger.warning(f"RPC: cancel_order - 尝试撤销失败：在内部缓存中未找到活动订单 {vt_orderid} (可能已完成或不存在)") # New warning
+                return {"status": "error", "message": f"Order {vt_orderid} not found in active cache"}
 
             req = CancelRequest(
-                orderid=order_to_cancel.orderid,
+                orderid=vt_orderid, # Use the vt_orderid directly
                 symbol=order_to_cancel.symbol,
                 exchange=order_to_cancel.exchange,
             )
@@ -279,9 +287,9 @@ class OrderExecutionGatewayService(RpcServer):
             logger.info(f"RPC: cancel_order - 撤单请求已发送 for {vt_orderid}")
             return {"status": "ok", "message": f"Cancel request sent for {vt_orderid}"}
 
-        except AttributeError:
-             logger.error("RPC: cancel_order - 当前网关对象不支持 get_order 方法。")
-             return {"status": "error", "message": "Gateway does not support get_order, cannot cancel."}
+        # except AttributeError: # Remove this specific exception handler for get_order
+        #      logger.error("RPC: cancel_order - 当前网关对象不支持 get_order 方法。")
+        #      return {"status": "error", "message": "Gateway does not support get_order, cannot cancel."}
         except Exception as e:
             logger.exception(f"RPC: cancel_order - 处理撤单指令时出错 (vt_orderid: {vt_orderid}): {e}")
             return {"status": "error", "message": f"Error processing cancel command: {e}"}
@@ -345,6 +353,13 @@ class OrderExecutionGatewayService(RpcServer):
         try:
             if event_type == EVENT_ORDER:
                 order: OrderData = data_obj
+                # +++ Update order cache +++
+                if order.is_active():
+                    self.order_cache[order.vt_orderid] = order
+                elif order.vt_orderid in self.order_cache:
+                    del self.order_cache[order.vt_orderid]
+                # +++ End update cache +++
+
                 # +++ Add Order Status Logging (Conditional on active_order_ids) +++
                 if order.vt_orderid in self.active_order_ids:
                     logger.info(
@@ -448,10 +463,6 @@ class OrderExecutionGatewayService(RpcServer):
 
         while self._publisher_active.is_set():
             loop_count += 1
-            # Optional: Reduce debug logging frequency further if needed
-            # if loop_count % 5000 == 1:
-            #     logger.debug(f"发布线程: Loop {loop_count}")
-
             current_time = time.time()
 
             # --- Log queue size periodically (Change to DEBUG) ---
@@ -586,10 +597,10 @@ class OrderExecutionGatewayService(RpcServer):
     def start(self, rep_address=None, pub_address=None):
         """Starts RpcServer, EventEngine, Gateway, Publisher, and Heartbeat threads."""
         if self.is_active():
-            logger.warning("订单执行网关服务(RPC模式)已在运行中。")
+            logger.warning(f"订单执行网关服务(RPC模式) for [{self.environment_name}] 已在运行中。")
             return
 
-        logger.info("启动订单执行网关服务(RPC模式)...")
+        logger.info(f"启动订单执行网关服务(RPC模式) for [{self.environment_name}]...")
 
         # Start RpcServer first
         try:
@@ -670,11 +681,6 @@ class OrderExecutionGatewayService(RpcServer):
         """Stops all components."""
         # Check if already stopped or never started properly
         is_rpc_active = self.is_active()
-        was_publisher_running = self._publisher_thread and self._publisher_thread.is_alive()
-        # was_heartbeat_running is removed
-
-        # if not is_rpc_active and not was_publisher_running: # Simplified check
-        #      return
 
         logger.info("停止订单执行网关服务(RPC模式)...")
 
@@ -730,37 +736,4 @@ class OrderExecutionGatewayService(RpcServer):
             except Exception as e:
                  logger.exception(f"停止 RPC 服务器时出错: {e}")
 
-        logger.info("订单执行网关服务(RPC模式)已停止。")
-
-# --- Main execution block (for testing) ---
-if __name__ == "__main__":
-    try:
-        # Need setup_logging here for the test block, import it
-        from utils.logger import setup_logging # Added specific import
-        setup_logging(service_name="OrderExecutionGateway_DirectRunRPC")
-    except ImportError as log_err:
-        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
-        sys.exit(1)
-
-    # logger_main = getLogger(__name__) # Removed getLogger
-    logger.info("Starting direct test run (RPC Mode)...") # Use logger directly
-
-    if not hasattr(config, 'ORDER_GATEWAY_REP_ADDRESS') or \
-       not hasattr(config, 'ORDER_GATEWAY_PUB_ADDRESS'):
-        logger.critical("错误：配置文件 config.zmq_config 缺少 ORDER_GATEWAY_REP_ADDRESS 或 ORDER_GATEWAY_PUB_ADDRESS。") # Use logger directly
-        sys.exit(1)
-
-    gw_service = OrderExecutionGatewayService("TestEnv")
-    gw_service.start()
-
-    try:
-        while gw_service.is_active():
-            time.sleep(1)
-    except KeyboardInterrupt:
-        logger.info("主程序接收到中断信号，正在停止...") # Use logger directly
-    except Exception as e:
-        logger.exception(f"主测试循环发生未处理错误：{e}") # Use logger directly
-    finally:
-        logger.info("开始停止服务...") # Use logger directly
-        gw_service.stop()
-        logger.info("订单执行网关测试运行结束 (RPC Mode)。") # Use logger directly
+        logger.info(f"订单执行网关服务(RPC模式) for [{self.environment_name}] 已停止。")

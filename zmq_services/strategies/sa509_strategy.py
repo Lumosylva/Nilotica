@@ -70,6 +70,9 @@ class SA509LiveStrategy(BaseLiveStrategy):
         self.logger.info(f"  price_tick: {getattr(self, 'price_tick', 'N/A')}")
         self.logger.info(f"  order_volume: {getattr(self, 'order_volume', 'N/A')}")
 
+        # +++ Add missing attribute +++
+        self.min_pos_threshold: float = 1e-8 # Threshold for float comparison of position
+        # +++ End Add +++
 
     # --- Lifecycle Callbacks ---
     def on_init(self) -> None:
@@ -176,58 +179,89 @@ class SA509LiveStrategy(BaseLiveStrategy):
         if order.vt_symbol != self.vt_symbol:
             return
 
-        # If an open order is no longer active (filled, cancelled, rejected)
-        if order.offset == Offset.OPEN and not order.is_active():
-            # Check if the strategy thought it was pending open based on this order ID
-            # Note: Order ID is removed from self.active_orders by super().on_order IF it was there
-            if self.long_pending_or_open: # If we were waiting for an open fill
-                if order.status not in [Status.ALLTRADED, Status.PARTTRADED]:
-                    self.long_pending_or_open = False # Reset flag only if NOT filled
-                    self.write_log(f"SA509 开仓订单 {order.vt_orderid} 未成交 ({order.status.value}), 重置开仓标志。")
-            # If filled, the flag remains True, and on_trade confirms the position
+        # Check if this order was initiated by this strategy (using the base class set)
+        # Order might already be removed from active_orders by super().on_order if it just finished
+        # So, checking if it *was* active might require looking at the order before super call,
+        # or relying on the fact that only our orders should trigger significant state changes.
+        # Let's simplify: assume if the order matches our symbol, we process its state change impact.
+        # We rely on self.long_pending_or_open / self.close_pending flags for *intent*.
+        is_my_order_intent = True # Assume relevant if symbol matches for state logic
 
-        # If a close order is no longer active
-        elif order.offset == Offset.CLOSE and not order.is_active():
-             # Check if the strategy thought it was pending close
-             if self.close_pending: # If we were waiting for a close fill
-                self.close_pending = False # Reset flag regardless of fill status for close orders
-                if order.status not in [Status.ALLTRADED, Status.PARTTRADED]:
-                     self.write_log(f"SA509 平仓订单 {order.vt_orderid} 未成交 ({order.status.value}), 重置平仓等待标志。持仓可能仍存在。")
-                # If filled, flag is reset, and on_trade confirms the flat position
+        # --- Update State based on Order Status ---
+        if not order.is_active(): # Process only terminal states
+            if order.offset == Offset.OPEN:
+                # If we were waiting for an open order to finish
+                if self.long_pending_or_open:
+                     if order.status in [Status.ALLTRADED, Status.PARTTRADED]:
+                         # If filled (partially or fully), let on_trade handle the final state confirmation
+                         self.write_log(f"SA509 开仓订单 {order.vt_orderid} 已成交 (状态: {order.status.value})。等待 on_trade 确认。")
+                     else:
+                         # If cancelled, rejected, etc., reset the pending flag
+                         self.long_pending_or_open = False
+                         self.write_log(f"SA509 开仓订单 {order.vt_orderid} 最终状态为 {order.status.value} (未成交), 重置开仓等待标志。")
+                         self._reset_targets(f"Open Order {order.vt_orderid} Failed/Cancelled") # Also reset targets if open failed
+                # else: # Order finished but we weren't pending? Log maybe.
+                     # self.write_log(f"收到非预期的开仓订单结束状态: {order.vt_orderid} ({order.status.value})", logging.WARNING)
 
+            elif order.offset == Offset.CLOSE:
+                # If we were waiting for a close order to finish
+                if self.close_pending:
+                    self.close_pending = False # Reset pending flag regardless of fill status for close
+                    if order.status in [Status.ALLTRADED, Status.PARTTRADED]:
+                        # If filled, let on_trade handle the position confirmation and state reset
+                        self.write_log(f"SA509 平仓订单 {order.vt_orderid} 已成交 (状态: {order.status.value})。等待 on_trade 确认。")
+                    else:
+                        # If close failed/cancelled, log it. Position likely still exists.
+                        # Don't reset long_pending_or_open here, as position is likely still held.
+                        self.write_log(f"SA509 平仓订单 {order.vt_orderid} 最终状态为 {order.status.value} (未成交), 重置平仓等待标志。当前持仓 {self.pos}", logging.WARNING)
+                # else: # Order finished but we weren't pending? Log maybe.
+                    # self.write_log(f"收到非预期的平仓订单结束状态: {order.vt_orderid} ({order.status.value})", logging.WARNING)
 
     def on_trade(self, trade: TradeData) -> None:
         """Process trade/fill updates."""
-        # Call base class implementation first to update self.pos
+        # Call base class implementation first to update self.pos and active_traded_volume
         super().on_trade(trade)
 
         # Only process trades relevant to this strategy instance
         if trade.vt_symbol != self.vt_symbol:
             return
 
-        # Refine state based on fills
+        # Check if this trade resulted from an order we were tracking as active
+        # Note: Base class doesn't track originating order ID in trade inherently
+        # We rely on the offset and position change logic here.
+        # Assume trade for vt_symbol affects our state.
+
+        # --- Refine State based on Fills --- 
         if trade.offset == Offset.OPEN:
             # Confirm position is open and refine entry price/targets
-            if self.pos > 0: # Check position based on base class update
-                 self.long_pending_or_open = True # Position is definitely open now
-                 self.close_pending = False # Should not be pending close if just opened
-                 # Refine entry price using actual trade price
-                 # TODO: Handle partial fills correctly (use average price?)
-                 self._calculate_and_set_targets(trade.price, "Trade Filled")
+            if self.pos != 0: # Use self.pos updated by base class
+                 # Regardless of previous pending state, an open fill means we are now in a position
+                 self.long_pending_or_open = True
+                 self.close_pending = False # Cannot be pending close if just opened/added
+                 self.write_log(f"SA509 开仓成交确认: VTOrderID={trade.vt_orderid}, Price={trade.price}, Volume={trade.volume}. 新持仓: {self.pos}")
+                 # Recalculate entry price and targets based on average fill price
+                 # We need average price if handling partial fills; assume full fill for now
+                 # TODO: Implement average price calculation for partial fills
+                 avg_entry_price = trade.price # Use current trade price as approximation for now
+                 self._calculate_and_set_targets(avg_entry_price, f"Open Trade {trade.vt_tradeid} Confirmed")
             else:
-                 # This case might happen with complex order handling or delayed updates
-                 self.write_log(f"Received OPEN trade {trade.vt_tradeid} but position is {self.pos}. State might be inconsistent.", logging.WARNING)
+                 # This *shouldn't* happen if base class updates pos correctly
+                 self.write_log(f"收到 OPEN trade {trade.vt_tradeid} 但 base class 更新后 pos 仍为 0。检查 BaseLiveStrategy.on_trade 实现。", logging.ERROR)
 
         elif trade.offset == Offset.CLOSE:
-            # Position closed, reset all flags if position is now flat
-            if self.pos == 0: # Check position based on base class update
+            self.write_log(f"SA509 平仓成交确认: VTOrderID={trade.vt_orderid}, Price={trade.price}, Volume={trade.volume}. 新持仓: {self.pos}")
+            self.close_pending = False # No longer pending close after a fill
+
+            # Position closed, reset flags only if position is now fully flat
+            if abs(self.pos) < self.min_pos_threshold: # Use a small threshold for float comparison
+                self.write_log(f"仓位已完全平掉 (持仓: {self.pos})。重置策略状态。")
                 self.long_pending_or_open = False
-                self.close_pending = False
-                self._reset_targets("Trade Closed")
+                self._reset_targets(f"Close Trade {trade.vt_tradeid} Confirmed - Flat")
             else:
-                 # This case might happen with partial close fills
-                 self.write_log(f"Received CLOSE trade {trade.vt_tradeid} but position is {self.pos}. Not fully closed yet.", logging.INFO)
-                 # Keep flags as they are, wait for next trade or manage partial close
+                 # Partial close fill
+                 self.write_log(f"收到部分平仓成交，当前持仓 {self.pos}。保持开仓状态和目标。")
+                 # Keep long_pending_or_open = True, keep targets.
+                 # Stop loss/take profit logic in on_tick will continue based on remaining position.
 
     # --- Helper Methods ---
     def _calculate_and_set_targets(self, entry_price: float, context: str) -> None:

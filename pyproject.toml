@@ -48,6 +48,7 @@ dependencies = [
     "babel>=2.17.0",
     "polars>=1.26.0",
     "websocket-client>=1.8.0",
+    "importlib-metadata>=8.6.1",
 ]
 
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
