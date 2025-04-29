@@ -123,8 +123,15 @@ class BaseLiveStrategy(metaclass=ABCMeta):
     ) -> Optional[str]:
         """Send a limit order to the trading engine."""
         if not self.trading:
-            self.logger.warning(f"Strategy not trading, cannot send order for {self.vt_symbol}.")
+            # Log removed as it might be noisy if strategy stops mid-tick processing
+            # self.logger.warning(f"Strategy not trading, cannot send order for {self.vt_symbol}.")
             return None
+
+        # +++ 新增检查：仅在网关连接时才尝试发送 +++
+        if not hasattr(self.strategy_engine, 'gateway_connected') or not self.strategy_engine.gateway_connected:
+             self.logger.debug(f"Order Gateway not connected yet. Order for {self.vt_symbol} {direction.value} {offset.value} skipped.")
+             return None
+        # +++ 结束新增 +++
 
         # Basic check for symbol matching before calling engine
         symbol_part = self.vt_symbol.split('.')[0]
@@ -206,16 +213,46 @@ class BaseLiveStrategy(metaclass=ABCMeta):
 
     def _update_pos(self, trade: TradeData) -> None:
         """Helper to update position based on trade data. Should be called in on_trade."""
-        # Ensure the trade belongs to this strategy's symbol
-        if trade.vt_symbol == self.vt_symbol:
-            if trade.direction == Direction.LONG:
-                self.pos += trade.volume
-            else:
-                self.pos -= trade.volume
-            self.write_log(f"Position updated by trade {trade.vt_tradeid}: {self.pos}", logging.DEBUG)
-        else:
-             self.write_log(f"Received trade for different symbol {trade.vt_symbol}, position not updated.", logging.WARNING)
+        if trade.vt_symbol != self.vt_symbol:
+            return # Ignore trades for other symbols
 
+        previous_pos = self.pos
+        pos_change = 0.0
+
+        # +++ Debug log for incoming trade attributes +++
+        self.write_log(f"_update_pos: Processing Trade={trade.vt_tradeid}, Direction={repr(trade.direction)}, Offset={repr(trade.offset)}, Volume={trade.volume}", logging.DEBUG)
+        # +++ End Debug log +++
+
+        # --- Corrected Position Update Logic (v4 - Robust Enum Value Comparison) ---
+        # Get enum values safely, default to None if attribute missing or not an Enum
+        direction_value = getattr(trade.direction, 'value', None)
+        offset_value = getattr(trade.offset, 'value', None)
+
+        if direction_value == Direction.LONG.value: # Buy
+            if offset_value == Offset.OPEN.value:
+                pos_change = trade.volume
+            else: # Buy to close short (assuming any non-OPEN offset is closing for LONG direction)
+                pos_change = trade.volume
+        elif direction_value == Direction.SHORT.value: # Sell
+            if offset_value == Offset.OPEN.value:
+                pos_change = -trade.volume
+            else: # Sell to close long (assuming any non-OPEN offset is closing for SHORT direction)
+                pos_change = -trade.volume
+        else:
+            self.write_log(f"_update_pos: Unknown or invalid direction value: {direction_value} for trade {trade.vt_tradeid}", logging.ERROR)
+        # --- End Corrected Logic (v4) ---
+
+        # Apply the calculated change
+        self.pos += pos_change
+
+        # Log the update
+        self.write_log(
+            f"Position Update: Symbol={trade.vt_symbol}, TradeID={trade.vt_tradeid}, "
+            # f"Direction={trade.direction.value}, Offset={trade.offset.value}, Price={trade.price}, Volume={trade.volume}. " # Original fields can be used
+            f"DirectionValue={direction_value}, OffsetValue={offset_value}, Price={trade.price}, Volume={trade.volume}. " # Log values used
+            f"PrevPos={previous_pos:.4f}, Change={pos_change:.4f}, NewPos={self.pos:.4f}",
+            logging.INFO
+        )
 
     def _update_active_orders(self, order: OrderData) -> None:
         """Helper to update the set of active orders. Should be called in on_order."""
