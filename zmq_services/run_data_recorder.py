@@ -10,12 +10,17 @@ if project_root not in sys.path:
 # Import the service class and config
 from zmq_services.data_recorder import DataRecorderService
 from config import zmq_config as config
+# Import new logger
+from utils.logger import setup_logging, logger
 
 
 def main():
     """Runs the data recorder service."""
+    # Setup logging at the beginning of main
+    setup_logging(service_name="DataRecorderRunner", level="INFO")
+
     # Get logger instance
-    logger = getLogger(__name__)
+    # logger = getLogger(__name__) # Removed getLogger
 
     logger.info("正在初始化数据记录器...")
 
@@ -45,17 +50,17 @@ def main():
         logger.info("数据记录器运行结束。")
 
 if __name__ == "__main__":
-    # --- Setup Logging ---
-    # Add project root first
-    project_root_setup = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    if project_root_setup not in sys.path:
-        sys.path.insert(0, project_root_setup)
-    # Now import logger setup
-    try:
-        from logger import setup_logging, getLogger
-        setup_logging(service_name="DataRecorderRunner", level="INFO") # <-- Change level to INFO
-    except ImportError as log_err:
-        print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
-        sys.exit(1)
+    # --- Setup Logging (Removed - Moved to main) ---
+    # # Add project root first
+    # project_root_setup = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    # if project_root_setup not in sys.path:
+    #     sys.path.insert(0, project_root_setup)
+    # # Now import logger setup
+    # try:
+    #     from logger import setup_logging, getLogger
+    #     setup_logging(service_name="DataRecorderRunner", level="INFO") # <-- Change level to INFO
+    # except ImportError as log_err:
+    #     print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+    #     sys.exit(1)
 
     main()

@@ -8,7 +8,7 @@ import pickle
 from datetime import datetime
 # Import logger
 import logging
-from logger import getLogger
+from utils.logger import logger
 # Import vnpy objects and constants needed for type checking and enum conversion
 from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, ContractData, LogData
 from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status, Product, OptionType # Remove PriceType
@@ -25,8 +25,6 @@ from config import zmq_config as config
 class DataRecorderService:
     def __init__(self, market_data_pub_addr: str, order_gateway_pub_addr: str, recording_path: str):
         """Initializes the data recorder service."""
-        self.logger = getLogger(__name__)
-
         self.context = zmq.Context()
         self.subscriber = self.context.socket(zmq.SUB)
         self.subscriber.setsockopt(zmq.LINGER, 0) # Avoid blocking on close
@@ -34,8 +32,8 @@ class DataRecorderService:
         # Connect to publishers using the provided RPC PUB addresses
         self.subscriber.connect(market_data_pub_addr)
         self.subscriber.connect(order_gateway_pub_addr)
-        self.logger.info(f"数据记录器连接行情发布器: {market_data_pub_addr}")
-        self.logger.info(f"数据记录器连接回报发布器: {order_gateway_pub_addr}")
+        logger.info(f"数据记录器连接行情发布器: {market_data_pub_addr}")
+        logger.info(f"数据记录器连接回报发布器: {order_gateway_pub_addr}")
 
         # Subscribe to relevant topics (adjust as needed)
         self.subscriber.subscribe("tick.")       # Ticks from MD Gateway
@@ -44,12 +42,12 @@ class DataRecorderService:
         self.subscriber.subscribe("account.")    # Account from Order Gateway
         self.subscriber.subscribe("contract.")   # Contracts from both?
         self.subscriber.subscribe("log")         # Logs from both
-        self.logger.info("订阅主题前缀: tick., order., trade., account., contract., log")
+        logger.info("订阅主题前缀: tick., order., trade., account., contract., log")
 
         # Ensure recording directory exists
         self.recording_path = recording_path
         os.makedirs(self.recording_path, exist_ok=True)
-        self.logger.info(f"数据将记录到: {self.recording_path}")
+        logger.info(f"数据将记录到: {self.recording_path}")
         self.file_handles = {}
         self.running = False
 
@@ -68,7 +66,7 @@ class DataRecorderService:
                     try:
                         d[key] = [self._convert_vnpy_obj_to_dict(item) for item in value]
                     except TypeError: # Handle cases where list contains non-convertible items
-                        self.logger.warning(f"Could not convert items in list/tuple for key '{key}', using string representation.")
+                        logger.warning(f"Could not convert items in list/tuple for key '{key}', using string representation.")
                         d[key] = str(value)
                 elif not isinstance(value, (str, int, float, bool, dict, type(None))):
                     # Handle other potential non-serializable types
@@ -76,7 +74,7 @@ class DataRecorderService:
                     if hasattr(value, '__dict__'):
                          d[key] = self._convert_vnpy_obj_to_dict(value) # Recursive call
                     else:
-                        self.logger.warning(f"Unhandled type '{type(value)}' for key '{key}', converting to string.")
+                        logger.warning(f"Unhandled type '{type(value)}' for key '{key}', converting to string.")
                         d[key] = str(value)
             return d
         elif isinstance(obj, dict):
@@ -86,7 +84,7 @@ class DataRecorderService:
             try:
                  return [self._convert_vnpy_obj_to_dict(item) for item in obj]
             except TypeError:
-                 self.logger.warning(f"Could not convert items in list/tuple, using string representation.")
+                 logger.warning(f"Could not convert items in list/tuple, using string representation.")
                  return str(obj)
         elif isinstance(obj, (str, int, float, bool, type(None))):
             return obj # Basic types are fine
@@ -94,13 +92,13 @@ class DataRecorderService:
              return obj.isoformat() # Handle standalone datetime
         else:
             # Fallback for completely unknown types
-            self.logger.warning(f"Unknown object type '{type(obj)}' encountered, converting to string.")
+            logger.warning(f"Unknown object type '{type(obj)}' encountered, converting to string.")
             return str(obj)
     # +++ End Helper Function +++
 
     def get_log_filename(self, topic: str) -> str | None:
         """Determines the log filename based on topic prefix."""
-        self.logger.debug(f"[DR] Determining filename for topic: {topic}")
+        logger.debug(f"[DR] Determining filename for topic: {topic}")
         today_str = datetime.now().strftime('%Y%m%d')
         # Use topic prefixes to determine file
         if topic.startswith("tick."):
@@ -116,16 +114,16 @@ class DataRecorderService:
         elif topic == "log":
              return os.path.join(self.recording_path, f"gateway_logs_{today_str}.jsonl")
         else:
-            self.logger.warning(f"收到未知主题，不记录: {topic}")
+            logger.warning(f"收到未知主题，不记录: {topic}")
             return None
 
     def record_message(self, topic_bytes: bytes, data_bytes: bytes):
         """Records a received message (topic, data) to the appropriate file."""
-        self.logger.debug(f"[DR] Entering record_message. Topic bytes: {topic_bytes}, Data length: {len(data_bytes)}")
+        logger.debug(f"[DR] Entering record_message. Topic bytes: {topic_bytes}, Data length: {len(data_bytes)}")
         record_time = time.time_ns() # Record reception time
         topic_str = topic_bytes.decode('utf-8', errors='ignore')
         filename = self.get_log_filename(topic_str)
-        self.logger.debug(f"[DR] Determined filename: {filename}")
+        logger.debug(f"[DR] Determined filename: {filename}")
 
         if not filename:
             return # Skip recording unknown topics
@@ -133,16 +131,16 @@ class DataRecorderService:
         try:
             # Deserialize data using pickle (since RpcServer uses send_pyobj)
             data_obj = pickle.loads(data_bytes)
-            self.logger.debug(f"[DR] Deserialized data object type: {type(data_obj)}")
+            logger.debug(f"[DR] Deserialized data object type: {type(data_obj)}")
 
             # Use the helper function for conversion
             record_data = self._convert_vnpy_obj_to_dict(data_obj)
             # Log partial converted data for verification
             if isinstance(record_data, dict):
                  log_snippet = {k: record_data.get(k) for k in list(record_data)[:5]}
-                 self.logger.debug(f"[DR] Converted record_data (snippet): {log_snippet}")
+                 logger.debug(f"[DR] Converted record_data (snippet): {log_snippet}")
             else:
-                 self.logger.debug(f"[DR] Converted record_data (non-dict): {str(record_data)[:100]}...")
+                 logger.debug(f"[DR] Converted record_data (non-dict): {str(record_data)[:100]}...")
 
             record = {
                 "zmq_topic": topic_str,
@@ -151,32 +149,32 @@ class DataRecorderService:
             }
 
             # Append to file using 'a' mode
-            self.logger.debug(f"[DR] Attempting to write to {filename}")
+            logger.debug(f"[DR] Attempting to write to {filename}")
             with open(filename, 'a', encoding='utf-8') as f:
                 json.dump(record, f, ensure_ascii=False)
                 f.write('\n')
-            self.logger.debug(f"[DR] Successfully wrote to {filename}")
+            logger.debug(f"[DR] Successfully wrote to {filename}")
 
         except pickle.UnpicklingError as e:
-             self.logger.error(f"[DR] Pickle 解码错误: {e}. Topic: {topic_str}")
+             logger.error(f"[DR] Pickle 解码错误: {e}. Topic: {topic_str}")
         except TypeError as e:
             # Log TypeError specifically from json.dump
-            self.logger.error(f"[DR] JSON 序列化错误 (可能由于不支持的数据类型): {e}. Topic: {topic_str}")
-            self.logger.error(f"[DR] Data object type: {type(data_obj)}")
-            self.logger.error(f"[DR] Converted data causing error (first 500 chars): {str(record_data)[:500]}") # Log problematic data
+            logger.error(f"[DR] JSON 序列化错误 (可能由于不支持的数据类型): {e}. Topic: {topic_str}")
+            logger.error(f"[DR] Data object type: {type(data_obj)}")
+            logger.error(f"[DR] Converted data causing error (first 500 chars): {str(record_data)[:500]}") # Log problematic data
         except IOError as e:
             # Log IOError specifically
-            self.logger.error(f"[DR] 写入文件 {filename} 时出错: {e}")
+            logger.error(f"[DR] 写入文件 {filename} 时出错: {e}")
         except Exception as e:
-            self.logger.exception(f"[DR] 记录消息时发生意外错误 (Topic: {topic_str})")
+            logger.exception(f"[DR] 记录消息时发生意外错误 (Topic: {topic_str})")
 
     def start(self):
         """Starts listening for messages and recording them."""
         if self.running:
-            self.logger.warning("数据记录器已在运行中。")
+            logger.warning("数据记录器已在运行中。")
             return
 
-        self.logger.info("启动数据记录器...")
+        logger.info("启动数据记录器...")
         self.running = True
 
         while self.running:
@@ -187,58 +185,56 @@ class DataRecorderService:
 
             except zmq.ZMQError as e:
                 if e.errno == zmq.ETERM:
-                    self.logger.info("ZMQ Context 已终止，停止数据记录器...")
+                    logger.info("ZMQ Context 已终止，停止数据记录器...")
                     self.running = False
                 else:
-                    self.logger.error(f"ZMQ 错误: {e}")
+                    logger.error(f"ZMQ 错误: {e}")
                     time.sleep(1)
             except KeyboardInterrupt:
-                self.logger.info("检测到中断信号，停止数据记录器...")
+                logger.info("检测到中断信号，停止数据记录器...")
                 self.running = False
             except Exception as e:
-                self.logger.exception("处理消息时发生未知错误")
+                logger.exception("处理消息时发生未知错误")
                 time.sleep(1)
 
-        self.logger.info("数据记录器循环结束。")
+        logger.info("数据记录器循环结束。")
         self.stop()
 
     def stop(self):
         """Stops the service and cleans up resources."""
-        self.logger.info("停止数据记录器...")
+        logger.info("停止数据记录器...")
         self.running = False
         if self.subscriber:
             try:
                 self.subscriber.close()
-                self.logger.info("ZeroMQ 订阅器已关闭。")
+                logger.info("ZeroMQ 订阅器已关闭。")
             except Exception as e:
-                 self.logger.error(f"关闭 ZeroMQ 订阅器时出错: {e}")
+                 logger.error(f"关闭 ZeroMQ 订阅器时出错: {e}")
         if self.context:
             try:
                 if not self.context.closed:
                     self.context.term()
-                    self.logger.info("ZeroMQ Context 已终止。")
+                    logger.info("ZeroMQ Context 已终止。")
                 else:
-                    self.logger.info("ZeroMQ Context 已终止 (之前已关闭).")
+                    logger.info("ZeroMQ Context 已终止 (之前已关闭).")
             except zmq.ZMQError as e:
-                 self.logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
+                 logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
             except Exception as e:
-                 self.logger.exception("关闭 ZeroMQ Context 时发生未知错误")
-        self.logger.info("数据记录器已停止。")
+                 logger.exception("关闭 ZeroMQ Context 时发生未知错误")
+        logger.info("数据记录器已停止。")
 
 
 # --- Main execution block (for testing) ---
 if __name__ == "__main__":
     # Setup logging for direct execution test
     try:
-        from logger import setup_logging, getLogger
+        from utils.logger import setup_logging
         setup_logging(service_name="DataRecorder_DirectRun")
     except ImportError as log_err:
         print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
         sys.exit(1)
 
-    logger_main = getLogger(__name__)
-
-    logger_main.info("Starting Data Recorder direct test run...")
+    logger.info("Starting Data Recorder direct test run...")
 
     # Connect to localhost publishers using RPC addresses
     md_pub_addr = config.MARKET_DATA_PUB_ADDRESS.replace("*", "localhost")
@@ -252,10 +248,10 @@ if __name__ == "__main__":
     try:
         recorder.start()
     except KeyboardInterrupt:
-        logger_main.info("\n主程序接收到中断信号。")
+        logger.info("\n主程序接收到中断信号。")
     except Exception as e:
-        logger_main.exception("主测试循环发生未处理错误")
+        logger.exception("主测试循环发生未处理错误")
     finally:
         if recorder.running:
             recorder.stop()
-        logger_main.info("数据记录器测试运行结束。")
+        logger.info("数据记录器测试运行结束。")
