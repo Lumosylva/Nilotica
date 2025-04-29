@@ -1,42 +1,29 @@
 import time
 import sys
 import os
-import argparse # Import argparse
+import argparse
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# from logger import setup_logging, getLogger # Removed
-from utils.logger import setup_logging, logger # Added
-
-# Import config first to check addresses
+from utils.logger import setup_logging, logger
 from config import zmq_config as config
-
-setup_logging(service_name="OrderGatewayRunner") # Set service name
-# Get logger instance
-# logger = getLogger(__name__) # Removed
+from zmq_services.order_execution_gateway import OrderExecutionGatewayService
 
 # Check for required RPC addresses in config
 if not hasattr(config, 'ORDER_GATEWAY_REP_ADDRESS') or \
    not hasattr(config, 'ORDER_GATEWAY_PUB_ADDRESS'):
-    logger.critical("错误：配置文件 config.zmq_config 缺少 ORDER_GATEWAY_REP_ADDRESS 或 ORDER_GATEWAY_PUB_ADDRESS。")
-    sys.exit(1)
-
-# Import the service class after check
-try:
-    from zmq_services.order_execution_gateway import OrderExecutionGatewayService
-except ImportError as e:
-    logger.exception(f"Error importing OrderExecutionGatewayService: {e}")
-    logger.info(f"Project root added to path: {project_root}")
-    logger.info(f"Current sys.path: {sys.path}")
-    logger.warning("Ensure zmq_services directory and its dependencies exist.")
+    # Use logger after setup if moved inside main, or print if logger not ready
+    try:
+        logger.critical("错误：配置文件 config.zmq_config 缺少 ORDER_GATEWAY_REP_ADDRESS 或 ORDER_GATEWAY_PUB_ADDRESS。")
+    except NameError: # If logger is not yet defined
+        print("CRITICAL: 错误：配置文件 config.zmq_config 缺少 ORDER_GATEWAY_REP_ADDRESS 或 ORDER_GATEWAY_PUB_ADDRESS。")
     sys.exit(1)
 
 def main():
     """Runs the order execution gateway service (RPC Mode)."""
-
     # +++ Add Argument Parser +++
     parser = argparse.ArgumentParser(description="Run the Order Execution Gateway Service for a specific CTP environment.")
     # Make --env optional with a default value
@@ -45,7 +32,19 @@ def main():
         default="simnow", 
         help="The CTP environment name (e.g., 'simnow', 'simnow7x24') defined in connect_ctp.json. Defaults to 'simnow'."
     )
+    # +++ Add log-level argument +++
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the minimum logging level."
+    )
+    # +++ End add log-level +++
     args = parser.parse_args()
+
+    # --- Setup Logging (Moved here) ---
+    setup_logging(service_name="OrderGatewayRunner", level=args.log_level.upper())
+    # --- End Logging Setup ---
 
     # Log if default environment is used
     if args.env == "simnow" and '--env' not in sys.argv:
