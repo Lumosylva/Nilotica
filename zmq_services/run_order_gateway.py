@@ -8,14 +8,15 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from logger import setup_logging, getLogger
+# from logger import setup_logging, getLogger # Removed
+from utils.logger import setup_logging, logger # Added
 
 # Import config first to check addresses
 from config import zmq_config as config
 
 setup_logging(service_name="OrderGatewayRunner") # Set service name
 # Get logger instance
-logger = getLogger(__name__)
+# logger = getLogger(__name__) # Removed
 
 # Check for required RPC addresses in config
 if not hasattr(config, 'ORDER_GATEWAY_REP_ADDRESS') or \
