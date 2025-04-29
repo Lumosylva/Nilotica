@@ -98,7 +98,7 @@ class DataRecorderService:
 
     def get_log_filename(self, topic: str) -> str | None:
         """Determines the log filename based on topic prefix."""
-        logger.debug(f"[DR] Determining filename for topic: {topic}")
+        logger.debug(f"Determining filename for topic: {topic}")
         today_str = datetime.now().strftime('%Y%m%d')
         # Use topic prefixes to determine file
         if topic.startswith("tick."):
@@ -119,11 +119,11 @@ class DataRecorderService:
 
     def record_message(self, topic_bytes: bytes, data_bytes: bytes):
         """Records a received message (topic, data) to the appropriate file."""
-        logger.debug(f"[DR] Entering record_message. Topic bytes: {topic_bytes}, Data length: {len(data_bytes)}")
+        logger.debug(f"Entering record_message. Topic bytes: {topic_bytes}, Data length: {len(data_bytes)}")
         record_time = time.time_ns() # Record reception time
         topic_str = topic_bytes.decode('utf-8', errors='ignore')
         filename = self.get_log_filename(topic_str)
-        logger.debug(f"[DR] Determined filename: {filename}")
+        logger.debug(f"Determined filename: {filename}")
 
         if not filename:
             return # Skip recording unknown topics
@@ -131,16 +131,16 @@ class DataRecorderService:
         try:
             # Deserialize data using pickle (since RpcServer uses send_pyobj)
             data_obj = pickle.loads(data_bytes)
-            logger.debug(f"[DR] Deserialized data object type: {type(data_obj)}")
+            logger.debug(f"Deserialized data object type: {type(data_obj)}")
 
             # Use the helper function for conversion
             record_data = self._convert_vnpy_obj_to_dict(data_obj)
             # Log partial converted data for verification
             if isinstance(record_data, dict):
                  log_snippet = {k: record_data.get(k) for k in list(record_data)[:5]}
-                 logger.debug(f"[DR] Converted record_data (snippet): {log_snippet}")
+                 logger.debug(f"Converted record_data (snippet): {log_snippet}")
             else:
-                 logger.debug(f"[DR] Converted record_data (non-dict): {str(record_data)[:100]}...")
+                 logger.debug(f"Converted record_data (non-dict): {str(record_data)[:100]}...")
 
             record = {
                 "zmq_topic": topic_str,
@@ -149,24 +149,24 @@ class DataRecorderService:
             }
 
             # Append to file using 'a' mode
-            logger.debug(f"[DR] Attempting to write to {filename}")
+            logger.debug(f"Attempting to write to {filename}")
             with open(filename, 'a', encoding='utf-8') as f:
                 json.dump(record, f, ensure_ascii=False)
                 f.write('\n')
-            logger.debug(f"[DR] Successfully wrote to {filename}")
+            logger.debug(f"Successfully wrote to {filename}")
 
         except pickle.UnpicklingError as e:
-             logger.error(f"[DR] Pickle 解码错误: {e}. Topic: {topic_str}")
+             logger.error(f"Pickle 解码错误: {e}. Topic: {topic_str}")
         except TypeError as e:
             # Log TypeError specifically from json.dump
-            logger.error(f"[DR] JSON 序列化错误 (可能由于不支持的数据类型): {e}. Topic: {topic_str}")
-            logger.error(f"[DR] Data object type: {type(data_obj)}")
-            logger.error(f"[DR] Converted data causing error (first 500 chars): {str(record_data)[:500]}") # Log problematic data
+            logger.error(f"JSON 序列化错误 (可能由于不支持的数据类型): {e}. Topic: {topic_str}")
+            logger.error(f"Data object type: {type(data_obj)}")
+            logger.error(f"Converted data causing error (first 500 chars): {str(record_data)[:500]}") # Log problematic data
         except IOError as e:
             # Log IOError specifically
-            logger.error(f"[DR] 写入文件 {filename} 时出错: {e}")
+            logger.error(f"写入文件 {filename} 时出错: {e}")
         except Exception as e:
-            logger.exception(f"[DR] 记录消息时发生意外错误 (Topic: {topic_str})")
+            logger.exception(f"记录消息时发生意外错误 (Topic: {topic_str})")
 
     def start(self):
         """Starts listening for messages and recording them."""
