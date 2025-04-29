@@ -11,16 +11,18 @@ if project_root not in sys.path:
 # Import the renamed service class and config
 from zmq_services.strategy_subscriber import StrategyEngine
 from config import zmq_config as config
+# Import new logger
+from utils.logger import setup_logging, logger
 
-# Import logger setup after adding path
-try:
-    from logger import setup_logging, getLogger
-    # Setup logging for this runner script
-    # Keep level INFO for runner itself, engine/strategies might have different levels
-    setup_logging(service_name="StrategyEngineRunner", level="INFO")
-except ImportError as log_err:
-    print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
-    sys.exit(1)
+# Import logger setup after adding path (Removed - Moved to main)
+# try:
+#     from logger import setup_logging, getLogger
+#     # Setup logging for this runner script
+#     # Keep level INFO for runner itself, engine/strategies might have different levels
+#     setup_logging(service_name="StrategyEngineRunner", level="INFO")
+# except ImportError as log_err:
+#     print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
+#     sys.exit(1)
 
 # --- Define Strategy Configuration ---
 # This dictionary defines which strategies to load and their parameters.
@@ -46,7 +48,10 @@ STRATEGIES_CONFIG = {
 
 def main():
     """Runs the strategy engine service."""
-    logger = getLogger(__name__)
+    # Setup logging at the beginning of main
+    setup_logging(service_name="StrategyEngineRunner", level="INFO")
+
+    # logger = getLogger(__name__) # Removed getLogger
 
     logger.info("正在初始化策略引擎...")
 
