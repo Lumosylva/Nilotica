@@ -4,7 +4,6 @@ import threading
 import sys
 import os
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from typing import Dict, Tuple, Any
 import configparser
 import logging
@@ -19,7 +18,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from logger import setup_logging, getLogger
+from utils.logger import logger
 
 # VNPY imports
 try:
@@ -33,7 +32,7 @@ try:
     from vnpy.rpc import RpcServer
 except ImportError as e:
     try:
-        getLogger(__name__).critical(f"Error importing vnpy modules: {e}", exc_info=True)
+        logger.critical(f"Error importing vnpy modules: {e}", exc_info=True)
     except Exception as e:
         print(f"CRITICAL: Error importing vnpy modules: {e}")
         print("Please ensure vnpy and vnpy_ctp are installed and accessible.")
@@ -41,15 +40,16 @@ except ImportError as e:
         print(f"CRITICAL: Current sys.path: {sys.path}")
     sys.exit(1)
 
-# Import new config location
 from config import zmq_config as config
-# Import constants from config
 from config.zmq_config import PUBLISH_BATCH_SIZE, CHINA_TZ # HEARTBEAT_INTERVAL_S likely unused
+
+# --- Add Heartbeat Constant ---
+HEARTBEAT_INTERVAL_S = 5.0 # Send heartbeat every 5 seconds
+# --- End Add --- 
 
 # +++ 添加函数：加载产品信息 +++
 def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
     """Loads commission rules and multipliers from an INI file."""
-    logger = getLogger('load_product_info')
     parser = configparser.ConfigParser()
     if not os.path.exists(filepath):
         logger.error(f"错误：产品信息文件未找到 {filepath}")
@@ -87,7 +87,6 @@ def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
 # --- Helper Functions for Serialization/Deserialization ---
 
 def vnpy_data_to_dict(obj):
-    logger = getLogger('vnpy_data_to_dict')
     """Converts OrderData or TradeData to a dictionary suitable for msgpack."""
     if isinstance(obj, (OrderData, TradeData)): # Add TickData if needed here too
         d = obj.__dict__
@@ -124,7 +123,6 @@ def vnpy_data_to_dict(obj):
 
 def dict_to_order_request(data_dict: Dict[str, Any]) -> OrderRequest | None:
     """Converts a dictionary back into a vnpy OrderRequest object."""
-    logger = getLogger('dict_to_order_request')
     try:
         direction = Direction(data_dict['direction'])
         order_type = OrderType(data_dict['type'])
@@ -152,11 +150,6 @@ def dict_to_order_request(data_dict: Dict[str, Any]) -> OrderRequest | None:
         logger.exception(f"创建 OrderRequest 时发生未知错误：{err} from data {data_dict}")
         return None
 
-# --- Constants (Removed local definitions) ---
-# HEARTBEAT_INTERVAL_S = 1.0
-# PUBLISH_BATCH_SIZE = 1000 
-# CHINA_TZ = ZoneInfo("Asia/Shanghai") 
-
 # --- Order Execution Gateway Service (RPC Mode) ---
 class OrderExecutionGatewayService(RpcServer):
     """
@@ -167,15 +160,16 @@ class OrderExecutionGatewayService(RpcServer):
     def __init__(self, environment_name: str):
         """Initializes the execution gateway service for a specific environment."""
         super().__init__()
-        self.logger = getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        self.logger.info(f"Initializing OrderExecutionGatewayService for environment: [{environment_name}]...")
+        logger.info(f"Initializing OrderExecutionGatewayService for environment: [{environment_name}]...")
         self.environment_name = environment_name # Store for logging
 
         self._event_counter = 0
         self._counter_lock = threading.Lock()
         self._last_logged_account_values: Dict[str, Tuple[float, float]] = {}
         self.active_order_ids: set[str] = set()
+        # +++ Add timestamp for timed account logging +++
+        self._last_account_log_time: float = 0.0 
+        # +++ End Add +++
 
         # VNPY setup
         self.event_engine = EventEngine()
@@ -188,13 +182,13 @@ class OrderExecutionGatewayService(RpcServer):
             all_ctp_settings = load_json("connect_ctp.json")
             if environment_name in all_ctp_settings:
                 self.ctp_setting = all_ctp_settings[environment_name]
-                self.logger.info(f"Loaded CTP settings for environment: [{environment_name}]")
+                logger.info(f"Loaded CTP settings for environment: [{environment_name}]")
             else:
-                self.logger.error(f"Environment '{environment_name}' not found in connect_ctp.json! Cannot connect CTP.")
+                logger.error(f"Environment '{environment_name}' not found in connect_ctp.json! Cannot connect CTP.")
         except FileNotFoundError:
-            self.logger.error("connect_ctp.json not found! Cannot connect CTP.")
+            logger.error("connect_ctp.json not found! Cannot connect CTP.")
         except Exception as e:
-            self.logger.exception(f"Error loading or parsing connect_ctp.json: {e}")
+            logger.exception(f"Error loading or parsing connect_ctp.json: {e}")
         # --- End Load and Select --- 
 
         self.contracts: Dict[str, ContractData] = {}
@@ -203,10 +197,10 @@ class OrderExecutionGatewayService(RpcServer):
         # Load product info for commission calculation
         config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config'))
         info_filepath = os.path.join(config_dir, 'project_files', 'product_info.ini')
-        self.logger.info(f"尝试从 {info_filepath} 加载产品信息...")
+        logger.info(f"尝试从 {info_filepath} 加载产品信息...")
         self.commission_rules, self.contract_multipliers = load_product_info(info_filepath)
         if not self.commission_rules or not self.contract_multipliers:
-             self.logger.warning("警告：未能成功加载手续费规则或合约乘数，手续费计算可能不准确！")
+             logger.warning("警告：未能成功加载手续费规则或合约乘数，手续费计算可能不准确！")
 
         # Register RPC handlers
         self.register(self.send_order)
@@ -222,7 +216,13 @@ class OrderExecutionGatewayService(RpcServer):
         self._publisher_active = threading.Event()
         self._publisher_thread = None
 
-        self.logger.info(f"订单执行网关服务(RPC模式) for [{environment_name}] 初始化完成。")
+        # --- Add Heartbeat Thread Variables ---
+        self._heartbeat_active = threading.Event()
+        self._heartbeat_thread = None
+        self._heartbeat_topic = b"heartbeat.ordergw" # Define topic as bytes
+        # --- End Add ---
+
+        logger.info(f"订单执行网关服务(RPC模式) for [{environment_name}] 初始化完成。")
 
     # --- RPC Handlers ---
     def send_order(self, req_dict: Dict[str, Any]) -> str | None:
@@ -230,26 +230,26 @@ class OrderExecutionGatewayService(RpcServer):
         RPC handler for sending an order request.
         Returns vt_orderid on success, None on failure.
         """
-        self.logger.info(f"RPC: 收到 send_order 请求: {req_dict}")
+        logger.info(f"RPC: 收到 send_order 请求: {req_dict}")
         order_request: OrderRequest | None = dict_to_order_request(req_dict)
 
         if not order_request:
-            self.logger.error("RPC: send_order - 无法将请求转换为 OrderRequest。")
+            logger.error("RPC: send_order - 无法将请求转换为 OrderRequest。")
             return None
 
         try:
             vt_orderid = self.gateway.send_order(order_request)
             if vt_orderid:
-                self.logger.info(f"RPC: send_order - 订单已发送至 CTP: {order_request.symbol}, VT_OrderID: {vt_orderid}")
+                logger.info(f"RPC: send_order - 订单已发送至 CTP: {order_request.symbol}, VT_OrderID: {vt_orderid}")
                 self.active_order_ids.add(vt_orderid)
                 return vt_orderid
             else:
                 # Log if the gateway itself failed to send without raising an exception
-                self.logger.error(f"RPC: send_order - CTP 网关未能发送订单 (gateway.send_order 返回 None): {order_request.symbol}")
+                logger.error(f"RPC: send_order - CTP 网关未能发送订单 (gateway.send_order 返回 None): {order_request.symbol}")
                 return None
         except Exception as e:
             # Log exceptions raised by the gateway's send_order
-            self.logger.exception(f"RPC: send_order - 发送订单时 CTP 网关出错: {e}")
+            logger.exception(f"RPC: send_order - 发送订单时 CTP 网关出错: {e}")
             return None
 
     def cancel_order(self, req_dict: Dict[str, Any]) -> Dict[str, str]:
@@ -259,15 +259,15 @@ class OrderExecutionGatewayService(RpcServer):
         Returns a status dictionary.
         """
         vt_orderid = req_dict.get('vt_orderid')
-        self.logger.info(f"RPC: 收到 cancel_order 请求 for {vt_orderid}")
+        logger.info(f"RPC: 收到 cancel_order 请求 for {vt_orderid}")
         if not vt_orderid:
-            self.logger.error("RPC: cancel_order - 收到无效的撤单指令：缺少 'vt_orderid' 字段。")
+            logger.error("RPC: cancel_order - 收到无效的撤单指令：缺少 'vt_orderid' 字段。")
             return {"status": "error", "message": "Missing vt_orderid"}
 
         try:
             order_to_cancel = self.gateway.get_order(vt_orderid)
             if not order_to_cancel:
-                self.logger.error(f"RPC: cancel_order - 尝试撤销失败：网关未找到订单 {vt_orderid}")
+                logger.error(f"RPC: cancel_order - 尝试撤销失败：网关未找到订单 {vt_orderid}")
                 return {"status": "error", "message": f"Order {vt_orderid} not found in gateway"}
 
             req = CancelRequest(
@@ -276,24 +276,24 @@ class OrderExecutionGatewayService(RpcServer):
                 exchange=order_to_cancel.exchange,
             )
             self.gateway.cancel_order(req)
-            self.logger.info(f"RPC: cancel_order - 撤单请求已发送 for {vt_orderid}")
+            logger.info(f"RPC: cancel_order - 撤单请求已发送 for {vt_orderid}")
             return {"status": "ok", "message": f"Cancel request sent for {vt_orderid}"}
 
         except AttributeError:
-             self.logger.error("RPC: cancel_order - 当前网关对象不支持 get_order 方法。")
+             logger.error("RPC: cancel_order - 当前网关对象不支持 get_order 方法。")
              return {"status": "error", "message": "Gateway does not support get_order, cannot cancel."}
         except Exception as e:
-            self.logger.exception(f"RPC: cancel_order - 处理撤单指令时出错 (vt_orderid: {vt_orderid}): {e}")
+            logger.exception(f"RPC: cancel_order - 处理撤单指令时出错 (vt_orderid: {vt_orderid}): {e}")
             return {"status": "error", "message": f"Error processing cancel command: {e}"}
 
     def query_contracts(self) -> Dict[str, Dict]:
         """RPC handler to query available contracts."""
-        self.logger.info("RPC: 收到 query_contracts 请求")
+        logger.info("RPC: 收到 query_contracts 请求")
         return {vt_symbol: contract.__dict__ for vt_symbol, contract in self.contracts.items()}
 
     def query_account(self) -> Dict | None:
         """RPC handler to query the latest account data."""
-        self.logger.info("RPC: 收到 query_account 请求")
+        logger.info("RPC: 收到 query_account 请求")
         if self.last_account_data:
             return self.last_account_data.__dict__
         else:
@@ -327,7 +327,7 @@ class OrderExecutionGatewayService(RpcServer):
         if event_type not in allowed_event_types:
             # Log discarded event types occasionally for debugging
             if self._event_counter % 5000 == 1: # Log every 5000th event processed
-                 self.logger.debug(f"事件处理器: 过滤掉的事件类型: {event_type} (总事件计数: {self._event_counter})")
+                 logger.debug(f"事件处理器: 过滤掉的事件类型: {event_type} (总事件计数: {self._event_counter})")
             # --- Handle side effects for non-published types ---
             if event_type == EVENT_CONTRACT:
                 # Still store contract data locally for query_contracts RPC
@@ -347,7 +347,7 @@ class OrderExecutionGatewayService(RpcServer):
                 order: OrderData = data_obj
                 # +++ Add Order Status Logging (Conditional on active_order_ids) +++
                 if order.vt_orderid in self.active_order_ids:
-                    self.logger.info(
+                    logger.info(
                         f"订单状态更新: [{order.datetime.strftime('%H:%M:%S')}] VTOrderID={order.vt_orderid}, "
                         f"状态={order.status.value}, "
                         f"已成交={order.traded}/{order.volume}, "
@@ -363,7 +363,7 @@ class OrderExecutionGatewayService(RpcServer):
                 trade: TradeData = data_obj
                 # +++ Add Trade Logging (Conditional on active_order_ids) +++
                 if trade.vt_orderid in self.active_order_ids:
-                    self.logger.info(
+                    logger.info(
                         f"新成交回报: [{trade.datetime.strftime('%H:%M:%S')}] VTOrderID={trade.vt_orderid}, "
                         f"成交ID={trade.vt_tradeid}, "
                         f"代码={trade.symbol}, "
@@ -378,41 +378,34 @@ class OrderExecutionGatewayService(RpcServer):
             elif event_type == EVENT_ACCOUNT:
                 account: AccountData = data_obj
                 self.last_account_data = account # Update local cache
+                
+                # +++ Get accountid FIRST +++
+                accountid = account.accountid 
+                # +++ End Get +++
 
-                # +++ Add Account Update Logging (Change-driven with Tolerance) +++
-                accountid = account.accountid
-                current_balance = account.balance
-                current_available = account.available
-                last_balance, last_available = self._last_logged_account_values.get(accountid, (None, None))
-
-                log_needed = False
-                # Always log the first time we see an account
-                if last_balance is None or last_available is None:
-                    log_needed = True
-                else:
-                    # Log if balance OR available changed beyond the tolerance
-                    balance_changed = not math.isclose(current_balance, last_balance, abs_tol=0.01)
-                    available_changed = not math.isclose(current_available, last_available, abs_tol=0.01)
-                    if balance_changed or available_changed:
-                        log_needed = True
-
-                if log_needed:
-                    self.logger.info(
-                        f"账户资金更新: AccountID={accountid}, "
+                # +++ Add Time Check for Account Update Logging +++
+                current_time = time.time()
+                if current_time - self._last_account_log_time >= 300:
+                    # Original change-driven logging logic (now inside time check)
+                    current_balance = account.balance
+                    current_available = account.available
+                    # (Removed the complex change check logic for simplicity, log every 5 mins if received)
+                    logger.info(
+                        f"账户资金更新 (每5分钟): AccountID={accountid}, "
                         f"Balance={current_balance:.2f}, "
                         f"Available={current_available:.2f}, "
                         f"Frozen={account.frozen:.2f}"
                     )
-                    # Update last logged values
-                    self._last_logged_account_values[accountid] = (current_balance, current_available)
-                # --- End Account Update Logging ---
+                    # Update the last log time
+                    self._last_account_log_time = current_time
+                # --- End Time Check and Logging Logic ---
 
                 topic_bytes = f"account.{accountid}".encode('utf-8')
                 data_bytes = pickle.dumps(account)
             elif event_type == EVENT_POSITION:
                  position: PositionData = data_obj
                  # +++ Change Position Update Logging to DEBUG +++
-                 self.logger.debug(
+                 logger.debug(
                      f"持仓更新: 代码={position.vt_symbol}, "
                      f"方向={position.direction.value}, "
                      f"数量={position.volume}, "
@@ -434,16 +427,16 @@ class OrderExecutionGatewayService(RpcServer):
                 self._publish_queue.put((topic_bytes, data_bytes))
                 # Log putting action occasionally for debugging
                 if self._event_counter % 1000 == 1: # Log less frequently
-                    self.logger.debug(f"事件处理器: 将事件放入发布队列: Topic={topic_bytes.decode('utf-8', 'ignore')}")
+                    logger.debug(f"事件处理器: 将事件放入发布队列: Topic={topic_bytes.decode('utf-8', 'ignore')}")
 
         except Exception as e:
              # Log error during processing/pickling *before* queueing
-             self.logger.exception(f"处理 VNPY 事件 {event_type} (类型: {type(data_obj).__name__}) 并准备放入队列时出错: {e}")
+             logger.exception(f"处理 VNPY 事件 {event_type} (类型: {type(data_obj).__name__}) 并准备放入队列时出错: {e}")
 
     # --- Publisher Thread Method (Simplified) ---
     def _run_publish(self):
         """Runs in a separate thread to get messages from the publish queue and send via ZMQ PUB socket."""
-        self.logger.info("发布线程启动 (批处理模式)。")
+        logger.info("发布线程启动 (批处理模式)。")
         socket_ready_logged = False
         last_queue_size_log_time = time.time()
         queue_size_log_interval = 30 # Log queue size every 30 seconds (Increased interval)
@@ -457,17 +450,17 @@ class OrderExecutionGatewayService(RpcServer):
             loop_count += 1
             # Optional: Reduce debug logging frequency further if needed
             # if loop_count % 5000 == 1:
-            #     self.logger.debug(f"发布线程: Loop {loop_count}")
+            #     logger.debug(f"发布线程: Loop {loop_count}")
 
             current_time = time.time()
 
             # --- Log queue size periodically (Change to DEBUG) ---
             if current_time - last_queue_size_log_time >= queue_size_log_interval:
                  publish_qsize = self._publish_queue.qsize()
-                 self.logger.debug(f"发布线程: 当前发布队列大小 (self._publish_queue): {publish_qsize}") # DEBUG
+                 logger.debug(f"发布线程: 当前发布队列大小 (self._publish_queue): {publish_qsize}") # DEBUG
                  with self._counter_lock:
                      current_event_count = self._event_counter
-                 self.logger.debug(f"发布线程: 处理的 VNPY 事件总数 (计数器): {current_event_count}") # DEBUG
+                 logger.debug(f"发布线程: 处理的 VNPY 事件总数 (计数器): {current_event_count}") # DEBUG
                  last_queue_size_log_time = current_time
                  # Reset HWM warning flag if queue is small
                  if publish_qsize < 500:
@@ -499,7 +492,7 @@ class OrderExecutionGatewayService(RpcServer):
             socket_available = hasattr(self, '_socket_pub') and self._socket_pub and not self._socket_pub.closed
             if not socket_available:
                  if loop_count % 100 == 1: # Log unavailability occasionally
-                     self.logger.warning("发布线程：MAIN PUB socket 不可用或已关闭。本批次消息将被丢弃。")
+                     logger.warning("发布线程：MAIN PUB socket 不可用或已关闭。本批次消息将被丢弃。")
                  # Mark tasks done since we can't send
                  for _ in batch:
                      self._publish_queue.task_done()
@@ -507,8 +500,8 @@ class OrderExecutionGatewayService(RpcServer):
                  continue
 
             if not socket_ready_logged:
-                self.logger.info("发布线程：检测到 MAIN PUB socket 可用。")
-                self.logger.info("订单执行网关服务(RPC模式)准备就绪。按 Ctrl+C 停止主程序。")
+                logger.info("发布线程：检测到 MAIN PUB socket 可用。")
+                logger.info("订单执行网关服务(RPC模式)准备就绪。按 Ctrl+C 停止主程序。")
                 socket_ready_logged = True
 
             # Process each item in the batch
@@ -521,21 +514,21 @@ class OrderExecutionGatewayService(RpcServer):
                     items_processed_in_batch += 1
                     # Optional: Log successful send occasionally
                     # if log_counter % 100 == 1:
-                    #    self.logger.debug(f"发布线程: Sent Topic: {topic_str_for_log}")
+                    #    logger.debug(f"发布线程: Sent Topic: {topic_str_for_log}")
                 except zmq.Again:
                     # HWM reached or no subscriber - message dropped by ZMQ
                     qsize_on_hwm = self._publish_queue.qsize()
-                    self.logger.warning(f"发布线程: [SEND HWM/Again] ZMQ发送缓冲区满或无订阅者，消息被丢弃. Topic: {topic_str_for_log}. 当前队列大小: {qsize_on_hwm}")
+                    logger.warning(f"发布线程: [SEND HWM/Again] ZMQ发送缓冲区满或无订阅者，消息被丢弃. Topic: {topic_str_for_log}. 当前队列大小: {qsize_on_hwm}")
                     items_processed_in_batch += 1 # Count as processed even if dropped
                     # Throttle HWM warnings
                     if not hwm_warning_logged_recently or (current_time - last_hwm_warning_time > hwm_warning_interval):
                         hwm_warning_logged_recently = True
                         last_hwm_warning_time = current_time
                 except zmq.ZMQError as send_err:
-                    self.logger.error(f"发布线程: [SEND ZMQERR] ZMQ 发送错误: {send_err}. Topic: {topic_str_for_log}")
+                    logger.error(f"发布线程: [SEND ZMQERR] ZMQ 发送错误: {send_err}. Topic: {topic_str_for_log}")
                     items_processed_in_batch += 1 # Count as processed to mark task done
                 except Exception as send_gen_err:
-                    self.logger.exception(f"发布线程: [SEND GENERR] 未知发送错误: {send_gen_err}. Topic: {topic_str_for_log}")
+                    logger.exception(f"发布线程: [SEND GENERR] 未知发送错误: {send_gen_err}. Topic: {topic_str_for_log}")
                     items_processed_in_batch += 1 # Count as processed
                 finally:
                     # Ensure task_done is called for every item attempted from the queue
@@ -544,21 +537,59 @@ class OrderExecutionGatewayService(RpcServer):
                         task_done_called = True
                     except Exception as td_err:
                          # This should not happen with standard queue
-                         self.logger.error(f"发布线程: CRITICAL! 调用 task_done 时出错: {td_err}")
+                         logger.error(f"发布线程: CRITICAL! 调用 task_done 时出错: {td_err}")
             log_counter += items_processed_in_batch # Increment log counter based on processed items
             # --- End Process Batch ---
 
-        self.logger.info("发布线程停止。")
+        logger.info("发布线程停止。")
     # --- End Publisher Thread Method ---
+
+    # --- Add Heartbeat Thread Method ---
+    def _run_heartbeat(self):
+        """Runs in a separate thread to periodically send heartbeat messages."""
+        logger.info(f"心跳线程启动 (间隔: {HEARTBEAT_INTERVAL_S}s, 主题: {self._heartbeat_topic.decode()})。")
+        loop_count = 0
+        while self._heartbeat_active.is_set():
+            loop_count += 1
+            # Check if publisher socket is ready
+            socket_available = hasattr(self, '_socket_pub') and self._socket_pub and not self._socket_pub.closed
+            if socket_available:
+                try:
+                    current_timestamp = time.time()
+                    data_bytes = pickle.dumps(current_timestamp)
+                    self._socket_pub.send_multipart([self._heartbeat_topic, data_bytes], flags=zmq.NOBLOCK)
+                    # Log heartbeat sending occasionally
+                    if loop_count % 12 == 1: # e.g., log every minute if interval is 5s
+                        logger.debug(f"发送心跳: Timestamp={datetime.fromtimestamp(current_timestamp).isoformat()}")
+                except zmq.Again:
+                     # Should not happen often with NOBLOCK on PUB if HWM not reached, but log if it does
+                     logger.warning("发送心跳时遇到 ZMQ EAGAIN (缓冲区可能已满？)")
+                except Exception as e:
+                     logger.exception(f"发送心跳时出错: {e}")
+            else:
+                # Log if socket is not ready (less frequently)
+                if loop_count % 6 == 1:
+                    logger.warning("心跳线程：MAIN PUB socket 不可用或已关闭，无法发送心跳。")
+
+            # Wait for the next interval, checking the active flag periodically
+            # This allows faster shutdown than a single sleep(INTERVAL)
+            wait_interval = 0.5 # Check every 0.5 seconds
+            remaining_wait = HEARTBEAT_INTERVAL_S
+            while remaining_wait > 0 and self._heartbeat_active.is_set():
+                time.sleep(min(wait_interval, remaining_wait))
+                remaining_wait -= wait_interval
+
+        logger.info("心跳线程停止。")
+    # --- End Add Heartbeat Thread Method ---
 
     # --- Lifecycle Management (Simplified) ---
     def start(self, rep_address=None, pub_address=None):
-        """Starts RpcServer, EventEngine, Gateway, and Publisher threads."""
+        """Starts RpcServer, EventEngine, Gateway, Publisher, and Heartbeat threads."""
         if self.is_active():
-            self.logger.warning("订单执行网关服务(RPC模式)已在运行中。")
+            logger.warning("订单执行网关服务(RPC模式)已在运行中。")
             return
 
-        self.logger.info("启动订单执行网关服务(RPC模式)...")
+        logger.info("启动订单执行网关服务(RPC模式)...")
 
         # Start RpcServer first
         try:
@@ -566,19 +597,19 @@ class OrderExecutionGatewayService(RpcServer):
                 rep_address=config.ORDER_GATEWAY_REP_ADDRESS,
                 pub_address=config.ORDER_GATEWAY_PUB_ADDRESS
             )
-            self.logger.info(f"RPC 服务器已启动。 REP: {config.ORDER_GATEWAY_REP_ADDRESS}, PUB: {config.ORDER_GATEWAY_PUB_ADDRESS}")
+            logger.info(f"RPC 服务器已启动。 REP: {config.ORDER_GATEWAY_REP_ADDRESS}, PUB: {config.ORDER_GATEWAY_PUB_ADDRESS}")
             # Set socket options...
             if hasattr(self, '_socket_pub') and self._socket_pub:
                 try:
                     sndhwm = 1000
                     self._socket_pub.setsockopt(zmq.SNDHWM, sndhwm)
-                    self.logger.info(f"为 MAIN PUB socket (_socket_pub) 设置了 ZMQ.SNDHWM 选项: {sndhwm}")
+                    logger.info(f"为 MAIN PUB socket (_socket_pub) 设置了 ZMQ.SNDHWM 选项: {sndhwm}")
                 except Exception as opt_err:
-                     self.logger.error(f"为 MAIN PUB socket (_socket_pub) 设置 ZMQ 选项时出错: {opt_err}")
+                     logger.error(f"为 MAIN PUB socket (_socket_pub) 设置 ZMQ 选项时出错: {opt_err}")
             else:
-                 self.logger.warning("无法设置 ZMQ 选项：RpcServer 未能成功创建 _socket_pub。")
+                 logger.warning("无法设置 ZMQ 选项：RpcServer 未能成功创建 _socket_pub。")
         except Exception as e:
-            self.logger.exception(f"启动 RPC 服务器时失败: {e}")
+            logger.exception(f"启动 RPC 服务器时失败: {e}")
             return
 
         # Start Publisher Thread
@@ -586,9 +617,19 @@ class OrderExecutionGatewayService(RpcServer):
              self._publisher_active.set()
              self._publisher_thread = threading.Thread(target=self._run_publish, daemon=True)
              self._publisher_thread.start()
-             self.logger.info("发布线程已启动。")
+             logger.info("发布线程已启动。")
         else:
-             self.logger.warning("发布线程似乎已在运行。")
+             logger.warning("发布线程似乎已在运行。")
+
+        # --- Start Heartbeat Thread --- 
+        if not self._heartbeat_thread or not self._heartbeat_thread.is_alive():
+            self._heartbeat_active.set()
+            self._heartbeat_thread = threading.Thread(target=self._run_heartbeat, daemon=True)
+            self._heartbeat_thread.start()
+            logger.info("心跳线程已启动。")
+        else:
+             logger.warning("心跳线程似乎已在运行。")
+        # --- End Start Heartbeat --- 
 
         # Start Event Engine and Register Handlers
         try:
@@ -600,30 +641,30 @@ class OrderExecutionGatewayService(RpcServer):
             self.event_engine.register(EVENT_POSITION, self.process_vnpy_event) # Register handler for Position events
             # Register for any other events you might want to count or have side effects for
             self.event_engine.start()
-            self.logger.info("事件引擎已启动，并注册了事件处理器。")
+            logger.info("事件引擎已启动，并注册了事件处理器。")
         except Exception as e:
-             self.logger.exception(f"启动或注册事件引擎时出错: {e}")
+             logger.exception(f"启动或注册事件引擎时出错: {e}")
              self.stop()
              return
 
         # Connect CTP Gateway
         if not self.ctp_setting:
-            self.logger.error("CTP settings not loaded or environment invalid, cannot connect CTP gateway.")
+            logger.error("CTP settings not loaded or environment invalid, cannot connect CTP gateway.")
             # Optionally stop the service here if CTP is essential
             # self.stop()
             return
 
         try:
-            self.logger.info(f"CTP 连接配置 (Env: {self.environment_name}): UserID={self.ctp_setting.get('userid')}, "
+            logger.info(f"CTP 连接配置 (Env: {self.environment_name}): UserID={self.ctp_setting.get('userid')}, "
                              f"BrokerID={self.ctp_setting.get('broker_id')}, TD={self.ctp_setting.get('td_address')}")
             self.gateway.connect(self.ctp_setting) # Uses the selected setting
-            self.logger.info("CTP 连接请求已发送。")
+            logger.info("CTP 连接请求已发送。")
         except Exception as err:
-            self.logger.exception(f"连接 CTP 交易网关时发生严重错误 (Env: {self.environment_name}): {err}")
+            logger.exception(f"连接 CTP 交易网关时发生严重错误 (Env: {self.environment_name}): {err}")
             self.stop()
             return
 
-        self.logger.info(f"订单执行网关服务(RPC模式) for [{self.environment_name}] 启动完成。")
+        logger.info(f"订单执行网关服务(RPC模式) for [{self.environment_name}] 启动完成。")
 
     def stop(self):
         """Stops all components."""
@@ -635,66 +676,78 @@ class OrderExecutionGatewayService(RpcServer):
         # if not is_rpc_active and not was_publisher_running: # Simplified check
         #      return
 
-        self.logger.info("停止订单执行网关服务(RPC模式)...")
+        logger.info("停止订单执行网关服务(RPC模式)...")
 
-        # --- REMOVED Stopping Heartbeat Thread ---
+        # --- Stop Heartbeat Thread --- 
+        if self._heartbeat_thread and self._heartbeat_thread.is_alive():
+            logger.info("正在停止心跳线程...")
+            self._heartbeat_active.clear()
+            self._heartbeat_thread.join(timeout=2.0) # Wait a bit for it to finish
+            if self._heartbeat_thread.is_alive():
+                logger.error("无法正常停止心跳线程。")
+            else:
+                logger.info("心跳线程已停止。")
+            self._heartbeat_thread = None
+        # --- End Stop Heartbeat --- 
 
         # Stop Publisher Thread first
         if self._publisher_thread and self._publisher_thread.is_alive():
-             self.logger.info("正在停止发布线程...")
+             logger.info("正在停止发布线程...")
              self._publisher_active.clear()
              self._publisher_thread.join(timeout=2.0)
              if self._publisher_thread.is_alive():
-                  self.logger.error("无法正常停止发布线程。")
+                  logger.error("无法正常停止发布线程。")
              else:
-                  self.logger.info("发布线程已停止。")
+                  logger.info("发布线程已停止。")
              self._publisher_thread = None
         # elif was_publisher_running: # Log if thread was running but RpcServer wasn't active
-        #      self.logger.warning("服务未激活，但发布线程仍在运行，已尝试停止。")
+        #      logger.warning("服务未激活，但发布线程仍在运行，已尝试停止。")
 
         # Stop Event Engine
         try:
             # Check if event engine was actually started and is active
             if hasattr(self.event_engine, '_active') and self.event_engine._active:
                 self.event_engine.stop()
-                self.logger.info("事件引擎已停止。")
+                logger.info("事件引擎已停止。")
             # else: # Optional: Log if never started/already stopped
-            #     self.logger.info("事件引擎未运行或已停止。")
+            #     logger.info("事件引擎未运行或已停止。")
         except Exception as e:
-            self.logger.exception(f"停止事件引擎时出错: {e}")
+            logger.exception(f"停止事件引擎时出错: {e}")
 
         # Close CTP Gateway
         if self.gateway:
             try:
                 self.gateway.close()
-                self.logger.info("CTP 交易网关已关闭。")
+                logger.info("CTP 交易网关已关闭。")
             except Exception as e:
-                self.logger.exception(f"关闭 CTP 网关时出错: {e}")
+                logger.exception(f"关闭 CTP 网关时出错: {e}")
 
         # Stop RpcServer last
         if is_rpc_active:
             try:
                  super().stop() # RpcServer.stop() closes sockets
-                 self.logger.info("RPC 服务器已停止。")
+                 logger.info("RPC 服务器已停止。")
             except Exception as e:
-                 self.logger.exception(f"停止 RPC 服务器时出错: {e}")
+                 logger.exception(f"停止 RPC 服务器时出错: {e}")
 
-        self.logger.info("订单执行网关服务(RPC模式)已停止。")
+        logger.info("订单执行网关服务(RPC模式)已停止。")
 
 # --- Main execution block (for testing) ---
 if __name__ == "__main__":
     try:
+        # Need setup_logging here for the test block, import it
+        from utils.logger import setup_logging # Added specific import
         setup_logging(service_name="OrderExecutionGateway_DirectRunRPC")
     except ImportError as log_err:
         print(f"CRITICAL: Failed to import or setup logger: {log_err}. Exiting.")
         sys.exit(1)
 
-    logger_main = getLogger(__name__)
-    logger_main.info("Starting direct test run (RPC Mode)...")
+    # logger_main = getLogger(__name__) # Removed getLogger
+    logger.info("Starting direct test run (RPC Mode)...") # Use logger directly
 
     if not hasattr(config, 'ORDER_GATEWAY_REP_ADDRESS') or \
        not hasattr(config, 'ORDER_GATEWAY_PUB_ADDRESS'):
-        logger_main.critical("错误：配置文件 config.zmq_config 缺少 ORDER_GATEWAY_REP_ADDRESS 或 ORDER_GATEWAY_PUB_ADDRESS。")
+        logger.critical("错误：配置文件 config.zmq_config 缺少 ORDER_GATEWAY_REP_ADDRESS 或 ORDER_GATEWAY_PUB_ADDRESS。") # Use logger directly
         sys.exit(1)
 
     gw_service = OrderExecutionGatewayService("TestEnv")
@@ -704,10 +757,10 @@ if __name__ == "__main__":
         while gw_service.is_active():
             time.sleep(1)
     except KeyboardInterrupt:
-        logger_main.info("主程序接收到中断信号，正在停止...")
+        logger.info("主程序接收到中断信号，正在停止...") # Use logger directly
     except Exception as e:
-        logger_main.exception(f"主测试循环发生未处理错误：{e}")
+        logger.exception(f"主测试循环发生未处理错误：{e}") # Use logger directly
     finally:
-        logger_main.info("开始停止服务...")
+        logger.info("开始停止服务...") # Use logger directly
         gw_service.stop()
-        logger_main.info("订单执行网关测试运行结束 (RPC Mode)。")
+        logger.info("订单执行网关测试运行结束 (RPC Mode)。") # Use logger directly
