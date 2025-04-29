@@ -10,7 +10,7 @@ Language: [CHINESE](README.md)
 
 ### **1. Introduction**
 
-This project is based on **[vnpy](https://github.com/vnpy/vnpy)**, **[vnpy_ctp](https://github.com/vnpy/vnpy_ctp) **, **[vnpy_rpcservice](https://github.com/vnpy/vnpy_rpcservice)**, and aims to simplify the domestic futures quantitative trading experience, making it easier for manual traders to switch to quantitative trading and focus more on strategy development.
+This project is based on **[vnpy](https://github.com/vnpy/vnpy)**, **[vnpy_ctp](https://github.com/vnpy/vnpy_ctp) **, and aims to simplify the domestic futures quantitative trading experience, making it easier for manual traders to switch to quantitative trading and focus more on strategy development.
 
 The functions currently implemented by the system are:
 
@@ -28,13 +28,11 @@ The functions currently implemented by the system are:
 - **Toolchain**: `uv` + `hatch` + `setuptools`
 - **vnpy** : version `4.0.0`
 - **vnpy_ctp**: `6.7.7.1` version (developed based on the `6.7.7` interface package of CTP futures version, the interface comes with the dll file of [penetrating real disk environment])
-- **vnpy_rpcservice**: version 1.0.6
-
 - If you need to compile other versions of CTP `C++`, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
 
 - If you use the CTP version of this system directly, you do not need to follow the build process in step 4 below. You can directly download the `whl` uv pip install in the release package and install it.
 
-  https://github.com/Ma-Dongdong/Nilotica_dev/releases
+  https://github.com/Lumosylva/Nilotica/releases
 
 - Note: Currently all codes are only tested under `Windows` environment, not under `Linux`
 
@@ -96,35 +94,31 @@ This project uses `uv` to manage Python virtual environments and dependent packa
 
 ### **5. Compile VNPY_CTP**
 
-Executing the `hatch build` command will compile the dynamic link library `.pyd` files of market and trading under vnpy_ctp\api\. The build hook `hatch_build.py` is responsible for compiling CTP C++ extensions and using `pybind11-stubgen` to generate `.pyi` stub files for the compiled modules. The compiled `.pyd` and `.pyi` files will be included in the final Wheel package.
+When `vnpy_ctp` needs to be compiled, execute the `hatch build` command to compile the dynamic link library `.pyd` file of the market and transaction under the project vnpy_ctp\api\. The build hook `hatch_build.py` is responsible for compiling the CTP C++ extension, and uses `pybind11-stubgen` to generate `.pyi` stub files for the compiled modules.
 
-If you need to compile `vnpy_ctp`, you can follow this build process. If you need to compile `vnpy_tts`, please modify the `path` of the `[tool.hatch.build.hooks.custom]` build script in `pyproject.toml` to `hatch_build_tts.py`, and then execute `hatch build`.
+When `vnpy_tts` needs to be compiled, please modify the `path` of the `[tool.hatch.build.hooks.custom]` build script in `pyproject.toml` to `hatch_build_tts.py`, and then execute `hatch build` to compile the process similar to the above.
 
 #### **(1) Clean up old builds**
 
-Open the terminal and enter the project root directory, delete the `dist` and `*.egg-info` directories
+Open the terminal and enter the project root directory, delete the `dist` and `build` directories
 
 PowerShell
 
 ```bash
-Remove-Item -Recurse -Force .pytest_cache, .mypy_cache, .ruff_cache, dist, build, *.egg-info -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
 ```
 
 CMD
 
 ```bash
-rmdir /s /q .pytest_cache
-rmdir /s /q .mypy_cache
-rmdir /s /q .ruff_cache
 rmdir /s /q dist
 rmdir /s /q build
-for /d %i in (*.egg-info) do rmdir /s /q "%i"
 ```
 
 Bash
 
 ```bash
-rm -rf .pytest_cache .mypy_cache .ruff_cache dist build *.egg-info
+rm -rf dist build
 ```
 
 #### **(2) Execute the build**
@@ -165,93 +159,95 @@ hatch build
 
 ```reStructuredText
 .
+├── assets - screenshots of service operation
 ├── bat - Windows BAT service startup script
 │ ├── 1_run_market_gateway.bat - Market gateway startup script
 │ ├── 2_run_order_gateway.bat - Order execution gateway startup script
 │ ├── 3_run_strategy_subscriber.bat - Strategy subscriber startup script
 │ ├── 4_run_risk_manager.bat - Risk management startup script
 │ ├── 5_run_data_recorder.bat - Data recording startup script
-│ └── 6_run_backtest.bat - Strategy backtest demo script
-├── config - project configuration directory
-├── logger - logging module
-├── logs - log storage directory
-│ ├── constants - constants directory
-│ │ ├── params.py - constants
-│ │ └── path.py - path constants
-│ └── project_files - This directory contains files such as holidays, contract multipliers and rates, contract and exchange mappings, etc.
-├── run_image - service running screenshot directory
-├── structlog - another log module, temporarily unused
+│ └── 6_run_backtest.bat - Strategy backtesting demo script
+├── config - Project configuration directory
+├── logs - Log storage directory
+│ ├── constants - Constant directory
+│ │ ├── params.py - Constants
+│ │ └── path.py - Path constants
+│ └── project_files - directory for storing holidays, contract multipliers and rates, contract and exchange mapping, etc.
+├── run_image - directory for service running screenshots
 ├── ta-lib - ta-lib library source files
-├── utils - utility package
-├── vnpy - vnpy's official core library, whose main function is an event-driven engine.
-├── vnpy_ctp - vnpy's official ctp library, its main function is to interact with exchange quotes and trading servers.
-├── vnpy_rpcservice - vnpy's official RPC library, its main function is to provide RPC services.
-├── zmq_services - the core of the system, including market gateway, order execution gateway, strategy subscriber, risk control management, data recording, strategy backtesting, and market playback.
-│ ├── backtester - Backtesting directory
+├── utils - tool package, including logs, paths, etc.
+├── vnpy - vnpy's official core library, the main function is the event-driven engine.
+├── vnpy_ctp - vnpy's official ctp library, the main function is to provide an interface for the underlying interaction with the market and trading servers.
+├── zmq_services - system core, including market gateway, order execution gateway, strategy subscriber, risk control management, data recording, strategy backtesting, market playback.
+│ ├── backtester - backtest directory
 │ │ ├── data_player.py - data playback
-│ │ ├── performance.py - calculates performance indicators and backtests performance reports
-│ │ ├── run_backtest.py - Run the backtest script
-│ │ ├── run_data_player.py - Run the data playback script
+│ │ ├── performance.py - calculate performance indicators, backtest performance report
+│ │ ├── run_backtest.py - run backtest script
+│ │ ├── run_data_player.py - run data playback script
 │ │ └── simulation_engine.py - simulation engine
-│ ├── recorded_data - local storage directory for tick, order, and trader data
+│ ├── strategies - strategy storage location
+│ ├── recorded_data - local storage directory for accounts, ticks, orders, and trader data
 │ ├── config.py - project configuration file
-│ ├── data_recorder.py - Data Recording
-│ ├── market_data_gateway.py - Market data gateway
-│ ├── order_execution_gateway.py - Order Execution Gateway
-│ ├── risk_manager.py - Risk management
-│ ├── run_data_recorder.py - Run the data recording script
-│ ├── run_market_gateway.py - Run the market gateway script
-│ ├── run_order_gateway.py - Runs the order execution gateway script
-│ ├── run_risk_manager.py - Run the risk management script
-│ ├── run_strategy_subscriber.py - Runs the strategy subscriber script
-│ └── strategy_subscriber.py - Strategy Subscriber
-├── .python-version - The Python version number used by the project, automatically generated by uv and does not need to be manually edited.
-├── CHANGELOG.md - System version change log
-├── LICENSE.txt - license file
+│ ├── data_recorder.py - data recorder
+│ ├── market_data_gateway.py - market gateway
+│ ├── order_execution_gateway.py - order execution gateway
+│ ├── risk_manager.py - Risk Control Manager
+│ ├── rpc_client_test.py - Order test script
+│ ├── run_data_recorder.py - Data recorder startup script
+│ ├── run_market_gateway.py - Market gateway startup script
+│ ├── run_order_gateway.py - Order execution gateway startup script
+│ ├── run_risk_manager.py - Risk control manager startup script
+│ ├── run_strategy_subscriber.py - Strategy engine startup script
+│ ├── strategy_base.py - Strategy base class
+│ └── strategy_subscriber.py - Strategy subscriber
+├── .python-version - Python version number used by the project, automatically generated by uv and does not need to be manually edited.
+├── CHANGELOG.md - System version update log
+├── LICENSE.txt - License file
 ├── README.md - Project description in Chinese
-├── README_EN.md - English description of the project
-├── __init__.py - the project version number
-├── hatch_build.py - custom build hook responsible for compiling C++ extensions
+├── README_EN.md - Project description in English
+├── __init__.py - Project version number
+├── banner.png - Project banner image
 ├── build.bat - Windows project automatic build script
 ├── build.sh - Linux project automatic build script
-├── install.bat - Windows installation script for ta-lib 0.6.3, temporarily useless
-├── install.sh - script for installing ta-lib 0.6.3 on Linux, temporarily useless
-├── logo.png - project logo
-├── main.py - main file of the project, no definition yet
-├── pyproject.toml - project configuration file, automatically generated by uv, used to define the project's main dependencies, metadata, build system and other information.
-├── run.bat - one-click start of the market gateway, order execution gateway, strategy subscriber, risk control management, and data recording scripts
-└── uv.lock - records all dependencies of the project, which is automatically managed by uv and does not require manual editing.
+├── hatch_build.py - vnpy_ctp build hook is responsible for compiling C++ extensions
+├── hatch_build_tts.py - vnpy_tts build hook is responsible for compiling C++ extensions
+├── install.bat - Windows installation script for ta-lib 0.6.3, temporarily unused
+├── install.sh - Linux installation script for ta-lib 0.6.3, temporarily unused
+├── main.py - Main project file, no definition for now
+├── pyproject.toml - Project configuration file, automatically generated by uv, used to define the main dependencies, metadata, build system and other information of the project.
+├── run.bat - One-click startup of market gateway, order execution gateway, strategy subscriber, risk control management, data recording script
+└── uv.lock - Records all dependencies of the project, automatically managed by uv, no manual editing required.
 ```
 
 ### **7. Service operation display**
 
 1. Run the market gateway:
 
-<img src="run_image/run_market_gateway.png" style="zoom:67%;" />
+<img src="assets/run_market_gateway.png" style="zoom:67%;" />
 
 2. Run the order execution gateway:
 
-<img src="run_image/run_order_gateway.png" style="zoom:67%;" />
+<img src="assets/run_order_gateway.png" style="zoom:67%;" />
 
 3. Run the strategy subscriber:
 
-<img src="run_image/run_strategy_subscriber.png" style="zoom:67%;" />
+<img src="assets/run_strategy_subscriber.png" style="zoom:67%;" />
 
 4. Operational risk control management:
 
-<img src="run_image/run_risk_manager.png" style="zoom:67%;" />
+<img src="assets/run_risk_manager.png" style="zoom:67%;" />
 
 5. Operation data recording:
 
-<img src="run_image/run_data_recorder.png" style="zoom:67%;" />
+<img src="assets/run_data_recorder.png" style="zoom:67%;" />
 
 6. Run the backtest
 
-<img src="run_image/run_backtest1.png" style="zoom:67%;" />
+<img src="assets/run_backtest1.png" style="zoom:67%;" />
 
-<img src="run_image/run_backtest2.png" style="zoom:67%;" />
+<img src="assets/run_backtest2.png" style="zoom:67%;" />
 
-<img src="run_image/run_backtest3.png" style="zoom:67%;" />
+<img src="assets/run_backtest3.png" style="zoom:67%;" />
 
 ### **8. Project Progress**
 

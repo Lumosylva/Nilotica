@@ -10,7 +10,7 @@ Language: [ENGLISH](README_EN.md)
 
 ### **1. 前言**
 
-本项目基于 **[vnpy](https://github.com/vnpy/vnpy)** 和 **[vnpy_ctp](https://github.com/vnpy/vnpy_ctp) **、**[vnpy_rpcservice](https://github.com/vnpy/vnpy_rpcservice)** 之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，更加专注于策略的开发。
+本项目基于 **[vnpy](https://github.com/vnpy/vnpy)** 和 **[vnpy_ctp](https://github.com/vnpy/vnpy_ctp) ** 之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，更加专注于策略的开发。
 
 目前系统已实现的功能：
 
@@ -32,13 +32,11 @@ Language: [ENGLISH](README_EN.md)
 
 - **vnpy_ctp**： `6.7.7.1`版本（基于CTP期货版的`6.7.7`接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件）
 
-- **vnpy_rpcservice**：`1.0.6`版本
-
 - 若需要其他版本CTP `C++` 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
 
 - 若直接使用本系统的CTP版本，则不需要进行下方第4步的构建流程，直接下载releases包中 `whl` uv pip install 安装即可
 
-  https://github.com/Ma-Dongdong/Nilotica_dev/releases
+  https://github.com/Lumosylva/Nilotica/releases
 
 - 注意：目前所有代码仅在`Windows`环境下测试，`Linux`下并未测试
 
@@ -99,35 +97,31 @@ Language: [ENGLISH](README_EN.md)
 
 ### **5. 编译VNPY_CTP**
 
-执行 `hatch build` 命令将会在 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，构建钩子 `hatch_build.py` 负责编译CTP C++  扩展，并使用 `pybind11-stubgen` 为编译好的模块生成  `.pyi` 存根文件，编译后的  `.pyd` 文件和  `.pyi` 文件会被包含在最终的 Wheel 包中。
+需要对`vnpy_ctp`编译时，执行 `hatch build` 命令将会在项目 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，由构建钩子 `hatch_build.py` 负责编译出CTP C++  扩展，并使用 `pybind11-stubgen` 为编译好的模块生成  `.pyi` 存根文件。
 
-若需要对`vnpy_ctp`编译，可进行此构建流程。若需要对`vnpy_tts`编译，请修改`pyproject.toml`中`[tool.hatch.build.hooks.custom]`构建脚本的`path`为`hatch_build_tts.py`，再执行`hatch build`即可。
+需要对`vnpy_tts`编译时，请修改`pyproject.toml`中`[tool.hatch.build.hooks.custom]`构建脚本的`path`为`hatch_build_tts.py`，再执行`hatch build`即可编译同上述类似的过程。
 
 #### **(1) 清理旧的构建**
 
-打开终端进入项目根目录，删除`dist`、`*.egg-info`目录
+打开终端进入项目根目录，删除`dist`、`build`目录
 
 PowerShell 
 
 ```bash
-Remove-Item -Recurse -Force .pytest_cache, .mypy_cache, .ruff_cache, dist, build, *.egg-info -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
 ```
 
 CMD
 
 ```bash
-rmdir /s /q .pytest_cache
-rmdir /s /q .mypy_cache
-rmdir /s /q .ruff_cache
 rmdir /s /q dist
 rmdir /s /q build
-for /d %i in (*.egg-info) do rmdir /s /q "%i"
 ```
 
 Bash
 
 ```bash
-rm -rf .pytest_cache .mypy_cache .ruff_cache dist build *.egg-info
+rm -rf dist build
 ```
 
 #### **(2) 执行构建**
@@ -168,6 +162,7 @@ hatch build
 
 ```reStructuredText
 .
+├── assets - 服务运行截图
 ├── bat - Windows BAT服务启动脚本
 │   ├── 1_run_market_gateway.bat - 行情网关启动脚本
 │   ├── 2_run_order_gateway.bat - 订单执行网关启动脚本
@@ -176,19 +171,16 @@ hatch build
 │   ├── 5_run_data_recorder.bat - 数据记录启动脚本
 │   └── 6_run_backtest.bat - 策略回测demo脚本
 ├── config - 项目配置目录
-├── logger - 日志模块
 ├── logs - 日志存放目录
 │   ├── constants - 常量目录
 │   │   ├── params.py - 常量
 │   │   └── path.py - 路径常量
 │   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录。
 ├── run_image - 服务运行截图目录
-├── structlog - 另一个日志模块，暂时无用
 ├── ta-lib - ta-lib库源文件
-├── utils - 工具类包
+├── utils - 工具类包，包含日志、路径等
 ├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎。
-├── vnpy_ctp - vnpy官方的ctp库，主要功能是与交易所行情和交易服务器交互。
-├── vnpy_rpcservice - vnpy官方的RPC库，主要功能是提供RPC服务。
+├── vnpy_ctp - vnpy官方的ctp库，主要功能是提供底层与行情和交易服务器交互的接口。
 ├── zmq_services - 系统核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测、行情回放。
 │   ├── backtester - 回测目录
 │   │   ├── data_player.py - 数据回放
@@ -196,17 +188,20 @@ hatch build
 │   │   ├── run_backtest.py - 运行回测脚本
 │   │   ├── run_data_player.py - 运行数据回放脚本
 │   │   └── simulation_engine.py - 模拟引擎
-│   ├── recorded_data - tick、order、trader数据本地存储目录
+│   ├── strategies - 策略存放位置
+│   ├── recorded_data - accounts、tick、order、trader数据本地存储目录
 │   ├── config.py - 项目配置文件
-│   ├── data_recorder.py - 数据记录
+│   ├── data_recorder.py - 数据记录器
 │   ├── market_data_gateway.py - 行情网关
 │   ├── order_execution_gateway.py - 订单执行网关
-│   ├── risk_manager.py - 风控管理
-│   ├── run_data_recorder.py - 运行数据记录脚本
-│   ├── run_market_gateway.py - 运行行情网关脚本
-│   ├── run_order_gateway.py - 运行订单执行网关脚本
-│   ├── run_risk_manager.py - 运行风控管理脚本
-│   ├── run_strategy_subscriber.py - 运行策略订阅器脚本
+│   ├── risk_manager.py - 风控管理器
+│   ├── rpc_client_test.py - 下单测试脚本
+│   ├── run_data_recorder.py - 数据记录器启动脚本
+│   ├── run_market_gateway.py - 行情网关启动脚本
+│   ├── run_order_gateway.py - 订单执行网关启动脚本
+│   ├── run_risk_manager.py - 风控管理器启动脚本
+│   ├── run_strategy_subscriber.py - 策略引擎启动脚本
+│   ├── strategy_base.py - 策略基类
 │   └── strategy_subscriber.py - 策略订阅器
 ├── .python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
 ├── CHANGELOG.md - 系统版本更新日志
@@ -214,12 +209,13 @@ hatch build
 ├── README.md - 项目中文说明
 ├── README_EN.md - 项目英文说明
 ├── __init__.py - 项目的版本号
-├── hatch_build.py - 自定义构建钩子负责编译 C++ 扩展
+├── banner.png - 项目banner图片
 ├── build.bat - Windows项目自动构建脚本
 ├── build.sh - Linux项目自动构建脚本
+├── hatch_build.py - vnpy_ctp构建钩子负责编译 C++ 扩展
+├── hatch_build_tts.py - vnpy_tts构建钩子负责编译 C++ 扩展
 ├── install.bat - Windows安装ta-lib 0.6.3的脚本，暂时无用
 ├── install.sh - Linux安装ta-lib 0.6.3的脚本，暂时无用
-├── logo.png - 项目logo
 ├── main.py - 项目主文件，暂时无定义
 ├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
 ├── run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
@@ -230,31 +226,31 @@ hatch build
 
 1. 运行行情网关：
 
-   <img src="run_image/run_market_gateway.png" style="zoom:67%;" />
+   <img src="assets/run_market_gateway.png" style="zoom:67%;" />
 
 2. 运行订单执行网关：
 
-   <img src="run_image/run_order_gateway.png" style="zoom:67%;" />
+   <img src="assets/run_order_gateway.png" style="zoom:67%;" />
 
 3. 运行策略订阅器：
 
-   <img src="run_image/run_strategy_subscriber.png" style="zoom:67%;" />
+   <img src="assets/run_strategy_subscriber.png" style="zoom:67%;" />
 
 4. 运行风控管理：
 
-   <img src="run_image/run_risk_manager.png" style="zoom:67%;" />
+   <img src="assets/run_risk_manager.png" style="zoom:67%;" />
 
 5. 运行数据记录：
 
-   <img src="run_image/run_data_recorder.png" style="zoom:67%;" />
+   <img src="assets/run_data_recorder.png" style="zoom:67%;" />
 
 6. 运行回测
 
-   <img src="run_image/run_backtest1.png" style="zoom:67%;" />
+   <img src="assets/run_backtest1.png" style="zoom:67%;" />
 
-   <img src="run_image/run_backtest2.png" style="zoom:67%;" />
+   <img src="assets/run_backtest2.png" style="zoom:67%;" />
 
-   <img src="run_image/run_backtest3.png" style="zoom:67%;" />
+   <img src="assets/run_backtest3.png" style="zoom:67%;" />
 
 ### **8. 项目进度**
 
