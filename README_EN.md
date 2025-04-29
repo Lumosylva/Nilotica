@@ -10,7 +10,7 @@ Language: [CHINESE](README.md)
 
 ### **1. Introduction**
 
-This project is based on **[vnpy](https://github.com/vnpy/vnpy)**, **[vnpy_ctp](https://github.com/vnpy/vnpy_ctp) **, and aims to simplify the domestic futures quantitative trading experience, making it easier for manual traders to switch to quantitative trading and focus more on strategy development.
+This project is based on [vnpy](https://github.com/vnpy/vnpy) and [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) , and aims to simplify the domestic futures quantitative trading experience, making it easier for manual traders to switch to quantitative trading and focus more on strategy development.
 
 The functions currently implemented by the system are:
 
