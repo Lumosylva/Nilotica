@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@ProjectName: Nilotica_dev
+@ProjectName: Nilotica
 @FileName   : params
 @Date       : 2025/4/11 15:32
 @Author     : Donny
@@ -26,7 +26,7 @@ class Params(object):
 
     # ----------项目中目录名称---------------------
     # 项目名称
-    project_name = "Nilotica_dev"
+    project_name = "Nilotica"
 
     # 日志目录名
     log_dir_name = "logs"

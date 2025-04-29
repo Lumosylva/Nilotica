@@ -1,5 +1,5 @@
 [project]
-name = "nilotica_dev"
+name = "nilotica"
 dynamic = ["version"]
 description = "一个基于vnpy的量化系统(Based vnpy quant trading system.)"
 license = { file = "LICENSE.txt" }
@@ -54,12 +54,12 @@ dependencies = [
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
 
 [project.urls]
-"Homepage" = "https://github.com/Nilotica/nilotica_dev"
-"Documentation" = "https://github.com/Nilotica/nilotica_dev/README.md"
-"Repository" = "https://github.com/Nilotica/nilotica_dev.git"
-"Issues" = "https://github.com/Nilotica/nilotica_dev/issues"
-"Changes" = "https://github.com/Nilotica/nilotica_dev/CHANGELOG.md"
-"Source" = "https://github.com/Nilotica/nilotica_dev"
+"Homepage" = "https://github.com/Lumosylva/Nilotica"
+"Documentation" = "https://github.com/Lumosylva/Nilotica/README.md"
+"Repository" = "git@github.com:Lumosylva/Nilotica.git"
+"Issues" = "https://github.com/Lumosylva/Nilotica/issues"
+"Changes" = "https://github.com/Lumosylva/Nilotica/CHANGELOG.md"
+"Source" = "https://github.com/Lumosylva/Nilotica"
 
 [build-system]
 requires = [
@@ -147,7 +147,7 @@ docs = [
 
 [tool.hatch.envs.default]
 dependencies = [
-  "nilotica_dev[dev,docs] @ ."
+  "nilotica[dev,docs] @ ."
 ]
 scripts.test = "pytest {args}"
 scripts.lint = [
@@ -167,7 +167,7 @@ scripts.build = "hatch build"
 dependencies = [
   "pytest>=7.4.0",
   "pytest-cov>=4.1.0",
-  "nilotica_dev @ ."
+  "nilotica @ ."
 ]
 scripts.run = "pytest {args:tests}"
 
@@ -236,14 +236,14 @@ warn_unreachable = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q --cov=nilotica_dev --cov-report=term-missing"
+addopts = "-ra -q --cov=nilotica --cov-report=term-missing"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 
 [tool.coverage.run]
-source = ["nilotica_dev"]
+source = ["nilotica"]
 omit = ["tests/*", "hatch_build_tts.py", "hatch_build.py", "*/__init__.py"]
 
 [tool.coverage.report]

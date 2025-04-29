@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@ProjectName: Nilotica_dev
+@ProjectName: Nilotica
 @FileName   : hatch_build
 @Date       : 2025/4/12 10:02
 @Author     : Donny

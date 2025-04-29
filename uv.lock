@@ -1123,7 +1123,7 @@ wheels = [
 ]
 
 [[package]]
-name = "nilotica-dev"
+name = "nilotica"
 source = { editable = "." }
 dependencies = [
     { name = "babel" },

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@ProjectName: Nilotica_dev
+@ProjectName: Nilotica
 @FileName   : hatch_build_tts.py
 @Date       : 2025/4/26 21:02
 @Author     : Donny

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@ProjectName: Nilotica_dev
+@ProjectName: Nilotica
 @FileName   : get_path
 @Date       : 2025/4/11 15:21
 @Author     : Donny
