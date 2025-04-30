@@ -249,6 +249,10 @@ hatch build
 
 <img src="assets/run_backtest3.png" style="zoom:67%;" />
 
+<img src="assets/run_backtest4.png" style="zoom:67%;" />
+
+<img src="assets/run_backtest5.png" style="zoom:67%;" />
+
 ### **8. Project Progress**
 
 - [x] Market Gateway
