@@ -5,8 +5,7 @@ import sys
 import os
 import pickle
 from datetime import datetime, time as dt_time
-import threading
-from collections import defaultdict
+from collections import defaultdict, deque
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -28,6 +27,25 @@ except ImportError:
 
 # VNPY imports (potentially needed for position/trade data structures)
 from vnpy.trader.object import PositionData, TradeData, OrderData, AccountData # Import as needed
+
+# Attempt to import CHINA_TZ from config, fallback if needed
+try:
+    from config.zmq_config import CHINA_TZ
+except ImportError:
+    # Fallback if not defined in config (requires zoneinfo package)
+    try:
+        from zoneinfo import ZoneInfo
+        CHINA_TZ = ZoneInfo("Asia/Shanghai")
+        logger.warning("CHINA_TZ not found in config, using zoneinfo fallback.")
+    except ImportError:
+        logger.error("zoneinfo package not found and CHINA_TZ not in config. Trading hours check might be inaccurate.")
+        # Define a dummy TZ or raise error if critical
+        from datetime import timedelta # Need timedelta for DummyTZ
+        class DummyTZ: # Basic placeholder, WILL NOT handle DST correctly
+            def utcoffset(self, dt): return timedelta(hours=8)
+            def dst(self, dt): return timedelta(0)
+            def tzname(self, dt): return "Asia/Shanghai_Fallback"
+        CHINA_TZ = DummyTZ()
 
 # Constants for Heartbeat
 MARKET_DATA_TIMEOUT = 30.0 # seconds - Timeout for considering market data stale
@@ -104,6 +122,10 @@ class RiskManagerService:
         # self.processing_thread = threading.Thread(target=self._run_processing_loop)
         # self.processing_thread.daemon = True # Allow main thread to exit even if this is running
 
+        # --- Add recently processed trade IDs --- 
+        self.processed_trade_ids: deque[str] = deque(maxlen=1000) # Store last 1000 trade IDs
+        # --- End Add ---
+
         logger.info("风险管理器初始化完成。") # Changed self.logger to logger
 
     def _get_connect_url(self, base_url: str) -> str:
@@ -138,206 +160,46 @@ class RiskManagerService:
                  self.gateway_connected = False
 
     def _is_trading_hours(self) -> bool:
-        """Checks if the current time is within any defined trading session."""
-        # TODO: This assumes sessions are for the current day and doesn't handle cross-day sessions well (e.g., night to next morning)
-        # TODO: Consider timezone awareness if server/client timezones differ significantly.
-        # TODO: Specific contracts might have slightly different hours.
-        now_dt = datetime.now()
-        current_time = now_dt.time()
-        # Optional: Consider day of week check if needed
-        # if now_dt.weekday() >= 5: # Skip weekends
-        #     return False 
-
+        """
+        Checks if the current time (in China Standard Time) is within any defined trading session,
+        handling overnight sessions and skipping weekends.
+        """
         try:
+            # Get current time in China Standard Time
+            now_dt_aware = datetime.now(CHINA_TZ)
+            current_time = now_dt_aware.time()
+            current_weekday = now_dt_aware.weekday() # Monday is 0 and Sunday is 6
+
+            # Skip weekends (Saturday: 5, Sunday: 6)
+            if current_weekday >= 5:
+                # Log occasionally if skipping checks due to weekend
+                # Use a simple counter or time-based throttle if needed
+                # logger.debug("Skipping trading hours check: Weekend.")
+                return False
+
+            # Check against defined sessions
             for start_str, end_str in config.FUTURES_TRADING_SESSIONS:
                 start_time = dt_time.fromisoformat(start_str) # HH:MM
                 end_time = dt_time.fromisoformat(end_str)
-                
-                # Simple case: session within the same day (e.g., 09:00-11:00)
+
+                # Case 1: Same-day session (e.g., 09:00 - 11:30)
                 if start_time <= end_time:
                     if start_time <= current_time < end_time:
+                        # logger.debug(f"Trading hours check: In session {start_str}-{end_str}")
                         return True
-                # Case: session crosses midnight (e.g., 21:00-02:30) - simplified handling
-                # This simple check might not be robust enough for all cross-midnight scenarios
-                # For 21:00-23:00, the above simple case works.
-                # If a session was 21:00-01:00, we'd need: current_time >= start_time or current_time < end_time
-                # else: # Assuming end_time < start_time means overnight
-                #     if current_time >= start_time or current_time < end_time:
-                #          return True
-        except Exception as e:
-            logger.error(f"检查交易时间时出错: {e}") # Changed self.logger to logger
-            return True # Fail open: assume trading hours if config is wrong
-        
-        return False # Not in any session
+                # Case 2: Overnight session (e.g., 21:00 - 02:30)
+                else: # start_time > end_time
+                    if current_time >= start_time or current_time < end_time:
+                        # logger.debug(f"Trading hours check: In overnight session {start_str}-{end_str}")
+                        return True
 
-    def _process_message(self, topic_bytes: bytes, message: dict):
-        """Processes a received message (Tick or Trade)."""
-        topic_str = ""
-        try:
-            topic_str = topic_bytes.decode('utf-8', errors='ignore')
-            msg_type = message.get('type', 'UNKNOWN')
-            msg_data = message.get('data', {})
-            timestamp_ns = message.get('timestamp', 0)
-            timestamp_sec = timestamp_ns / 1_000_000_000
-            dt_object = datetime.fromtimestamp(timestamp_sec)
-            pretty_time = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-
-            if msg_type == "TRADE":
-                logger.info(f"[{pretty_time}] 收到成交回报: {msg_data.get('vt_symbol')}") # Changed self.logger to logger
-                symbol, updated_pos = self.update_position(msg_data)
-                self.check_risk(vt_symbol=msg_data.get('vt_symbol'), trigger_event="TRADE")
-
-            elif msg_type == "TICK":
-                # Optional: Process ticks for market risk checks later
-                # logger.debug(f"[{pretty_time}] 收到行情: {msg_data.get('vt_symbol')}") # Use debug level
-                pass # Placeholder for market data risk checks
-            
-            elif msg_type == "ACCOUNT_DATA":
-                # --- Reconstruct AccountData carefully --- 
-                try:
-                    gateway_name = msg_data.get("gateway_name", "UnknownGW")
-                    accountid = msg_data.get("accountid")
-
-                    if not accountid:
-                        logger.error(f"重建 AccountData 时缺少关键字段: accountid。 Data Keys: {list(msg_data.keys())}") # Changed self.logger to logger
-                        return
-
-                    # Create AccountData instance (assuming gateway_name and accountid are sufficient for init)
-                    # If init requires more/different fields, this needs adjustment based on vnpy definition.
-                    account = AccountData(gateway_name=gateway_name, accountid=accountid)
-
-                    # Populate other fields
-                    for key, value in msg_data.items():
-                        if key in ["gateway_name", "accountid"]:
-                            continue
-                        if hasattr(account, key):
-                             try:
-                                 # Attempt type conversion for known numeric fields if they are strings
-                                 # This might happen depending on serialization
-                                 if key in ['balance', 'available', 'commission', 'margin', 'frozen'] and isinstance(value, str):
-                                     try:
-                                         value = float(value)
-                                     except ValueError:
-                                         logger.warning(f"无法将账户字段 '{key}' 的值 '{value}' 转换为 float。") # Changed self.logger to logger
-                                         continue # Skip setting if conversion fails
-                                 
-                                 setattr(account, key, value)
-                             except Exception as set_e:
-                                 logger.error(f"设置属性 {key}={value} on AccountData 时出错: {set_e}") # Changed self.logger to logger
-                        # else:
-                        #     logger.debug(f"重建 AccountData 时跳过未知键：{key}")
-
-                    # --- Compare key fields to determine significant change --- 
-                    has_key_fields_changed = False
-                    if self.account_data is None:
-                        has_key_fields_changed = True
-                    else:
-                        # Compare margin, frozen, commission - adjust fields as needed
-                        if (getattr(account, 'margin', None) != getattr(self.account_data, 'margin', None) or
-                            getattr(account, 'frozen', None) != getattr(self.account_data, 'frozen', None) or
-                            getattr(account, 'commission', None) != getattr(self.account_data, 'commission', None)):
-                             has_key_fields_changed = True
-                    # --- End key field comparison --- 
-                     
-                    # Only update, log, and check risk if key fields have changed
-                    if has_key_fields_changed:
-                        self.account_data = account # Update stored data
-                        logger.info(f"账户关键信息更新: AccountID={account.accountid}, Balance={account.balance:.2f}, Available={account.available:.2f}, Margin={getattr(account, 'margin', 0.0):.2f}, Frozen={getattr(account, 'frozen', 0.0):.2f}") # Changed self.logger to logger
-                        self.check_risk(trigger_event="ACCOUNT_UPDATE")
-
-                except KeyError as e:
-                    logger.error(f"重建 AccountData 时缺少关键字段: {e}。 Data Keys: {list(msg_data.keys())}") # Changed self.logger to logger
-                except Exception as e_rec:
-                    logger.exception(f"重建 AccountData 对象时发生未知错误：{e_rec}") # Changed self.logger to logger
-                    logger.error(f"原始数据: {msg_data}") # Changed self.logger to logger
-
-            elif msg_type == "ORDER_STATUS":
-                # --- Reconstruct OrderData carefully --- 
-                try:
-                    # Extract known fields and handle Enum conversions
-                    gateway_name = msg_data.get("gateway_name", "UnknownGW")
-                    symbol = msg_data.get("symbol")
-                    exchange_str = msg_data.get("exchange")
-                    orderid = msg_data.get("orderid")
-                    direction_str = msg_data.get("direction")
-                    offset_str = msg_data.get("offset")
-                    order_type_str = msg_data.get("type") 
-                    status_str = msg_data.get("status")
-
-                    # Basic validation
-                    if not all([gateway_name, symbol, exchange_str, orderid, direction_str, offset_str, order_type_str, status_str]):
-                        logger.error(f"重建 OrderData 时缺少关键字段。 Data Keys: {list(msg_data.keys())}") # Changed self.logger to logger
-                        return # Skip processing this message
-
-                    # Convert Enums
-                    exchange = Exchange(exchange_str)
-                    direction = Direction(direction_str)
-                    offset = Offset(offset_str)
-                    order_type = OrderType(order_type_str)
-                    status = Status(status_str)
-
-                    # Create a default OrderData or use known mandatory fields
-                    # It's often safer to create an empty instance then populate
-                    # However, OrderData might require some args. Let's use known ones.
-                    order = OrderData(
-                        gateway_name=gateway_name,
-                        symbol=symbol,
-                        exchange=exchange,
-                        orderid=orderid,
-                        direction=direction,
-                        offset=offset,
-                        type=order_type,
-                        price=msg_data.get('price', 0.0), # Get price or default
-                        volume=msg_data.get('volume', 0.0), # Get volume or default
-                        status=status # Use converted status
-                    )
-
-                    # Populate remaining fields from the dictionary
-                    for key, value in msg_data.items():
-                        # Skip fields already handled or problematic ones like vt_symbol
-                        if key in ["gateway_name", "symbol", "exchange", "orderid", "direction", "offset", "type", "status", "price", "volume", "vt_symbol"]:
-                             continue
-                        
-                        # Handle datetime conversion 
-                        if key == "datetime" and value and isinstance(value, str):
-                            try:
-                                value = datetime.fromisoformat(value)
-                            except (ValueError, TypeError):
-                                logger.warning(f"无法将订单日期时间 '{value}' 转换为 datetime 对象。") # Changed self.logger to logger
-                                value = None # Or keep as string?
-
-                        # Set attribute if it exists on the object
-                        if hasattr(order, key):
-                            try:
-                                setattr(order, key, value)
-                            except Exception as set_e:
-                                logger.error(f"设置属性 {key}={value} on OrderData 时出错: {set_e}") # Changed self.logger to logger
-                        # else: # Optional: log unknown keys
-                        #     logger.debug(f"重建 OrderData 时跳过未知键：{key}")
-
-                    # --- Log only if status has changed --- 
-                    last_status = self.last_order_status.get(order.vt_orderid)
-                    if order.status != last_status:
-                        self.last_order_status[order.vt_orderid] = order.status # Update last known status
-                        logger.info(f"[{pretty_time}] 订单状态更新: ID={order.vt_orderid}, Status={order.status.value}, Traded={order.traded}") # Changed self.logger to logger
-                    # else: 
-                    #     logger.debug(f"[{pretty_time}] 收到订单回报 (状态未变): ID={order.vt_orderid}, Status={order.status.value}")
-
-                    self.update_active_orders(order)
-                    self.check_risk(vt_symbol=order.vt_symbol, trigger_event="ORDER_UPDATE")
-
-                except KeyError as e:
-                    logger.error(f"重建 OrderData 时缺少关键字段: {e}。 Data Keys: {list(msg_data.keys())}") # Changed self.logger to logger
-                except ValueError as e: # Handle Enum conversion errors
-                    logger.error(f"重建 OrderData 时枚举转换错误: {e}。 Data: {msg_data}") # Changed self.logger to logger
-                except Exception as e_rec:
-                    logger.exception(f"重建 OrderData 对象时发生未知错误。：{e_rec}") # Changed self.logger to logger
-                    logger.error(f"原始数据: {msg_data}") # Changed self.logger to logger
+            # If no sessions match
+            # logger.debug("Trading hours check: Outside all defined sessions.")
+            return False
 
         except Exception as e:
-            logger.exception(f"处理消息时出错 (Topic: {topic_str})：{e}") # Changed self.logger to logger
-            # Log only essential parts to avoid large log entries
-            logger.error(f"出错消息内容 (部分): {{'type': msg_type, 'data_keys': list(msg_data.keys())}}") # Changed self.logger to logger
+            logger.error(f"检查交易时间时出错: {e}")
+            return True # Fail open: assume trading hours if config is wrong or time conversion fails
 
     def update_position(self, trade_data: TradeData):
         """Updates position based on trade data."""
@@ -385,66 +247,69 @@ class RiskManagerService:
 
     def check_risk(self, vt_symbol: str = None, trigger_event: str = "UNKNOWN", current_position: int = None):
         """Checks various risk limits based on current state. Logs market data status."""
-        # logger.info(f"--- Entered check_risk (Trigger: {trigger_event}, Symbol: {vt_symbol}) ---") # <-- Commented out
-
         # Log market data status at the beginning of check
         if not self.market_data_ok:
-            logger.warning("[Risk Check] 行情数据流异常，部分依赖市价的检查可能不准确或已跳过。") # Changed self.logger to logger
-        # else:
-        #     logger.debug("[Risk Check] Market data stream OK.") # Optional debug log
+            logger.warning("[Risk Check] 行情数据流异常，部分依赖市价的检查可能不准确或已跳过。")
 
-        # 1. Position Limit Check (only if vt_symbol is provided)
+        # --- 1. Position Limit Check (Per Symbol) --- 
+        # 检查特定合约的持仓是否超出预设限制 (仅当 vt_symbol 被提供时触发)
         if vt_symbol:
             position = self.positions.get(vt_symbol, 0)
             limit = self.position_limits.get(vt_symbol)
             if limit is not None and abs(position) > limit:
-                logger.warning(f"[风险告警] 合约 {vt_symbol}: 持仓 {position} 超出限制 {limit}!") # Changed self.logger to logger
-                # Action: Could try to send closing orders, but needs careful logic
+                logger.warning(f"[风险告警] 合约 {vt_symbol}: 持仓 {position} 超出限制 {limit}!")
+                # Potential Action: Send closing orders (requires careful logic)
 
-        # 2. Pending Order Limit Check
-        # Count pending orders globally and per contract
+        # --- 2. Pending Order Limit Check --- 
+        # 统计全局和各合约的活动（挂单）数量
         global_pending_count = len(self.active_orders)
         pending_per_contract = defaultdict(int)
         orders_to_potentially_cancel = defaultdict(list)
         for order in self.active_orders.values():
-             if order.is_active(): # Double check, though active_orders should only contain active ones
+             if order.is_active():
                  pending_per_contract[order.vt_symbol] += 1
                  orders_to_potentially_cancel[order.vt_symbol].append(order)
 
-        # Check global limit
+        # --- 2a. Global Pending Order Limit --- 
+        # 检查全局活动订单总数是否超出限制
         if global_pending_count > self.global_max_pending:
-            logger.warning(f"[风险告警] 全局活动订单数 {global_pending_count} 超出限制 {self.global_max_pending}!") # Changed self.logger to logger
-            # Action: Find the oldest pending order globally and try to cancel it
+            logger.warning(f"[风险告警] 全局活动订单数 {global_pending_count} 超出限制 {self.global_max_pending}!")
+            # Action: Cancel the oldest pending order globally
             oldest_order = min(self.active_orders.values(), key=lambda o: o.datetime, default=None)
             if oldest_order:
-                 logger.warning(f"尝试撤销最旧的全局挂单: {oldest_order.vt_orderid}") # Changed self.logger to logger
+                 logger.warning(f"尝试撤销最旧的全局挂单: {oldest_order.vt_orderid}")
                  self._send_cancel_request(oldest_order.vt_orderid)
 
-        # Check per-contract limit (only if vt_symbol triggered the check or for all)
-        # If vt_symbol is None (e.g., account update trigger), check all contracts
+        # --- 2b. Per-Contract Pending Order Limit --- 
+        # 检查单个合约的活动订单数是否超出限制 (如果提供了 vt_symbol，只检查该合约；否则检查所有有挂单的合约)
         symbols_to_check = [vt_symbol] if vt_symbol else list(pending_per_contract.keys())
         for symbol in symbols_to_check:
              if symbol is None: continue
              count = pending_per_contract.get(symbol, 0)
              limit_per = self.max_pending_per_contract
              if count > limit_per:
-                 logger.warning(f"[风险告警] 合约 {symbol}: 活动订单数 {count} 超出限制 {limit_per}!") # Changed self.logger to logger
+                 logger.warning(f"[风险告警] 合约 {symbol}: 活动订单数 {count} 超出限制 {limit_per}!")
                  # Action: Cancel the oldest active order for this specific symbol
                  symbol_orders = sorted(orders_to_potentially_cancel.get(symbol, []), key=lambda o: o.datetime)
                  if symbol_orders:
                      order_to_cancel = symbol_orders[0]
-                     logger.warning(f"尝试撤销合约 {symbol} 最旧的挂单: {order_to_cancel.vt_orderid}") # Changed self.logger to logger
+                     logger.warning(f"尝试撤销合约 {symbol} 最旧的挂单: {order_to_cancel.vt_orderid}")
                      self._send_cancel_request(order_to_cancel.vt_orderid)
 
-        # 3. Margin Usage Check (requires account_data)
+        # --- 3. Margin Usage Check --- 
+        # 检查保证金占用率是否超出限制 (需要有最新的账户数据)
         if self.account_data:
-             # Simplified check: available < (1 - limit_ratio) * balance
-             # More accurate check needs margin calculation based on positions/orders
-             required_margin = self.account_data.balance - self.account_data.available
-             margin_ratio = required_margin / self.account_data.balance if self.account_data.balance > 0 else 0
+             # Calculate used margin based on balance and available funds
+             # Use getattr for safer access, providing default values
+             balance = getattr(self.account_data, 'balance', 0.0)
+             available = getattr(self.account_data, 'available', 0.0)
+             required_margin = balance - available
+             
+             # Calculate margin ratio, handle division by zero
+             margin_ratio = required_margin / balance if balance > 0 else 0
              if margin_ratio > self.margin_limit_ratio:
-                  logger.warning(f"[风险告警] 保证金占用率 {margin_ratio:.2%} 超出限制 {self.margin_limit_ratio:.2%}!") # Changed self.logger to logger
-                  # Action: Could cancel orders or liquidate positions (complex)
+                  logger.warning(f"[风险告警] 保证金占用率 {margin_ratio:.2%} 超出限制 {self.margin_limit_ratio:.2%}! (Balance={balance:.2f}, Available={available:.2f})")
+                  # Potential Action: Cancel orders or liquidate positions (complex)
 
     def _send_cancel_request(self, vt_orderid: str):
         """Sends a cancel order request to the Order Execution Gateway."""
@@ -724,9 +589,23 @@ class RiskManagerService:
         self.check_risk(vt_symbol=order.vt_symbol, trigger_event="ORDER_UPDATE")
 
     def process_trade_update(self, trade: TradeData):
-        # logger.info("--- Entered process_trade_update ---") # <-- Commented out
+        # --- Check for duplicate trade --- 
+        vt_tradeid = getattr(trade, 'vt_tradeid', None)
+        if vt_tradeid:
+            if vt_tradeid in self.processed_trade_ids:
+                logger.debug(f"Ignoring duplicate trade event: {vt_tradeid}")
+                return # Skip processing duplicate
+            else:
+                self.processed_trade_ids.append(vt_tradeid)
+        else:
+            logger.warning("Trade update received without vt_tradeid, cannot check for duplicates.")
+            # Decide whether to process or skip trades without ID? Process for now.
+        # --- End Check for duplicate --- 
+
         symbol, updated_pos = self.update_position(trade)
-        self.check_risk(vt_symbol=trade.vt_symbol, trigger_event="TRADE", current_position=updated_pos)
+        # Only check risk if update_position was successful (returned symbol)
+        if symbol:
+            self.check_risk(vt_symbol=symbol, trigger_event="TRADE", current_position=updated_pos)
 
     def process_account_update(self, account: AccountData):
         # logger.info("--- Entered process_account_update ---") # <-- Commented out
