@@ -1,17 +1,17 @@
-import time
 import sys
 import os
-import logging
 import argparse
+from typing import Dict, Any
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from zmq_services.strategy_subscriber import StrategyEngine
+from zmq_services.strategy_engine import StrategyEngine
 from config import zmq_config as config
 from utils.logger import setup_logging, logger
+import json
 
 
 # --- Define Strategy Configuration ---
@@ -20,17 +20,24 @@ STRATEGIES_CONFIG = {
     "SA509_Trend_1": {  # Unique name for this strategy instance
         "strategy_class": "zmq_services.strategies.sa509_strategy.SA509LiveStrategy", # Full path to the class
         "vt_symbol": "SA509.CZCE", # Symbol the strategy trades
-        "setting": {             # Strategy-specific parameters (optional overrides)
-            # "entry_threshold": 3060, # Example: Override entry threshold from config
-            "order_volume": 1        # Example: Set order volume
-            # Add other parameters defined in SA509LiveStrategy if needed
+        "setting": {             # Strategy-specific parameters (MUST provide all required)
+            "entry_threshold": "1330.0",      # Required: Decimal
+            "profit_target_ticks": 10,        # Required: int
+            "stop_loss_ticks": 5,           # Required: int
+            "price_tick": "1.0",              # Required: Decimal
+            "order_volume": "1.0",            # Required: Decimal
+            "order_price_offset_ticks": 0     # +++ Add new parameter (int) +++
         }
     },
     # --- Add configuration for other strategies below ---
     # "AnotherStrategy_Instance": {
     #     "strategy_class": "zmq_services.strategies.another_strategy.AnotherStrategyClass",
     #     "vt_symbol": "ag2412.SHFE",
-    #     "setting": {"param1": 100, "param2": 0.5}
+    #     "setting": {
+    #         "param1_decimal": "100.5", # Example Decimal
+    #         "param2_int": 50,          # Example Int
+    #         # Add all required params for AnotherStrategyClass here
+    #     }
     # },
 }
 # --- End Strategy Configuration ---
