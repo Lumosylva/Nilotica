@@ -6,10 +6,8 @@ import os
 from datetime import datetime
 from typing import Dict, Tuple, Any
 import configparser
-import logging
 import pickle
 import queue
-import math
 
 from vnpy.trader.utility import load_json
 
@@ -41,7 +39,7 @@ except ImportError as e:
     sys.exit(1)
 
 from config import zmq_config as config
-from config.zmq_config import PUBLISH_BATCH_SIZE, CHINA_TZ # HEARTBEAT_INTERVAL_S likely unused
+from config.zmq_config import PUBLISH_BATCH_SIZE # HEARTBEAT_INTERVAL_S likely unused
 
 # --- Add Heartbeat Constant ---
 HEARTBEAT_INTERVAL_S = 5.0 # Send heartbeat every 5 seconds
@@ -360,8 +358,20 @@ class OrderExecutionGatewayService(RpcServer):
                     del self.order_cache[order.vt_orderid]
                 # +++ End update cache +++
 
+                # +++ Remove order ID from active set if order is no longer active +++
+                if not order.is_active():
+                    if order.vt_orderid in self.active_order_ids:
+                        self.active_order_ids.discard(order.vt_orderid)
+                        logger.debug(f"订单 {order.vt_orderid} 状态变为非活动 ({order.status.value})，已从 active_order_ids 移除。")
+                    # else: # Optional: Log if a non-active order wasn't in the set (shouldn't happen ideally)
+                    #    logger.warning(f"试图移除的非活动订单 {order.vt_orderid} 不在 active_order_ids 集合中。")
+                # +++ End remove order ID +++
+
                 # +++ Add Order Status Logging (Conditional on active_order_ids) +++
-                if order.vt_orderid in self.active_order_ids:
+                # Note: This condition now more accurately reflects "orders originally sent by this gateway"
+                # rather than "currently active orders sent by this gateway" after the cleanup logic above.
+                # Consider if the logging condition itself should change. For now, keep original logic.
+                if order.vt_orderid in self.active_order_ids or not order.is_active(): # Log if it *was* active or just became inactive
                     logger.info(
                         f"订单状态更新: [{order.datetime.strftime('%H:%M:%S')}] VTOrderID={order.vt_orderid}, "
                         f"状态={order.status.value}, "
@@ -376,20 +386,32 @@ class OrderExecutionGatewayService(RpcServer):
                 data_bytes = pickle.dumps(order)
             elif event_type == EVENT_TRADE:
                 trade: TradeData = data_obj
-                # +++ Add Trade Logging (Conditional on active_order_ids) +++
-                if trade.vt_orderid in self.active_order_ids:
-                    logger.info(
-                        f"新成交回报: [{trade.datetime.strftime('%H:%M:%S')}] VTOrderID={trade.vt_orderid}, "
-                        f"成交ID={trade.vt_tradeid}, "
-                        f"代码={trade.symbol}, "
-                        f"方向={trade.direction.value}, "
-                        f"开平={trade.offset.value}, "
-                        f"价格={trade.price}, "
-                        f"数量={trade.volume}"
-                    )
+                # +++ 无条件记录收到成交事件 +++
+                logger.info(f"收到 EVENT_TRADE: VTOrderID={getattr(trade, 'vt_orderid', 'N/A')}, Symbol={getattr(trade, 'vt_symbol', 'N/A')}")
+                # +++ 结束无条件记录 +++
+
+                # +++ 原来的条件日志 (可选保留，或暂时注释掉) +++
+                # if trade.vt_orderid in self.active_order_ids:
+                #     logger.info(
+                #         f"成交回报详情: [{trade.datetime.strftime('%H:%M:%S')}] VTOrderID={trade.vt_orderid}, "
+                #         f"成交ID={trade.vt_tradeid}, "
+                #         f"代码={trade.symbol}, "
+                #         f"方向={trade.direction.value}, "
+                #         f"开平={trade.offset.value}, "
+                #         f"价格={trade.price}, "
+                #         f"数量={trade.volume}"
+                #     )
+                # else:
+                #      logger.warning(f"收到的成交回报 VTOrderID {trade.vt_orderid} 不在 active_order_ids 集合中！")
                 # --- End Trade Logging ---
                 topic_bytes = f"trade.{trade.vt_symbol}".encode('utf-8')
                 data_bytes = pickle.dumps(trade)
+                # --- Put serialized data onto the publish queue ---
+                if topic_bytes and data_bytes:
+                    self._publish_queue.put((topic_bytes, data_bytes))
+                    # Log putting action occasionally for debugging
+                    if self._event_counter % 1000 == 1: # Log less frequently
+                        logger.debug(f"事件处理器: 将成交事件放入发布队列: Topic={topic_bytes.decode('utf-8', 'ignore')}")
             elif event_type == EVENT_ACCOUNT:
                 account: AccountData = data_obj
                 self.last_account_data = account # Update local cache
