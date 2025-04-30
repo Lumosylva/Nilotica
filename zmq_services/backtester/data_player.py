@@ -5,8 +5,15 @@ import sys
 import os
 import json
 import glob
-from datetime import datetime
+from datetime import datetime, time as dt_time
 import heapq # For efficient sorting/merging if loading multiple project_files
+import pickle
+# +++ Add Logger Import +++
+from utils.logger import logger # Assuming logger is configured elsewhere
+# +++ Correct Config Import +++
+# from zmq_services import config
+from config import zmq_config as config
+# +++ End Correction +++
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')) # Go up two levels
@@ -19,10 +26,6 @@ try:
 except ImportError:
      print("无法导入 zmq_services.config。请确保路径设置正确。")
      # Define fallback config values if necessary for testing standalone
-     class config:
-         BACKTEST_DATA_SOURCE_PATH = "../recorded_data/" # Adjust path
-         BACKTEST_DATA_PUB_URL = "tcp://*:5560"
-         # Add other needed configs if testing standalone
 
 # --- Data Player Service ---
 class DataPlayerService:
@@ -36,7 +39,7 @@ class DataPlayerService:
         self.context = zmq.Context()
         self.publisher = self.context.socket(zmq.PUB)
         self.publisher.bind(backtest_pub_url)
-        print(f"回测数据发布器绑定到: {backtest_pub_url}")
+        logger.info(f"回测数据发布器绑定到: {backtest_pub_url}")
 
         self.data_source_path = data_source_path
         self.backtest_pub_url = backtest_pub_url
@@ -48,52 +51,63 @@ class DataPlayerService:
 
     def load_data(self) -> bool:
         """Loads tick data from the specified file."""
-        print(f"尝试从 {self.tick_data_file} 加载数据...")
+        logger.info(f"尝试从 {self.tick_data_file} 加载数据...")
         if not os.path.exists(self.tick_data_file):
-            print(f"错误: 数据文件不存在: {self.tick_data_file}")
+            logger.error(f"错误: 数据文件不存在: {self.tick_data_file}")
             return False
 
         try:
+            loaded_count = 0 # Initialize count
             with open(self.tick_data_file, 'r', encoding='utf-8') as f:
                 for line in f:
                     try:
                         record = json.loads(line.strip())
-                        original_message = record.get("original_message")
-                        if original_message and original_message.get("type") == "TICK":
+                        original_message = record.get("data") # Get data part which should be the original message
+                        if original_message and isinstance(original_message, dict): # Basic check if it's a dict
                             # Extract necessary info for playback
-                            original_ts_ns = original_message.get("timestamp")
-                            topic_str = original_message.get("topic") # Use original topic
-                            # Re-pack the original message for sending
-                            packed_original_msg = msgpack.packb(original_message, use_bin_type=True)
+                            original_ts_ns = record.get("reception_timestamp_ns") # Use reception time as primary key
+                            topic_str = record.get("zmq_topic")
+                            
+                            # Simulate the message format expected by StrategyEngine (topic, pickled data)
+                            # Here, original_message IS the data object (like TickData dict)
+                            try:
+                                # We need to pickle the data part again
+                                pickled_data_bytes = pickle.dumps(original_message)
+                            except pickle.PicklingError as pe:
+                                 logger.warning(f"Pickle 序列化错误 for data in record: {pe}. Record: {record}")
+                                 continue # Skip this record
+                                 
                             topic_bytes = topic_str.encode('utf-8')
 
                             if original_ts_ns and topic_str:
-                                self.all_ticks.append((original_ts_ns, topic_bytes, packed_original_msg))
+                                self.all_ticks.append((original_ts_ns, topic_bytes, pickled_data_bytes))
+                                loaded_count += 1
                             else:
-                                print(f"警告: 跳过缺少时间戳或主题的记录: {record}")
+                                logger.warning(f"警告: 跳过缺少时间戳或主题的记录: {record}")
+                        else:
+                            logger.warning(f"警告: 记录中缺少 'data' 或格式不正确: {record}")
 
                     except json.JSONDecodeError as e:
-                        print(f"警告: 解析 JSON 行时出错: {e}. 行: {line.strip()}")
+                        logger.warning(f"警告: 解析 JSON 行时出错: {e}. 行: {line.strip()}")
                     except msgpack.PackException as e:
-                         print(f"警告: 重新打包消息时出错: {e}. 消息: {original_message}")
+                         logger.warning(f"警告: 重新打包消息时出错: {e}. 消息: {original_message}")
                     except Exception as e:
-                         print(f"警告: 处理记录时发生未知错误: {e}. 记录: {record}")
-
+                         logger.warning(f"警告: 处理记录时发生未知错误: {e}. 记录: {record}")
 
             if not self.all_ticks:
-                print("错误：未能从文件中加载任何有效的 Tick 数据。")
+                logger.error("错误：未能从文件中加载任何有效的 Tick 数据。")
                 return False
 
             # Sort data by original timestamp
             self.all_ticks.sort(key=lambda x: x[0])
-            print(f"数据加载完成并排序。总共 {len(self.all_ticks)} 条 Tick 数据。")
+            logger.info(f"数据加载完成并排序。总共 {loaded_count} 条有效 Tick 数据。")
             return True
 
         except IOError as e:
-            print(f"读取文件 {self.tick_data_file} 时出错: {e}")
+            logger.error(f"读取文件 {self.tick_data_file} 时出错: {e}")
             return False
         except Exception as e:
-             print(f"加载数据时发生未知错误: {e}")
+             logger.exception(f"加载数据时发生未知错误: {e}")
              import traceback
              traceback.print_exc()
              return False
@@ -108,10 +122,10 @@ class DataPlayerService:
                                < 1 = Slower than real-time.
         """
         if not self.all_ticks:
-            print("错误: 没有数据可供回放。请先调用 load_data()。")
+            logger.error("错误: 没有数据可供回放。请先调用 load_data()。")
             return
 
-        print(f"开始数据回放 (速度: {playback_speed if playback_speed > 0 else '最大'})... 按 Ctrl+C 停止。")
+        logger.info(f"开始数据回放 (速度: {playback_speed if playback_speed > 0 else '最大'})... 按 Ctrl+C 停止。")
         self.running = True
         start_time_ns = time.time_ns()
         start_data_ts_ns = self.all_ticks[0][0]
@@ -119,9 +133,9 @@ class DataPlayerService:
         played_count = 0
 
         try:
-            for original_ts_ns, topic_bytes, packed_message_bytes in self.all_ticks:
+            for original_ts_ns, topic_bytes, pickled_data_bytes in self.all_ticks:
                 if not self.running:
-                    print("回放被中断。")
+                    logger.info("回放被中断。")
                     break
 
                 if playback_speed > 0:
@@ -140,48 +154,48 @@ class DataPlayerService:
                         time.sleep(wait_ns / 1_000_000_000) # Convert ns to seconds
 
                 # Publish the data
-                self.publisher.send_multipart([topic_bytes, packed_message_bytes])
+                self.publisher.send_multipart([topic_bytes, pickled_data_bytes])
                 played_count += 1
                 last_data_ts_ns = original_ts_ns # Update last timestamp for delta calculation
 
                 # Print progress occasionally
                 if played_count % 1000 == 0:
                     data_time = datetime.fromtimestamp(original_ts_ns / 1_000_000_000)
-                    print(f"  已回放 {played_count}/{len(self.all_ticks)} 条 | 当前数据时间: {data_time.strftime('%H:%M:%S.%f')[:-3]}")
+                    logger.info(f"  已回放 {played_count}/{len(self.all_ticks)} 条 | 当前数据时间: {data_time.strftime('%H:%M:%S.%f')[:-3]}")
 
         except KeyboardInterrupt:
-            print("\n检测到中断信号，停止回放...")
+            logger.info("\n检测到中断信号，停止回放...")
         except Exception as e:
-            print(f"回放过程中发生错误: {e}")
+            logger.exception(f"回放过程中发生错误: {e}")
             import traceback
             traceback.print_exc()
         finally:
             self.running = False
-            print(f"数据回放结束。总共回放 {played_count} 条消息。")
+            logger.info(f"数据回放结束。总共回放 {played_count} 条消息。")
             self.stop()
 
     def stop(self):
         """Stops the service and cleans up resources."""
-        print("停止数据回放服务...")
+        logger.info("停止数据回放服务...")
         self.running = False # Ensure playback loop stops
         if self.publisher:
             try:
                 self.publisher.close()
-                print("ZeroMQ 发布器已关闭。")
+                logger.info("ZeroMQ 发布器已关闭。")
             except Exception as e:
-                print(f"关闭 ZeroMQ 发布器时出错: {e}")
+                logger.error(f"关闭 ZeroMQ 发布器时出错: {e}")
         if self.context:
             try:
                 if not self.context.closed:
                     self.context.term()
-                    print("ZeroMQ Context 已终止。")
+                    logger.info("ZeroMQ Context 已终止。")
                 else:
-                    print("ZeroMQ Context 已终止 (之前已关闭).")
+                    logger.debug("ZeroMQ Context 已终止 (之前已关闭).")
             except zmq.ZMQError as e:
-                 print(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
+                 logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
             except Exception as e:
-                 print(f"关闭 ZeroMQ Context 时发生未知错误: {e}")
-        print("数据回放服务已停止。")
+                 logger.exception(f"关闭 ZeroMQ Context 时发生未知错误: {e}")
+        logger.info("数据回放服务已停止。")
 
 # --- Main execution block (Example Usage) ---
 if __name__ == "__main__":

@@ -1,32 +1,34 @@
+from typing import Optional
+
 import zmq
-import msgpack
+import pickle
 import time
 import sys
 import os
 import json
-import heapq
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import deque
+
+# +++ Add Logger Import +++
+from utils.logger import logger # Assuming logger is configured elsewhere (e.g., run_backtest.py)
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')) # Go up two levels
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import local config
-try:
-    from zmq_services import config
-except ImportError:
-     print("无法导入 zmq_services.config。")
-     sys.exit(1)
 
 # Import necessary vnpy constants and objects
 try:
-    from vnpy.trader.constant import (Direction, OrderType, Exchange, Offset, Status)
-    from vnpy.trader.object import OrderRequest # For type hinting if needed
-    # We won't create full vnpy OrderData/TradeData objects, just dicts mimicking them
+    from vnpy.trader.constant import (
+        Direction, OrderType, Exchange, Offset, Status
+    )
+    from vnpy.trader.object import OrderRequest, TickData, OrderData, TradeData
 except ImportError:
-    print("无法导入 vnpy 常量/对象，请确保 vnpy 已安装。")
+    # +++ Add ERROR log here +++
+    logger.error("CRITICAL: Failed to import vnpy objects/constants! Using dummy fallback classes. Backtest results may be inaccurate.")
+    # +++ End Add +++
+    logger.warning("无法导入 vnpy 常量/对象，将使用内部定义的 Fallback。请确保 vnpy 已安装。")
     # Define fallbacks if needed
     class Direction: LONG = "多"; SHORT = "空"
     class OrderType: LIMIT = "限价"; MARKET = "市价"; STOP = "STOP" # Add others if used
@@ -34,53 +36,64 @@ except ImportError:
     class Offset: NONE = "无"; OPEN = "开"; CLOSE = "平"; CLOSETODAY="平今"; CLOSEYESTERDAY="平昨"
     class Status: SUBMITTING="提交中"; NOTTRADED="未成交"; PARTTRADED="部分成交"; ALLTRADED="全部成交"; CANCELLED="已撤销"; REJECTED="拒单"
     class OrderRequest: pass # Placeholder
+    class TickData: pass
+    class OrderData: pass
+    class TradeData: pass
 
 # --- Serialization/Deserialization Helpers (Adapted from gateways) ---
 # We need these to process incoming requests and format outgoing reports
 
-def vnpy_report_to_dict(obj_dict):
-    """Converts dicts with enums/datetime to basic types for msgpack."""
-    # This function assumes input is already a dict, but might contain non-serializable types
-    d = obj_dict.copy() # Work on a copy
-    for key, value in d.items():
-        if isinstance(value, (Direction, OrderType, Exchange, Offset, Status)):
-            d[key] = value.value # Use Enum value
-        elif isinstance(value, datetime):
-            d[key] = value.isoformat() if value else None
-    return d
-
-def dict_to_order_request_data(data_dict) -> dict | None:
-     """Converts received message data dict into a validated OrderRequest-like dict."""
-     # This doesn't create a vnpy object, just validates and formats the dict
-     try:
-         # Validate required fields exist
-         required_fields = ['symbol', 'exchange', 'direction', 'type', 'volume']
-         if not all(field in data_dict for field in required_fields):
-             missing = [f for f in required_fields if f not in data_dict]
-             print(f"订单请求字典缺少字段: {missing}")
-             return None
-
-         # Validate enum values (optional but good practice)
-         try:
-             Direction(data_dict['direction'])
-             OrderType(data_dict['type'])
-             Exchange(data_dict['exchange']) # Assumes vnpy's Exchange is available or compatible string used
-             Offset(data_dict.get('offset', Offset.NONE)) # Check offset too
-         except ValueError as e:
-             print(f"订单请求字典包含无效枚举值: {e}")
-             return None
-
-         # Return a cleaned-up dict (or the original if validation passed)
-         # Add default price/offset if missing and appropriate
-         data_dict.setdefault('price', 0.0)
-         data_dict.setdefault('offset', Offset.NONE)
-         data_dict.setdefault('reference', 'backtest_strategy') # Default reference
-         return data_dict
-
-     except Exception as e:
-         print(f"转换订单请求字典时出错: {e}")
-         return None
-
+def create_tick_from_dict(tick_dict: dict) -> Optional[TickData]:
+    """Creates a TickData object from a dictionary, handling potential errors."""
+    vt_symbol = tick_dict.get('vt_symbol')
+    if not vt_symbol or '.' not in vt_symbol:
+        logger.error(f"Invalid or missing vt_symbol in tick dict: {tick_dict}")
+        return None
+    try:
+        tick = TickData(
+            gateway_name=tick_dict.get('gateway_name', 'SIMULATOR'),
+            symbol=vt_symbol.split('.')[0],
+            exchange=Exchange(vt_symbol.split('.')[-1]),
+            datetime=datetime.fromtimestamp(tick_dict.get('timestamp') / 1_000_000_000) if tick_dict.get('timestamp') else datetime.now(),
+            name=tick_dict.get('name', ''),
+            volume=float(tick_dict.get('volume', 0.0)),
+            turnover=float(tick_dict.get('turnover', 0.0)),
+            open_interest=float(tick_dict.get('open_interest', 0.0)),
+            last_price=float(tick_dict.get('last_price', 0.0)),
+            last_volume=float(tick_dict.get('last_volume', 0.0)),
+            limit_up=float(tick_dict.get('limit_up', 0.0)),
+            limit_down=float(tick_dict.get('limit_down', 0.0)),
+            open_price=float(tick_dict.get('open_price', 0.0)),
+            high_price=float(tick_dict.get('high_price', 0.0)),
+            low_price=float(tick_dict.get('low_price', 0.0)),
+            pre_close=float(tick_dict.get('pre_close', 0.0)),
+            bid_price_1=float(tick_dict.get('bid_price_1', 0.0)),
+            bid_price_2=float(tick_dict.get('bid_price_2', 0.0)),
+            bid_price_3=float(tick_dict.get('bid_price_3', 0.0)),
+            bid_price_4=float(tick_dict.get('bid_price_4', 0.0)),
+            bid_price_5=float(tick_dict.get('bid_price_5', 0.0)),
+            ask_price_1=float(tick_dict.get('ask_price_1', 0.0)),
+            ask_price_2=float(tick_dict.get('ask_price_2', 0.0)),
+            ask_price_3=float(tick_dict.get('ask_price_3', 0.0)),
+            ask_price_4=float(tick_dict.get('ask_price_4', 0.0)),
+            ask_price_5=float(tick_dict.get('ask_price_5', 0.0)),
+            bid_volume_1=float(tick_dict.get('bid_volume_1', 0.0)),
+            bid_volume_2=float(tick_dict.get('bid_volume_2', 0.0)),
+            bid_volume_3=float(tick_dict.get('bid_volume_3', 0.0)),
+            bid_volume_4=float(tick_dict.get('bid_volume_4', 0.0)),
+            bid_volume_5=float(tick_dict.get('bid_volume_5', 0.0)),
+            ask_volume_1=float(tick_dict.get('ask_volume_1', 0.0)),
+            ask_volume_2=float(tick_dict.get('ask_volume_2', 0.0)),
+            ask_volume_3=float(tick_dict.get('ask_volume_3', 0.0)),
+            ask_volume_4=float(tick_dict.get('ask_volume_4', 0.0)),
+            ask_volume_5=float(tick_dict.get('ask_volume_5', 0.0)),
+            localtime=tick_dict.get('localtime') # Keep as is or convert if needed
+        )
+        tick.vt_symbol = vt_symbol # Ensure vt_symbol is set
+        return tick
+    except (ValueError, TypeError) as e:
+        logger.error(f"Error creating TickData from dict for {vt_symbol}: {e}. Dict: {tick_dict}")
+        return None
 
 # --- Simulation Engine Service ---
 class SimulationEngineService:
@@ -99,17 +112,17 @@ class SimulationEngineService:
         # Publisher for simulated market data
         self.md_publisher = self.context.socket(zmq.PUB)
         self.md_publisher.bind(backtest_md_pub_url)
-        print(f"模拟行情发布器绑定到: {backtest_md_pub_url}")
+        logger.info(f"模拟行情发布器绑定到: {backtest_md_pub_url}") # Use logger
 
         # Publisher for simulated order reports (status, trades)
         self.report_publisher = self.context.socket(zmq.PUB)
         self.report_publisher.bind(backtest_report_pub_url)
-        print(f"模拟回报发布器绑定到: {backtest_report_pub_url}")
+        logger.info(f"模拟回报发布器绑定到: {backtest_report_pub_url}") # Use logger
 
         # Pull socket to receive order requests from strategy
         self.order_puller = self.context.socket(zmq.PULL)
         self.order_puller.bind(backtest_order_pull_url)
-        print(f"模拟订单接收器绑定到: {backtest_order_pull_url}")
+        logger.info(f"模拟订单接收器绑定到: {backtest_order_pull_url}") # Use logger
 
         self.data_source_path = data_source_path
         self.date_str = date_str
@@ -120,115 +133,174 @@ class SimulationEngineService:
         self.contract_multipliers = contract_multipliers
         # +++ 存储滑点设置 +++
         self.slippage = slippage
-        print(f"手续费规则已加载: {self.commission_rules}")
-        print(f"合约乘数已加载: {self.contract_multipliers}")
-        print(f"固定滑点设置为: {self.slippage}")
+        logger.debug(f"手续费规则: {self.commission_rules}")
+        logger.debug(f"合约乘数: {self.contract_multipliers}")
+        logger.info(f"固定滑点设置为: {self.slippage}") # Keep slippage as info
         # +++ 结束存储 +++
 
-        self.all_ticks = [] # List of (original_ts_ns, original_tick_message)
-        self.current_tick_message = None # The tick currently being processed
+        # --- Modified tick storage --- 
+        self.all_ticks = [] # List of (original_ts_ns, topic_string, original_tick_message_dict)
+        # --- End Modification ---
+        self.current_tick_message_dict = None # Store the dict
         self.current_tick_time_ns = 0
         self.active_orders = {} # local_order_id -> order_request_data (dict)
         self.local_order_id_counter = 0
         self.trade_id_counter = 0
 
         self.running = False
+        self.unique_topics_loaded = set() # +++ Add set to track loaded topics +++
 
     def load_data(self) -> bool:
         """Loads tick data from the specified file."""
-        print(f"模拟引擎: 尝试从 {self.tick_data_file} 加载数据...")
-        # Basic loading, similar to DataPlayer, but stores the whole original message dict
+        logger.info(f"模拟引擎: 尝试从 {self.tick_data_file} 加载数据...") # Use logger
         if not os.path.exists(self.tick_data_file):
-            print(f"错误: 数据文件不存在: {self.tick_data_file}")
+            logger.error(f"数据文件不存在: {self.tick_data_file}") # Use logger
             return False
         try:
             loaded_count = 0
+            # +++ Clear and track unique topics +++
+            self.unique_topics_loaded = set()
+            topics_to_log = 5 # Log first 5 unique topics
+            # +++ End Track +++
             with open(self.tick_data_file, 'r', encoding='utf-8') as f:
                 for line in f:
                     try:
                         record = json.loads(line.strip())
                         original_message = record.get("original_message")
-                        if original_message and original_message.get("type") == "TICK":
+                        zmq_topic_str = record.get("zmq_topic") # <<< Get the correct topic
+
+                        if original_message and original_message.get("type") == "TICK" and zmq_topic_str:
+                            # +++ Log unique topics +++
+                            if zmq_topic_str not in self.unique_topics_loaded and len(self.unique_topics_loaded) < topics_to_log:
+                                self.unique_topics_loaded.add(zmq_topic_str)
+                                logger.debug(f"Found unique ZMQ topic in data file: '{zmq_topic_str}'")
+                            # +++ End Log +++
                             original_ts_ns = original_message.get("timestamp")
                             if original_ts_ns:
-                                self.all_ticks.append((original_ts_ns, original_message))
+                                # --- Store topic along with timestamp and message --- 
+                                self.all_ticks.append((original_ts_ns, zmq_topic_str, original_message))
+                                # --- End Store topic ---
                                 loaded_count += 1
+                            else:
+                                logger.warning(f"Tick record missing internal timestamp: {original_message}")
+                        # else: Skip non-tick messages or records missing topic
+
                     except Exception as e:
-                        print(f"警告: 处理记录时出错: {e}. 行: {line.strip()}")
+                        logger.warning(f"处理记录时出错: {e}. 行: {line.strip()}") # Use logger
 
             if not self.all_ticks:
-                 print("错误：未能从文件中加载任何有效的 Tick 数据。")
+                 logger.error("未能从文件中加载任何有效的 Tick 数据。") # Use logger
                  return False
 
             self.all_ticks.sort(key=lambda x: x[0])
-            print(f"数据加载完成并排序。总共 {loaded_count} 条 Tick 数据。")
+            logger.info(f"数据加载完成并排序。总共 {loaded_count} 条 Tick 数据。") # Use logger
+            # +++ Log final unique topics summary +++
+            logger.info(f"加载完成。从数据文件中找到 {len(self.unique_topics_loaded)} 个唯一 ZMQ 主题 (最多记录 {topics_to_log} 个)。")
+            # +++ End Log +++
             return True
         except Exception as e:
-             print(f"加载数据时发生未知错误: {e}")
-             import traceback; traceback.print_exc()
+             logger.exception(f"加载数据时发生未知错误: {e}") # Use logger.exception
              return False
 
-    def publish_tick(self, tick_message: dict):
-        """Publishes the tick message to the backtest market data URL."""
+    # --- Modified publish_tick to accept processed_count --- 
+    def publish_tick(self, topic_str: str, tick_dict: dict, processed_count: int):
+        """Converts tick dict to TickData object and publishes pickled object."""
+        if not topic_str:
+             logger.warning(f"Attempted to publish tick with empty topic: {tick_dict}")
+             return
+        
+        # --- Get the inner 'data' dictionary --- 
+        actual_tick_data_dict = tick_dict.get('data')
+        if not isinstance(actual_tick_data_dict, dict):
+            logger.error(f"Tick message on topic '{topic_str}' is missing 'data' field or it's not a dict: {tick_dict}")
+            return
+        # --- End Get inner dict --- 
+
+        # --- Create TickData object FROM the inner dict --- 
+        tick_object = create_tick_from_dict(actual_tick_data_dict)
+        # --- End Create ---
+        if not tick_object:
+            return # Error logged in create_tick_from_dict
+
         try:
-            topic_str = tick_message.get("topic", "TICK.UNKNOWN")
             topic = topic_str.encode('utf-8')
-            packed_message = msgpack.packb(tick_message, use_bin_type=True)
+            packed_message = pickle.dumps(tick_object)
+            # --- End Pickle ---
+            # +++ Log published topic using processed_count +++
+            # --- FIX: Correct log frequency condition --- 
+            if processed_count % 5000 == 1: # Log every 5000th tick (using the CORRECT loop counter)
+                 logger.debug(f"Publishing tick #{processed_count} with topic: '{topic_str}'")
+            # --- End FIX --- 
+            # +++ End Log +++
             self.md_publisher.send_multipart([topic, packed_message])
+        except pickle.PicklingError as e:
+             logger.error(f"Pickle序列化Tick对象时出错 (Topic: {topic_str}): {e}")
         except Exception as e:
-            print(f"发布模拟 Tick 时出错: {e}")
+            logger.error(f"发布模拟 Tick (Topic: {topic_str}) 时出错: {e}") 
+    # --- End Modification ---
 
     def check_for_new_orders(self):
         """Non-blockingly checks for and processes new order requests."""
-        while True: # Process all waiting requests immediately
+        while True: 
             try:
+                # --- Still receive pickled request tuple --- 
                 packed_request = self.order_puller.recv(flags=zmq.NOBLOCK)
-                request_msg = msgpack.unpackb(packed_request, raw=False)
-                request_data = request_msg.get('data')
-                print(f"模拟引擎: 收到订单请求: {request_data}")
+                request_tuple = pickle.loads(packed_request) # Expecting ("send_order", (req_dict,), {})
+                # --- End Receive --- 
 
-                validated_data = dict_to_order_request_data(request_data)
-                if validated_data:
-                    self.local_order_id_counter += 1
-                    local_order_id = f"sim_{self.local_order_id_counter}"
-                    validated_data['local_order_id'] = local_order_id # Store our ID
-                    validated_data['vt_orderid'] = f"SIM.{local_order_id}" # vnpy style ID
-                    validated_data['order_time_ns'] = self.current_tick_time_ns # Timestamp the order
+                # +++ Add DEBUG log after receiving tuple +++
+                logger.debug(f"check_for_new_orders: Received request tuple: {request_tuple}")
+                # +++ End Add +++
 
-                    self.active_orders[local_order_id] = validated_data
-                    print(f"  订单 {local_order_id} 已接受并激活。")
-
-                    # Send SUBMITTED status report immediately
-                    self.generate_and_publish_order_report(validated_data, Status.SUBMITTING) # Or SUBMITTED
-                    self.generate_and_publish_order_report(validated_data, Status.NOTTRADED)
-
+                # --- Validate and extract req_dict --- 
+                if isinstance(request_tuple, tuple) and len(request_tuple) == 3 and request_tuple[0] == "send_order":
+                     if request_tuple[1] and isinstance(request_tuple[1][0], dict):
+                         request_data = request_tuple[1][0] # Get the actual order dict
+                     else:
+                         logger.error(f"收到的 send_order 请求格式无效 (args): {request_tuple}")
+                         continue
                 else:
-                     print("  无效订单请求，已忽略。")
-                     # Maybe send a REJECTED report?
+                     logger.error(f"收到的订单请求格式无效 (非send_order元组): {request_tuple}")
+                     continue
+                # --- End Validation --- 
+
+                # --- Add DEBUG log after successful validation --- 
+                logger.debug(f"check_for_new_orders: Successfully validated order request dict: {request_data}")
+                # --- End Add ---
+
+                self.local_order_id_counter += 1
+                local_order_id = f"sim_{self.local_order_id_counter}"
+                validated_data = request_data # Assume basic validation for now
+                # Add more robust validation if needed (check fields, enums)
+                required_fields = ['symbol', 'exchange', 'direction', 'type', 'volume']
+                if not all(field in validated_data for field in required_fields):
+                    missing = [f for f in required_fields if f not in validated_data]
+                    logger.error(f"订单请求字典缺少字段: {missing}. Dict: {validated_data}")
+                    # Maybe send REJECTED report?
+                    continue
+                validated_data['local_order_id'] = local_order_id
+                validated_data['vt_orderid'] = f"SIM.{local_order_id}"
+                validated_data['order_time_ns'] = self.current_tick_time_ns
+
+                self.active_orders[local_order_id] = validated_data
+                logger.info(f"订单 {local_order_id} 已接受并激活。VTOrderID: {validated_data['vt_orderid']}")
+
+                self.generate_and_publish_order_report(validated_data, Status.SUBMITTING)
+                self.generate_and_publish_order_report(validated_data, Status.NOTTRADED)
 
             except zmq.Again:
                 break # No more messages waiting
-            except msgpack.UnpackException as e:
-                print(f"解码订单请求时出错: {e}")
+            except pickle.UnpicklingError as e:
+                logger.error(f"反序列化订单请求时出错: {e}")
             except Exception as e:
-                print(f"处理订单请求时发生未知错误: {e}")
-                import traceback; traceback.print_exc()
+                logger.exception(f"处理订单请求时发生未知错误: {e}")
 
     def match_orders(self):
-        """Attempts to match active orders against the current tick."""
-        # +++ Debug: 函数入口 +++
-        # entry_sim_time_str = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        # print(f"--- ENTER match_orders @ {entry_sim_time_str} ---")
-        # +++ 结束 +++
-
-        if not self.current_tick_message or not self.current_tick_message.get("data"):
-            # +++ Debug: 因无 Tick 数据返回 +++
-            # entry_sim_time_str = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] # Need this if uncommenting below
-            # print(f"--- EXIT match_orders @ {entry_sim_time_str} (No Tick Data) ---")
-            # +++ 结束 +++
-            return
-
-        tick_data = self.current_tick_message["data"]
+        """Attempts to match active orders against the current tick (using dict)."""
+        # --- Logic remains largely the same, using self.current_tick_message_dict --- 
+        if not self.current_tick_message_dict or not self.current_tick_message_dict.get("data"):
+             return
+        tick_data = self.current_tick_message_dict["data"]
         ask_price = tick_data.get('ask_price_1')
         bid_price = tick_data.get('bid_price_1')
         tick_symbol = tick_data.get('vt_symbol')
@@ -243,22 +315,14 @@ class SimulationEngineService:
             # +++ 结束 +++
             return # 无有效价格，无法撮合
 
-        # +++ Debug: 即将进入循环 +++
-        # print(f"--- LOOPING active_orders @ {sim_time_str} for Tick {tick_symbol} ---")
-        # +++ 结束 +++
-
         orders_to_remove = []
         for local_id, order_data in list(self.active_orders.items()):
             order_vt_symbol = f"{order_data.get('symbol')}.{order_data.get('exchange')}"
             if order_vt_symbol != tick_symbol:
                 continue
 
-            # +++ 注释掉额外调试 +++
-            # print(f"  DEBUG [{sim_time_str}] Checking order: ID={local_id}, Symbol={order_vt_symbol}, Direction={order_data.get('direction')}, Type={order_data.get('type')}, Price={order_data.get('price')}")
-            # +++ 结束注释 +++
-
             # --- 修正日志时间戳 ---
-            print(f"[{sim_time_str}] 撮合检查: 订单 {local_id} ({order_data.get('direction')} {order_data.get('type')} @ {order_data.get('price')}) vs Tick {tick_symbol} (Bid: {bid_price}, Ask: {ask_price})")
+            logger.debug(f"[{sim_time_str}] 撮合检查: 订单 {local_id} ({order_data.get('direction')} {order_data.get('type')} @ {order_data.get('price')}) vs Tick {tick_symbol} (Bid: {bid_price}, Ask: {ask_price})")
             # --- 结束修正 ---
 
             trade_price = 0
@@ -268,42 +332,27 @@ class SimulationEngineService:
             if order_data['direction'] == Direction.LONG.value:
                 if order_data['type'] == OrderType.LIMIT.value:
                     match_condition = order_data['price'] >= bid_price
-                    # --- 注释掉条件检查日志 ---
-                    # print(f"  [{sim_time_str}] 买单限价条件检查: order_price({order_data['price']}) >= bid_price({bid_price}) ? {match_condition}")
-                    # --- 结束注释 ---
                     if match_condition:
                         trade_price = ask_price # 买单以卖一价成交
                         matched = True
                 elif order_data['type'] == OrderType.MARKET.value:
-                    # --- 确保市价日志也有时间戳 ---
                     match_condition = True # 市价单认为条件满足
                     trade_price = ask_price
                     matched = True
-                    # --- 注释掉条件检查日志 ---
-                    # print(f"  [{sim_time_str}] 买单市价条件: 自动匹配，成交价 = ask_price({ask_price})")
-                    # --- 结束注释 ---
             elif order_data['direction'] == Direction.SHORT.value:
                 if order_data['type'] == OrderType.LIMIT.value:
                     match_condition = order_data['price'] <= ask_price
-                    # --- 注释掉条件检查日志 ---
-                    # print(f"  [{sim_time_str}] 卖单限价条件检查: order_price({order_data['price']}) <= ask_price({ask_price}) ? {match_condition}")
-                    # --- 结束注释 ---
                     if match_condition:
                         trade_price = bid_price # 卖单以买一价成交
                         matched = True
                 elif order_data['type'] == OrderType.MARKET.value:
-                    # --- 确保市价日志也有时间戳 ---
                     match_condition = True # 市价单认为条件满足
                     trade_price = bid_price
                     matched = True
-                    # --- 注释掉条件检查日志 ---
-                    # print(f"  [{sim_time_str}] 卖单市价条件: 自动匹配，成交价 = bid_price({bid_price})")
-                    # --- 结束注释 ---
-
 
             if matched:
                 # --- 确保日志有时间戳 ---
-                print(f"    [{sim_time_str}] 订单 {local_id} 匹配成功! 成交价: {trade_price:.2f}")
+                logger.info(f"[{sim_time_str}] 订单 {local_id} 匹配成功! 理论成交价: {trade_price:.2f}") # Use logger
                 # --- 结束确保 ---
                 self.trade_id_counter += 1
                 trade_id = f"simtrade_{self.trade_id_counter}"
@@ -321,11 +370,11 @@ class SimulationEngineService:
                         # 确保价格不会因为滑点变成负数
                         trade_price = max(trade_price, 0.0)
                     # --- 修正日志打印 --- 
-                    print(f"    应用滑点: 方向={order_data['direction']}, 滑点值={self.slippage}, 理论价={original_trade_price:.2f} => 实际价={trade_price:.2f}")
+                    logger.info(f"    应用滑点: 方向={order_data['direction']}, 滑点值={self.slippage}, 理论价={original_trade_price:.2f} => 实际价={trade_price:.2f}") # Use logger
                     # --- 结束修正 ---
                 # +++ 结束应用 +++
 
-                trade_report_data = {
+                trade_report_dict = {
                     "gateway_name": "SIMULATOR",
                     "symbol": order_data['symbol'],
                     "exchange": order_data['exchange'],
@@ -336,85 +385,81 @@ class SimulationEngineService:
                     "vt_orderid": order_data['vt_orderid'],
                     "direction": order_data['direction'],
                     "offset": order_data['offset'],
-                    "price": trade_price, # <--- 使用调整后的价格
+                    "price": trade_price,
                     "volume": order_data['volume'],
-                    "trade_time": sim_time_dt.isoformat(), # 使用模拟时间 dt 对象转 iso
-                    "datetime": sim_time_dt # 使用模拟时间 dt 对象
+                    "trade_time": sim_time_dt.isoformat(),
+                    "datetime": sim_time_dt
                 }
-                # 注意：generate_and_publish_trade_report 会使用这个价格计算手续费
-                self.generate_and_publish_trade_report(trade_report_data)
+                self.generate_and_publish_trade_report(trade_report_dict)
                 self.generate_and_publish_order_report(order_data, Status.ALLTRADED, traded_volume=order_data['volume'])
                 orders_to_remove.append(local_id)
-            # --- (可选) 添加未匹配时的日志 ---
-            # elif match_condition is not None and not matched:
-            #     print(f"  [{sim_time_str}] 订单 {local_id} 未满足撮合条件。")
-            # --- 结束 ---
 
         for local_id in orders_to_remove:
             try:
                 del self.active_orders[local_id]
                 # --- 确保日志有时间戳 ---
-                print(f"    [{sim_time_str}] 订单 {local_id} 已完成并从活动列表移除。")
+                logger.info(f"[{sim_time_str}] 订单 {local_id} 已完成并从活动列表移除。") # Use logger
                 # --- 结束确保 ---
             except KeyError:
-                 print(f"警告：[{sim_time_str}] 尝试移除订单 {local_id} 时未找到。")
+                 logger.warning(f"尝试移除订单 {local_id} 时未找到。") # Use logger
 
-        # +++ Debug: 函数正常结束 +++
-        # print(f"--- EXIT match_orders @ {sim_time_str} (Normal) ---")
-        # +++ 结束 +++
+    def generate_and_publish_order_report(self, order_report_dict: dict, status: Status, traded_volume: float = 0):
+        """Generates OrderData object from dict and publishes pickled object."""
+        vt_symbol = order_report_dict.get('vt_symbol', f"{order_report_dict.get('symbol', '')}.{order_report_dict.get('exchange', '')}")
+        vt_orderid = order_report_dict.get('vt_orderid')
+        
+        # --- Create OrderData object --- 
+        try:
+             # Use order time from original request if available
+             order_time_ns = order_report_dict.get('order_time_ns', self.current_tick_time_ns)
+             order_time_dt = datetime.fromtimestamp(order_time_ns / 1_000_000_000)
+             report_time_dt = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000)
 
-    def generate_and_publish_order_report(self, order_request_data: dict, status: Status, traded_volume: float = 0):
-        """Generates and publishes an OrderData-like report dictionary."""
-        vt_symbol = f"{order_request_data['symbol']}.{order_request_data['exchange']}"
-        # 使用订单时间戳
-        order_time_dt = datetime.fromtimestamp(order_request_data['order_time_ns'] / 1_000_000_000)
-        # *** 修正: 在函数内部根据当前模拟时间计算回报时间 ***
-        report_time_dt = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000) # 使用当前模拟时间
+             order_object = OrderData(
+                 gateway_name="SIMULATOR",
+                 symbol=order_report_dict['symbol'],
+                 exchange=Exchange(order_report_dict['exchange']),
+                 orderid=order_report_dict['local_order_id'],
+                 direction=Direction(order_report_dict['direction']),
+                 offset=Offset(order_report_dict.get('offset', Offset.NONE.value)),
+                 type=OrderType(order_report_dict['type']),
+                 price=float(order_report_dict.get('price', 0.0)),
+                 volume=float(order_report_dict['volume']),
+                 traded=float(traded_volume),
+                 status=status, # Use the passed status
+                 datetime=report_time_dt # Use the datetime object for report time
+             )
+             order_object.vt_symbol = vt_symbol # Ensure vt_symbol is set
+             order_object.vt_orderid = vt_orderid
+        except (ValueError, TypeError, KeyError) as e:
+            logger.error(f"Error creating OrderData object from dict for {vt_orderid}: {e}. Dict: {order_report_dict}")
+            return
+        # --- End Create --- 
 
-        report_data = {
-            "gateway_name": "SIMULATOR",
-            "symbol": order_request_data['symbol'],
-            "exchange": order_request_data['exchange'],
-            "vt_symbol": vt_symbol,
-            "orderid": order_request_data['local_order_id'],
-            "vt_orderid": order_request_data['vt_orderid'],
-            "direction": order_request_data['direction'],
-            "offset": order_request_data['offset'],
-            "type": order_request_data['type'],
-            "price": order_request_data['price'],
-            "volume": order_request_data['volume'],
-            "traded": traded_volume,
-            "status": status,
-            "order_time": order_time_dt.isoformat(), # 订单原始时间
-            "datetime": report_time_dt # 回报生成时的模拟时间
-        }
-        topic_str = f"ORDER_STATUS.{vt_symbol}"
-        message = {
-            "topic": topic_str,
-            "type": "ORDER_STATUS",
-            "source": "SimulationEngine",
-            "timestamp": self.current_tick_time_ns, # 使用模拟时间戳
-            "data": vnpy_report_to_dict(report_data)
-        }
+        topic_str = f"order.{vt_symbol}" # Use generic order topic now
         try:
             topic = topic_str.encode('utf-8')
-            packed_message = msgpack.packb(message, use_bin_type=True)
+            # --- Pickle the OBJECT --- 
+            packed_message = pickle.dumps(order_object)
+            # --- End Pickle --- 
             self.report_publisher.send_multipart([topic, packed_message])
-        except Exception as e:
-            # *** 添加错误发生时的时间戳和上下文信息 ***
+        except pickle.PicklingError as e:
             sim_time_str = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            print(f"[{sim_time_str}] 发布订单回报 (状态: {status.value}, 订单: {order_request_data.get('local_order_id')}) 时出错: {e}")
-            # *** 结束添加 ***
+            logger.error(f"[{sim_time_str}] Pickle序列化Order对象时出错 (Status: {status.value}, Order: {vt_orderid}): {e}")
+        except Exception as e:
+            sim_time_str = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            logger.error(f"[{sim_time_str}] 发布订单回报 (状态: {status.value}, 订单: {vt_orderid}) 时出错: {e}") 
+    # --- End Modification ---
 
-    def generate_and_publish_trade_report(self, trade_data: dict):
-        """Generates and publishes a TradeData-like report dictionary, including commission."""
-        vt_symbol = trade_data["vt_symbol"]
-        symbol = trade_data["symbol"]
-        price = trade_data["price"]
-        volume = trade_data["volume"]
-        offset = trade_data["offset"] # 获取开平仓信息 (应为 '开', '平', '平今', '平昨')
+    def generate_and_publish_trade_report(self, trade_report_dict: dict):
+        """Calculates commission, generates TradeData object, and publishes pickled object."""
+        vt_symbol = trade_report_dict["vt_symbol"]
+        symbol = trade_report_dict["symbol"]
+        price = trade_report_dict["price"]
+        volume = trade_report_dict["volume"]
+        offset_val = trade_report_dict["offset"] # Get offset value
 
-        # +++ 计算手续费 +++
+        # --- Calculate commission (logic remains same, using dict) --- 
         commission = 0.0
         rules = self.commission_rules.get(symbol)
         multiplier = self.contract_multipliers.get(symbol)
@@ -426,14 +471,14 @@ class SimulationEngineService:
 
             # 根据开平标志选择费率或固定金额
             # 注意：直接比较从 order_data 传来的字符串值
-            if offset == Offset.OPEN.value:
+            if offset_val == Offset.OPEN.value:
                 rate = rules.get('open_rate', 0.0)
                 fixed = rules.get('open_fixed', 0.0)
-            elif offset in [Offset.CLOSE.value, Offset.CLOSETODAY.value, Offset.CLOSEYESTERDAY.value]:
+            elif offset_val in [Offset.CLOSE.value, Offset.CLOSETODAY.value, Offset.CLOSEYESTERDAY.value]:
                 rate = rules.get('close_rate', 0.0)
                 fixed = rules.get('close_fixed', 0.0)
             else:
-                 print(f"警告: 未知的开平标志 '{offset}'，手续费按开仓计算 (如果规则存在)。")
+                 logger.warning(f"警告: 未知的开平标志 '{offset_val}'，手续费按开仓计算 (如果规则存在)。")
                  rate = rules.get('open_rate', 0.0) # 或提供一个默认处理
                  fixed = rules.get('open_fixed', 0.0)
 
@@ -448,71 +493,108 @@ class SimulationEngineService:
             if min_comm > 0:
                 commission = max(commission, min_comm)
 
-            print(f"    计算手续费: 合约={symbol}, 价格={price}, 量={volume}, 乘数={multiplier}, 开平={offset}, 费率={rate}, 固定={fixed}, 最低={min_comm} => 手续费={commission:.2f}")
+            logger.debug(f"计算手续费: 合约={symbol}, 价格={price}, 量={volume}, 乘数={multiplier}, 开平={offset_val}, 费率={rate}, 固定={fixed}, 最低={min_comm} => 手续费={commission:.2f}") # Use logger.debug
 
         elif not rules:
-             print(f"警告: 未找到合约 {symbol} 的手续费规则，手续费计为 0。")
+             logger.warning(f"警告: 未找到合约 {symbol} 的手续费规则，手续费计为 0。") # Use logger
         elif not multiplier or multiplier <= 0:
-             print(f"警告: 未找到或无效的合约 {symbol} 乘数 ({multiplier})，手续费计为 0。")
+             logger.warning(f"警告: 未找到或无效的合约 {symbol} 乘数 ({multiplier})，手续费计为 0。") # Use logger
         # +++ 结束计算 +++
 
         # 将手续费添加到回报数据中
-        trade_data['commission'] = commission
+        trade_report_dict['commission'] = commission
 
-        # --- 后续发布逻辑不变 ---
-        topic_str = f"TRADE.{vt_symbol}"
-        # 确保 trade_data 中的 datetime 是 datetime 对象
-        if isinstance(trade_data.get("datetime"), str):
-             trade_data["datetime"] = datetime.fromisoformat(trade_data["datetime"])
+        # --- Create TradeData object --- 
+        vt_tradeid = trade_report_dict.get('vt_tradeid')
+        try:
+             # Use datetime object from dict if available
+             trade_time_dt = trade_report_dict.get("datetime")
+             if not isinstance(trade_time_dt, datetime):
+                 # Fallback to parsing string or using current sim time
+                 trade_time_str = trade_report_dict.get("trade_time")
+                 if trade_time_str:
+                      trade_time_dt = datetime.fromisoformat(trade_time_str)
+                 else:
+                      trade_time_dt = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000)
+             
+             trade_object = TradeData(
+                 gateway_name="SIMULATOR",
+                 symbol=symbol,
+                 exchange=Exchange(trade_report_dict['exchange']),
+                 orderid=trade_report_dict['orderid'],
+                 tradeid=trade_report_dict['tradeid'],
+                 direction=Direction(trade_report_dict['direction']),
+                 offset=Offset(offset_val),
+                 price=float(price),
+                 volume=float(volume),
+                 datetime=trade_time_dt # Use datetime object
+             )
+             trade_object.vt_symbol = vt_symbol # Ensure vt_symbol is set
+             # --- Set vt_orderid and vt_tradeid AFTER creation ---
+             trade_object.vt_orderid = trade_report_dict['vt_orderid'] 
+             trade_object.vt_tradeid = vt_tradeid
+             # +++ Assign calculated commission to the object +++
+             trade_object.commission = float(commission)
+             # +++ End Assign +++
+             # --- End Set ---
+        except (ValueError, TypeError, KeyError) as e:
+            logger.error(f"Error creating TradeData object from dict for {vt_tradeid}: {e}. Dict: {trade_report_dict}")
+            return
+        # --- End Create --- 
 
-        message = {
-            "topic": topic_str,
-            "type": "TRADE",
-            "source": "SimulationEngine",
-            "timestamp": self.current_tick_time_ns, # 使用模拟时间戳
-            "data": vnpy_report_to_dict(trade_data) # vnpy_report_to_dict 会处理 datetime
-        }
+        topic_str = f"trade.{vt_symbol}" # Use generic trade topic
         try:
             topic = topic_str.encode('utf-8')
-            packed_message = msgpack.packb(message, use_bin_type=True)
+            # --- Pickle the OBJECT --- 
+            packed_message = pickle.dumps(trade_object)
+            # --- End Pickle ---
             self.report_publisher.send_multipart([topic, packed_message])
+        except pickle.PicklingError as e:
+             logger.error(f"Pickle序列化Trade对象时出错 (Trade: {vt_tradeid}): {e}")
         except Exception as e:
-             print(f"发布成交回报时出错: {e}")
+             logger.error(f"发布成交回报 (Trade: {vt_tradeid}) 时出错: {e}")
+    # --- End Modification ---
 
     def run_simulation(self):
         """Runs the main simulation loop."""
         if not self.all_ticks:
-            print("错误: 没有数据可供模拟。请先调用 load_data()。")
+            logger.error("没有数据可供模拟。请先调用 load_data()。") # Use logger
             return
 
-        print(f"开始模拟回测 {self.date_str}...")
+        logger.info(f"开始模拟回测 {self.date_str}...") # Use logger
         self.running = True
         processed_count = 0
 
         start_sim_time = time.time() # Wall clock time
 
-        for ts_ns, tick_msg in self.all_ticks:
+        # +++ Add delay for subscriber connection +++
+        initial_delay_s = 0.5 # Give subscriber 500ms to connect
+        logger.info(f"等待 {initial_delay_s} 秒以确保订阅者连接...")
+        time.sleep(initial_delay_s)
+        # +++ End Add delay +++
+
+        # --- Loop unpacks dict, publish calls pickle --- 
+        for ts_ns, topic_str, tick_msg_dict in self.all_ticks:
             if not self.running:
-                print("模拟被中断。")
                 break
 
             self.current_tick_time_ns = ts_ns
-            self.current_tick_message = tick_msg
-            loop_start_time = time.perf_counter_ns() # 高精度循环开始时间
+            self.current_tick_message_dict = tick_msg_dict # Store the dict
+            loop_start_time = time.perf_counter_ns()
 
-            # 1. Publish current tick
+            # 1. Publish current tick (Pass processed_count)
             publish_start = time.perf_counter_ns()
-            self.publish_tick(tick_msg)
+            self.publish_tick(topic_str, tick_msg_dict, processed_count)
             publish_end = time.perf_counter_ns()
 
-            # 2. Check for new orders
+            # 2. Check for new orders (receives pickled tuple)
             check_order_start = time.perf_counter_ns()
             self.check_for_new_orders()
             check_order_end = time.perf_counter_ns()
 
-            # 3. Attempt to match active orders
+            # 3. Attempt to match active orders (uses dict)
             match_start = time.perf_counter_ns()
-            self.match_orders()
+            self.match_orders() # Match logic uses dicts
             match_end = time.perf_counter_ns()
 
             loop_end_time = time.perf_counter_ns() # 高精度循环结束时间
@@ -524,17 +606,17 @@ class SimulationEngineService:
                  publish_ms = (publish_end - publish_start) / 1_000_000
                  check_ms = (check_order_end - check_order_start) / 1_000_000
                  match_ms = (match_end - match_start) / 1_000_000
-                 print(f"  已处理 {processed_count}/{len(self.all_ticks)} ticks | 模拟时间: {data_time.strftime('%H:%M:%S.%f')[:-3]} | 循环耗时: {loop_duration_ms:.3f} ms (Pub: {publish_ms:.3f}, Check: {check_ms:.3f}, Match: {match_ms:.3f})")
+                 logger.info(f"已处理 {processed_count}/{len(self.all_ticks)} ticks | 模拟时间: {data_time.strftime('%H:%M:%S.%f')[:-3]} | 循环耗时: {loop_duration_ms:.3f} ms (Pub: {publish_ms:.3f}, Check: {check_ms:.3f}, Match: {match_ms:.3f})")
 
         end_sim_time = time.time()
-        print(f"模拟回测结束。处理了 {processed_count} 条 ticks。")
-        print(f"模拟耗时: {end_sim_time - start_sim_time:.2f} 秒。")
+        logger.info(f"模拟回测结束。处理了 {processed_count} 条 ticks。") # Use logger
+        logger.info(f"模拟耗时: {end_sim_time - start_sim_time:.2f} 秒。") # Use logger
         self.running = False
         self.stop() # Clean up ZMQ
 
     def stop(self):
         """Stops the service and cleans up resources."""
-        print("停止模拟引擎...")
+        logger.info("停止模拟引擎...") # Use logger
         self.running = False
         sockets = [self.md_publisher, self.report_publisher, self.order_puller]
         for sock in sockets:
@@ -545,11 +627,11 @@ class SimulationEngineService:
             try:
                 if not self.context.closed: self.context.term()
             except Exception: pass
-        print("模拟引擎资源已释放。")
+        logger.info("模拟引擎资源已释放。") # Use logger
 
 # --- Main execution block (for testing, might not be practical) ---
 if __name__ == "__main__":
-     print("Simulation Engine - 此脚本通常不直接运行，而是由回测主脚本调用。")
+     logger.error("Simulation Engine - 此脚本通常不直接运行，而是由回测主脚本调用。")
      # Example basic run now needs commission_rules and contract_multipliers
      # today = datetime.now().strftime('%Y%m%d')
      # example_commission_rules = {
