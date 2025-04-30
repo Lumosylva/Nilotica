@@ -36,7 +36,7 @@ BACKTEST_ORDER_REQUEST_PULL_URL = "tcp://*:5562" # 回测订单请求接收地�
 SUBSCRIBE_SYMBOLS = ["SA509.CZCE", "rb2510.SHFE", "MA509.CZCE"] # 示例合约，请修改为您需要的
 
 # --- Strategy Specific Parameters (SA509 Example) ---
-SA509_ENTRY_THRESHOLD = 1350.0       # SA509 入场价格阈值 (示例)
+SA509_ENTRY_THRESHOLD = 1330.0       # SA509 入场价格阈值 (示例)
 SA509_PROFIT_TARGET_TICKS = 10       # SA509 止盈目标 (跳动点数)
 SA509_STOP_LOSS_TICKS = 5          # SA509 止损距离 (跳动点数)
 SA509_PRICE_TICK = 1.0               # SA509 最小价格变动 (示例，请根据实际合约修改)
@@ -85,3 +85,12 @@ except ImportError:
 
 # Log level for gateways (e.g., "INFO", "DEBUG")
 # GATEWAY_LOG_LEVEL = "INFO" 
+
+# --- Engine/Communication Parameters ---
+MARKET_DATA_TIMEOUT_SECONDS = 30.0  # (Strategy Engine) 行情数据被视为超时的秒数
+INITIAL_TICK_GRACE_PERIOD_MULTIPLIER = 2.0 # (Strategy Engine) 初始连接后，判断行情超时的宽限期倍数 (乘以 MARKET_DATA_TIMEOUT_SECONDS)
+PING_INTERVAL_SECONDS = 5.0       # (Strategy Engine) 发送 PING 到订单网关的间隔秒数
+PING_TIMEOUT_MS = 2500            # (Strategy Engine) 等待 PING 回复的超时毫秒数
+RPC_TIMEOUT_MS = 3000             # (Strategy Engine) 默认 RPC 请求的超时毫秒数
+RPC_RETRIES = 1                   # (Strategy Engine) RPC 请求失败后的重试次数
+HEARTBEAT_TIMEOUT_SECONDS = 10.0    # (Strategy Engine) 接收订单网关心跳的超时秒数

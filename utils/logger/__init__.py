@@ -17,6 +17,7 @@ from loguru import logger
 from vnpy.trader.setting import SETTINGS
 from vnpy.trader.utility import get_folder_path
 
+
 # --- Default Configuration ---
 DEFAULT_LOG_FORMAT = (
     "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> - "
@@ -36,16 +37,54 @@ __all__ = ["logger", "setup_logging"]
 DEFAULT_LOG_LEVEL: str = SETTINGS.get("log.level", "INFO") # Use .get for safety
 
 
-def int_level_to_str(level: int) -> str:
-    level_mapping = {
-        50: "CRITICAL",
-        40: "ERROR",
-        30: "WARNING",
-        20: "INFO",
-        10: "DEBUG",
-        0: "NOTSET"
-    }
-    return level_mapping.get(level, "UNKNOWN")
+# def int_level_to_str(level: int) -> str:
+#     level_mapping = {
+#         50: "CRITICAL",
+#         40: "ERROR",
+#         30: "WARNING",
+#         20: "INFO",
+#         10: "DEBUG",
+#         0: "NOTSET"
+#     }
+#     return level_mapping.get(level, "UNKNOWN")
+
+CRITICAL = 50
+FATAL = CRITICAL
+ERROR = 40
+WARNING = 30
+WARN = WARNING
+INFO = 20
+DEBUG = 10
+NOTSET = 0
+
+_levelToName = {
+    CRITICAL: 'CRITICAL',
+    ERROR: 'ERROR',
+    WARNING: 'WARNING',
+    INFO: 'INFO',
+    DEBUG: 'DEBUG',
+    NOTSET: 'NOTSET',
+}
+
+_nameToLevel = {
+    'CRITICAL': CRITICAL,
+    'FATAL': FATAL,
+    'ERROR': ERROR,
+    'WARN': WARNING,
+    'WARNING': WARNING,
+    'INFO': INFO,
+    'DEBUG': DEBUG,
+    'NOTSET': NOTSET,
+}
+
+def get_level_name(level: int | str):
+    if level is not None:
+        if isinstance(level, int):
+            return _levelToName.get(level)
+        elif isinstance(level, str):
+            return level.upper()
+        else:
+            raise TypeError('Expected a string or integer value for level')
 
 # --- Setup Function ---
 def setup_logging(
@@ -75,13 +114,7 @@ def setup_logging(
         # No handlers configured yet, safe to continue
         pass
 
-    # --- Process log level for Loguru --- 
-    if isinstance(level, str):
-        level = level.upper()
-    # If level is already an int (like logging.INFO), use it directly
-    if isinstance(level, int):
-        level = int_level_to_str(level)
-
+    level = get_level_name(level)
     # --- Configure Console Logging ---
     # Read console setting from vnpy settings
     if SETTINGS.get("log.console", True): # Use .get for safety
