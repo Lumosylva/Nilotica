@@ -1,10 +1,7 @@
-import time
-from datetime import datetime
 import logging
-# from logger import getLogger # Removed
 import sys
 import os
-import pickle
+import threading
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -14,10 +11,6 @@ if project_root not in sys.path:
 from utils.logger import logger
 
 from vnpy.trader.utility import load_json
-# Add project root to Python path to find vnpy modules
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 # VNPY imports
 try:
@@ -26,7 +19,7 @@ try:
     from vnpy.trader.object import TickData, SubscribeRequest, LogData, ContractData # Added ContractData
     from vnpy.trader.event import EVENT_TICK, EVENT_LOG, EVENT_CONTRACT
     from vnpy_ctp import CtpGateway
-    from vnpy.rpc import RpcServer # Import RpcServer
+    # from vnpy.rpc import RpcServer # <-- Remove RpcServer import
     from vnpy.trader.constant import Exchange # Import Exchange here
 except ImportError as e:
     print(f"CRITICAL: Error importing vnpy modules: {e}")
@@ -36,20 +29,29 @@ except ImportError as e:
     sys.exit(1)
 
 # Import new config location
-from config import zmq_config as config # Ensure this has REP and PUB addresses
+from config import zmq_config as config # Ensure this has PUB address
+
+# +++ Import the new base class +++
+from .zmq_base import ZmqPublisherBase
+
+# Define the expected CTP connection success message
+# Note: This might need adjustment based on the actual vnpy_ctp output
+CTP_MD_LOGIN_SUCCESS_MSG = "行情服务器登录成功"
+CTP_CONNECTION_TIMEOUT_S = 30.0 # Timeout for waiting connection
 
 # --- Market Data Gateway Service ---
-# Inherit from RpcServer
-class MarketDataGatewayService(RpcServer):
+# Inherit from ZmqPublisherBase
+class MarketDataGatewayService(ZmqPublisherBase):
     """
     Market data gateway service that uses CtpGateway for data collection
-    and RpcServer for publishing data.
+    and ZmqPublisherBase for publishing data via ZMQ PUB socket.
+    Uses event-driven check for CTP connection success.
     """
     def __init__(self, environment_name: str):
         """Initializes the gateway service for a specific environment."""
-        super().__init__() # Initialize the RpcServer base class
+        super().__init__() # Initialize the ZmqPublisherBase base class
 
-        logger.info(f"Initializing MarketDataGatewayService for environment: [{environment_name}]...") # Changed self.logger to logger
+        logger.info(f"Initializing MarketDataGatewayService for environment: [{environment_name}]...")
         self.environment_name = environment_name
 
         # Create EventEngine for the gateway
@@ -58,48 +60,51 @@ class MarketDataGatewayService(RpcServer):
         # Create CTP gateway instance
         self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_MD_{environment_name}")
 
+        # --- CTP Connection State --- 
+        self._ctp_connected: bool = False
+        self._ctp_connection_event = threading.Event() # Event to signal connection
+        # --- End CTP Connection State --- 
+
         # --- Load and Select CTP Settings --- 
         self.ctp_setting: dict | None = None
         try:
             all_ctp_settings = load_json("connect_ctp.json")
             if environment_name in all_ctp_settings:
                 self.ctp_setting = all_ctp_settings[environment_name]
-                logger.info(f"Loaded CTP settings for environment: [{environment_name}]") # Changed self.logger to logger
+                logger.info(f"Loaded CTP settings for environment: [{environment_name}]")
             else:
-                logger.error(f"Environment '{environment_name}' not found in connect_ctp.json! Cannot connect CTP.") # Changed self.logger to logger
+                logger.error(f"Environment '{environment_name}' not found in connect_ctp.json! Cannot connect CTP.")
         except FileNotFoundError:
-            logger.error("connect_ctp.json not found! Cannot connect CTP.") # Changed self.logger to logger
+            logger.error("connect_ctp.json not found! Cannot connect CTP.")
         except Exception as err:
-            logger.exception(f"Error loading or parsing connect_ctp.json: {err}") # Changed self.logger to logger
+            logger.exception(f"Error loading or parsing connect_ctp.json: {err}")
         # --- End Load and Select --- 
 
         self._subscribe_list = []
 
-        logger.info(f"行情网关服务(RPC模式) for [{environment_name}] 初始化完成。") # Changed self.logger to logger
+        logger.info(f"行情网关服务 for [{environment_name}] 初始化完成。")
 
     def process_event(self, event: Event):
-        """Processes events from the EventEngine."""
+        """Processes events from the EventEngine and publishes via ZmqPublisherBase."""
         event_type = event.type
         if event_type == EVENT_TICK:
             tick: TickData = event.data
-            # self.publish(f"tick.{tick.vt_symbol}", tick)  # <-- Commented out problematic call
-            logger.debug(f"发布Tick: {tick.vt_symbol} - Price: {tick.last_price}") # Changed self.logger to logger
-            # --- Manually send multipart message ---
-            try:
-                topic_bytes = f"tick.{tick.vt_symbol}".encode('utf-8')
-                data_bytes = pickle.dumps(tick)
-                # Directly access self._socket_pub based on vnpy.rpc source
-                self._socket_pub.send_multipart([topic_bytes, data_bytes])
-                # logger.debug(f"手动发送 multipart Tick 成功 (主题: {topic_bytes.decode()})") # <-- 注释掉
-            except AttributeError:
-                 logger.error("AttributeError: 无法直接访问 self._socket_pub！RpcServer 内部可能已更改。") # Changed self.logger to logger
-            except Exception as e_manual_send:
-                logger.exception(f"手动发送 multipart Tick 时出错: {e_manual_send}") # Changed self.logger to logger
-            # --- End manual send ---
+            logger.debug(f"发布Tick: {tick.vt_symbol} - Price: {tick.last_price}")
+            # --- Use the publish method from ZmqPublisherBase --- 
+            topic = f"tick.{tick.vt_symbol}"
+            success = self.publish(topic, tick)
+            if not success:
+                 logger.error(f"发布 Tick 失败 (主题: {topic})")
+            # --- End use publish method --- 
 
         elif event_type == EVENT_LOG:
             log: LogData = event.data
-            # self.publish(f"log", log) # <-- Commented out problematic call
+            # Check for CTP connection success message
+            if not self._ctp_connected and CTP_MD_LOGIN_SUCCESS_MSG in log.msg:
+                logger.info("检测到 CTP 行情登录成功信号！")
+                self._ctp_connected = True
+                self._ctp_connection_event.set() # Signal the start method
+
             # Restore logging of vnpy internal logs using custom logger
             level_map = {
                 logging.DEBUG: logging.DEBUG,
@@ -116,84 +121,75 @@ class MarketDataGatewayService(RpcServer):
 
             logger_level = level_map.get(log_level_value, logging.INFO)
             gateway_name = getattr(log, 'gateway_name', 'UnknownGateway')
-            logger.log(logger_level, f"[VNPY LOG - MDGW Processed] {gateway_name} - {log.msg}") # Changed self.logger to logger
-            # --- Manually send multipart message for log ---
-            try:
-                topic_bytes = b"log"
-                data_bytes = pickle.dumps(log)
-                # Directly access self._socket_pub
-                self._socket_pub.send_multipart([topic_bytes, data_bytes])
-                # logger.debug(f"手动发送 multipart Log 成功") # <-- 注释掉
-            except AttributeError:
-                 logger.error("AttributeError: 无法直接访问 self._socket_pub！RpcServer 内部可能已更改。") # Changed self.logger to logger
-            except Exception as e_manual_log_send:
-                logger.exception(f"手动发送 multipart Log 时出错: {e_manual_log_send}") # Changed self.logger to logger
-            # --- End manual send ---
+            logger.log(logger_level, f"[VNPY LOG - MDGW Processed] {gateway_name} - {log.msg}")
+            # --- Use the publish method from ZmqPublisherBase --- 
+            topic = "log"
+            success = self.publish(topic, log)
+            if not success:
+                 logger.error(f"发布 Log 失败 (主题: {topic})")
+            # --- End use publish method --- 
 
         elif event_type == EVENT_CONTRACT:
             contract: ContractData = event.data
-            # self.publish(f"contract.{contract.vt_symbol}", contract) # <-- Commented out problematic call
-            # logger.debug(f"发布合约信息: {contract.vt_symbol}")
-            # --- Manually send multipart message for contract ---
-            try:
-                topic_bytes = f"contract.{contract.vt_symbol}".encode('utf-8')
-                data_bytes = pickle.dumps(contract)
-                 # Directly access self._socket_pub
-                self._socket_pub.send_multipart([topic_bytes, data_bytes])
-                # logger.debug(f"手动发送 multipart Contract 成功 (主题: {topic_bytes.decode()})") # <-- 注释掉
-            except AttributeError:
-                 logger.error("AttributeError: 无法直接访问 self._socket_pub！RpcServer 内部可能已更改。") # Changed self.logger to logger
-            except Exception as e_manual_contract_send:
-                 logger.exception(f"手动发送 multipart Contract 时出错: {e_manual_contract_send}") # Changed self.logger to logger
-             # --- End manual send ---
+            # --- Use the publish method from ZmqPublisherBase --- 
+            topic = f"contract.{contract.vt_symbol}"
+            success = self.publish(topic, contract)
+            if not success:
+                 logger.error(f"发布 Contract 失败 (主题: {topic})")
+            # --- End use publish method --- 
 
-    def start(self, rep_address=None, pub_address=None):
-        """Starts the RpcServer, EventEngine, and connects the gateway."""
-        if self.is_active():
-            logger.warning(f"行情网关服务(RPC模式) for [{self.environment_name}] 已在运行中。")
-            return
+    def start(self, pub_address=None):
+        """Starts the publisher, EventEngine, and connects the gateway."""
+        # Use pub_address from config
+        pub_address = config.MARKET_DATA_PUB_ADDRESS
+        
+        # 1. Start the ZmqPublisherBase (binds PUB socket)
+        if not super().start(pub_address=pub_address):
+             logger.error(f"无法启动 ZmqPublisherBase (绑定到 {pub_address})，行情网关启动中止。")
+             return # Don't proceed if publisher fails to start
 
-        logger.info(f"启动行情网关服务(RPC模式) for [{self.environment_name}]...")
-
-        # 1. Start the RpcServer (binds sockets, starts threads)
-        try:
-            # Use addresses from config
-            super().start(
-                rep_address=config.MARKET_DATA_REP_ADDRESS,
-                pub_address=config.MARKET_DATA_PUB_ADDRESS
-            )
-            logger.info(f"RPC 服务器已启动。 REP: {config.MARKET_DATA_REP_ADDRESS}, PUB: {config.MARKET_DATA_PUB_ADDRESS}") # Changed self.logger to logger
-        except Exception as err:
-            logger.exception(f"启动 RPC 服务器失败: {err}") # Changed self.logger to logger
-            return # Don't proceed if RPC server fails
+        # If publisher started successfully, proceed with the rest
+        logger.info(f"行情网关服务 for [{self.environment_name}] 正在启动...")
 
         # 2. Start the EventEngine
         self.event_engine.register(EVENT_TICK, self.process_event)
         self.event_engine.register(EVENT_LOG, self.process_event)
         self.event_engine.register(EVENT_CONTRACT, self.process_event)
         self.event_engine.start()
-        logger.info("事件引擎已启动。") # Changed self.logger to logger
+        logger.info("事件引擎已启动。")
 
         # 3. Connect CTP Gateway
-        logger.info(f"连接 CTP 网关 for [{self.environment_name}]...") # Changed self.logger to logger
+        logger.info(f"连接 CTP 网关 for [{self.environment_name}]...")
         if not self.ctp_setting:
-            logger.error("CTP settings not loaded or environment invalid, cannot connect CTP gateway.") # Changed self.logger to logger
+            logger.error("CTP settings not loaded or environment invalid, cannot connect CTP gateway.")
+            self.stop() # Attempt cleanup if CTP setting missing
             return
         try:
-            logger.info(f"CTP 连接配置 (Env: {self.environment_name}): UserID={self.ctp_setting.get('userid')}, " # Changed self.logger to logger
+            logger.info(f"CTP 连接配置 (Env: {self.environment_name}): UserID={self.ctp_setting.get('userid')}, "
                              f"BrokerID={self.ctp_setting.get('broker_id')}, MD={self.ctp_setting.get('md_address')}")
+            # Clear the connection event before connecting
+            self._ctp_connection_event.clear()
+            self._ctp_connected = False
+            
             self.gateway.connect(self.ctp_setting)
-            logger.info("CTP 网关连接请求已发送。等待连接成功...") # Changed self.logger to logger
+            logger.info(f"CTP 网关连接请求已发送。等待连接成功信号 (超时: {CTP_CONNECTION_TIMEOUT_S}s)...")
 
-            # Wait for connection (replace sleep with event-driven logic if possible)
-            # TODO: Implement waiting for a specific CTP connection success event/log
-            time.sleep(10)
-            # Restore custom logger
-            logger.info("CTP 网关假定连接成功（基于延时）。") # Changed self.logger to logger
+            # Wait for the connection success event from process_event
+            connected = self._ctp_connection_event.wait(timeout=CTP_CONNECTION_TIMEOUT_S)
+
+            if not connected:
+                logger.error(f"CTP 行情连接超时 ({CTP_CONNECTION_TIMEOUT_S}s)！未收到登录成功信号。")
+                self.stop()
+                return
+            
+            # If connected is True, proceed with subscriptions
+            logger.info("CTP 行情网关连接成功。")
 
             # 4. Subscribe to market data
-            logger.info("订阅行情...") # Changed self.logger to logger
+            logger.info("订阅行情...")
             self._subscribe_list = []
+            subscribe_count = 0
+            failed_symbols = []
             for vt_symbol in config.SUBSCRIBE_SYMBOLS:
                 try:
                     symbol, exchange_str = vt_symbol.split('.')
@@ -201,45 +197,56 @@ class MarketDataGatewayService(RpcServer):
                     req = SubscribeRequest(symbol=symbol, exchange=exchange)
                     self.gateway.subscribe(req)
                     self._subscribe_list.append(vt_symbol)
-                    logger.info(f"发送订阅请求: {vt_symbol}") # Changed self.logger to logger
-                    time.sleep(0.5) # Avoid flood
+                    # Log first few and periodically, avoid excessive logging
+                    if subscribe_count < 5 or subscribe_count % 50 == 0:
+                         logger.info(f"发送订阅请求: {vt_symbol}")
+                    subscribe_count += 1
                 except ValueError:
-                     logger.error(f"错误的合约格式，跳过订阅: {vt_symbol} (应为 SYMBOL.EXCHANGE)") # Changed self.logger to logger
+                     logger.error(f"错误的合约格式，跳过订阅: {vt_symbol} (应为 SYMBOL.EXCHANGE)")
+                     failed_symbols.append(vt_symbol)
                 except Exception as err:
-                     logger.exception(f"订阅 {vt_symbol} 时出错: {err}") # Changed self.logger to logger
-            logger.info(f"已发送 {len(self._subscribe_list)} 个合约的订阅请求。") # Changed self.logger to logger
+                     logger.exception(f"订阅 {vt_symbol} 时出错: {err}")
+                     failed_symbols.append(vt_symbol)
+            logger.info(f"共发送 {subscribe_count} 个合约的订阅请求。")
+            if failed_symbols:
+                logger.warning(f"以下合约订阅失败或跳过: {', '.join(failed_symbols)}")
 
         except Exception as err:
-            logger.exception(f"连接或订阅 CTP 网关时发生严重错误 (Env: {self.environment_name}): {err}") # Changed self.logger to logger
+            logger.exception(f"连接或订阅 CTP 网关时发生严重错误 (Env: {self.environment_name}): {err}")
             self.stop() # Attempt to clean up if connection fails
 
-        logger.info(f"行情网关服务(RPC模式) for [{self.environment_name}] 启动流程完成。") # Changed self.logger to logger
+        logger.info(f"行情网关服务 for [{self.environment_name}] 启动流程完成。")
 
 
     def stop(self):
         """Stops the service and cleans up resources."""
+        # Check if base class is active first
         if not self.is_active():
-            logger.warning(f"行情网关服务(RPC模式) for [{self.environment_name}] 未运行。") # Changed self.logger to logger
+            # logger.warning(f"行情网关服务 for [{self.environment_name}] 未运行。")
             return
 
-        logger.info(f"停止行情网关服务(RPC模式) for [{self.environment_name}]...") # Changed self.logger to logger
+        logger.info(f"停止行情网关服务 for [{self.environment_name}]...")
 
-        # 1. Stop the EventEngine first to prevent new events processing
+        # Set the connection event just in case the start thread is still waiting
+        # Prevents potential deadlock during shutdown if start fails mid-wait
+        self._ctp_connection_event.set()
+
+        # 1. Stop the EventEngine first to prevent processing more events
         try:
-            if hasattr(self.event_engine, '_active') and self.event_engine._active: # Use _active attribute check
+            if hasattr(self.event_engine, '_active') and self.event_engine._active:
                 self.event_engine.stop()
-                logger.info("事件引擎已停止。") # Changed self.logger to logger
+                logger.info("事件引擎已停止。")
         except Exception as err:
-            logger.exception(f"停止事件引擎时出错: {err}") # Changed self.logger to logger
+            logger.exception(f"停止事件引擎时出错: {err}")
 
         # 2. Close the CTP Gateway connection
         if self.gateway:
             try:
                 self.gateway.close()
-                logger.info("CTP 网关已关闭。") # Changed self.logger to logger
+                logger.info("CTP 网关已关闭。")
             except Exception as err:
-                logger.exception(f"关闭 CTP 网关时出错: {err}") # Changed self.logger to logger
+                logger.exception(f"关闭 CTP 网关时出错: {err}")
 
-        # 3. Stop the RpcServer (closes sockets, terminates context, joins threads)
+        # 3. Stop the ZmqPublisherBase (closes PUB socket, terminates context)
         super().stop()
-        logger.info(f"行情网关服务(RPC模式) for [{self.environment_name}] 已停止。")
+        # Base class stop method already logs its completion
