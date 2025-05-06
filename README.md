@@ -233,7 +233,7 @@ hatch build
 
 3. 运行策略引擎：
 
-   <img src="assets/run_strategy_subscriber.png" style="zoom:67%;" />
+   <img src="assets/run_strategy_engine.png" style="zoom:67%;" />
 
 4. 运行风控管理：
 

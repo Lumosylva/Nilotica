@@ -230,7 +230,7 @@ hatch build
 
 3. Run the strategy engine:
 
-<img src="assets/run_strategy_subscriber.png" style="zoom:67%;" />
+<img src="assets/run_strategy_engine.png" style="zoom:67%;" />
 
 4. Operational risk control management:
 
