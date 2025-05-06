@@ -5,7 +5,6 @@ import zmq
 import time
 import sys
 import os
-import pickle
 import logging
 import msgpack
 from utils.logger import logger
@@ -74,7 +73,7 @@ class StrategyEngine: # Renamed class
         logger.info(f"策略引擎连接行情发布器: {gateway_pub_url}")
         logger.info(f"策略引擎连接回报发布器: {order_report_url}")
 
-        # --- Change REQ to PUSH for order sending --- 
+        # --- Change REQ to PUSH for order sending ---
         # self.order_requester = self.context.socket(zmq.REQ)
         # self.order_requester.setsockopt(zmq.LINGER, 0)
         # self.order_requester.connect(order_req_url)
@@ -82,7 +81,7 @@ class StrategyEngine: # Renamed class
         # self.order_pusher.setsockopt(zmq.LINGER, 0)
         # self.order_pusher.connect(order_req_url)
         # logger.info(f"策略引擎连接订单推送器 (PUSH): {order_req_url}")
-        # --- Setup REQ socket for RPC communication (Live Mode) --- 
+        # --- Setup REQ socket for RPC communication (Live Mode) ---
         self.order_requester = self.context.socket(zmq.REQ)
         self.order_requester.setsockopt(zmq.LINGER, 0)
         self.order_requester.connect(order_gw_rep_url)

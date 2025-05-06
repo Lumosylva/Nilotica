@@ -21,11 +21,14 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import local config (need to adjust relative path)
-try:
-    from zmq_services import config
-except ImportError:
-     print("无法导入 zmq_services.config。请确保路径设置正确。")
+# try:
+#     from zmq_services import config
+# except ImportError:
+#      print("无法导入 zmq_services.config。请确保路径设置正确。")
      # Define fallback config values if necessary for testing standalone
+# --- Use the same top-level config import as run_data_player --- 
+# from config import zmq_config as config
+# --- End Use top-level import ---
 
 # --- Data Player Service ---
 class DataPlayerService:
@@ -50,67 +53,70 @@ class DataPlayerService:
         self.running = False
 
     def load_data(self) -> bool:
-        """Loads tick data from the specified file."""
+        """Loads tick data from the specified single file."""
+        # --- Reverted logic to load single combined file --- 
         logger.info(f"尝试从 {self.tick_data_file} 加载数据...")
         if not os.path.exists(self.tick_data_file):
             logger.error(f"错误: 数据文件不存在: {self.tick_data_file}")
             return False
 
+        self.all_ticks = [] # Ensure list is clear before loading
+        loaded_count = 0
+        total_lines = 0
+
+        logger.info(f"  正在加载文件: {self.tick_data_file}")
         try:
-            loaded_count = 0 # Initialize count
             with open(self.tick_data_file, 'r', encoding='utf-8') as f:
-                for line in f:
+                for line_num, line in enumerate(f, 1):
+                    total_lines += 1
                     try:
                         record = json.loads(line.strip())
-                        original_message = record.get("data") # Get data part which should be the original message
-                        if original_message and isinstance(original_message, dict): # Basic check if it's a dict
-                            # Extract necessary info for playback
-                            original_ts_ns = record.get("reception_timestamp_ns") # Use reception time as primary key
-                            topic_str = record.get("zmq_topic")
-                            
-                            # Simulate the message format expected by StrategyEngine (topic, pickled data)
-                            # Here, original_message IS the data object (like TickData dict)
-                            try:
-                                # We need to pickle the data part again
-                                pickled_data_bytes = pickle.dumps(original_message)
-                            except pickle.PicklingError as pe:
-                                 logger.warning(f"Pickle 序列化错误 for data in record: {pe}. Record: {record}")
-                                 continue # Skip this record
-                                 
-                            topic_bytes = topic_str.encode('utf-8')
+                        # Use the inner 'data' field which is the dict representation of the VNPY object
+                        data_dict = record.get("data")
+                        if not isinstance(data_dict, dict):
+                            logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] 跳过记录，'data' 字段不是字典: {record}")
+                            continue
 
-                            if original_ts_ns and topic_str:
-                                self.all_ticks.append((original_ts_ns, topic_bytes, pickled_data_bytes))
-                                loaded_count += 1
-                            else:
-                                logger.warning(f"警告: 跳过缺少时间戳或主题的记录: {record}")
-                        else:
-                            logger.warning(f"警告: 记录中缺少 'data' 或格式不正确: {record}")
+                        original_ts_ns = record.get("reception_timestamp_ns") # Use reception time
+                        topic_str = record.get("zmq_topic")
+
+                        if not original_ts_ns or not topic_str:
+                            logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] 跳过记录，缺少时间戳或主题: {record}")
+                            continue
+
+                        # --- Serialize the data_dict using msgpack --- 
+                        try:
+                            # No need to convert again, 'data' is already the dict from convert_vnpy_obj_to_dict
+                            msgpacked_data_bytes = msgpack.packb(data_dict, use_bin_type=True)
+                        except (msgpack.PackException, TypeError) as pe:
+                            logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] Msgpack 序列化错误: {pe}. Data: {data_dict}")
+                            continue # Skip this record
+                        # --- End Serialize ---
+                             
+                        topic_bytes = topic_str.encode('utf-8')
+                        self.all_ticks.append((original_ts_ns, topic_bytes, msgpacked_data_bytes))
+                        loaded_count += 1
 
                     except json.JSONDecodeError as e:
-                        logger.warning(f"警告: 解析 JSON 行时出错: {e}. 行: {line.strip()}")
-                    except msgpack.PackException as e:
-                         logger.warning(f"警告: 重新打包消息时出错: {e}. 消息: {original_message}")
-                    except Exception as e:
-                         logger.warning(f"警告: 处理记录时发生未知错误: {e}. 记录: {record}")
+                        logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] 解析 JSON 行时出错: {e}. 行: {line.strip()}")
+                    except Exception as e_line:
+                        logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] 处理记录时发生未知错误: {e_line}. 记录: {record}")
+        except IOError as e_io:
+            logger.error(f"读取文件 {self.tick_data_file} 时出错: {e_io}")
+            return False # Stop if file reading fails
+        except Exception as e_file:
+            logger.exception(f"加载文件 {self.tick_data_file} 时发生未知错误: {e_file}")
+            return False # Stop on other file loading errors
+        # --- End Reverted logic ---
 
-            if not self.all_ticks:
-                logger.error("错误：未能从文件中加载任何有效的 Tick 数据。")
-                return False
-
-            # Sort data by original timestamp
-            self.all_ticks.sort(key=lambda x: x[0])
-            logger.info(f"数据加载完成并排序。总共 {loaded_count} 条有效 Tick 数据。")
-            return True
-
-        except IOError as e:
-            logger.error(f"读取文件 {self.tick_data_file} 时出错: {e}")
+        if not self.all_ticks:
+            logger.error(f"错误：未能从文件 {self.tick_data_file} 中加载任何有效的 Tick 数据 (共处理 {total_lines} 行)。")
             return False
-        except Exception as e:
-             logger.exception(f"加载数据时发生未知错误: {e}")
-             import traceback
-             traceback.print_exc()
-             return False
+
+        # Sort data by original timestamp
+        self.all_ticks.sort(key=lambda x: x[0])
+        logger.info(f"数据加载完成并排序。总共 {loaded_count} 条有效 Tick 数据 (来自文件: {os.path.basename(self.tick_data_file)}, 共 {total_lines} 行)。")
+        return True
 
     def start_playback(self, playback_speed: float = 0):
         """

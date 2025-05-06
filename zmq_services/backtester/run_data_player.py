@@ -1,4 +1,3 @@
-import time
 import sys
 import os
 import argparse
@@ -13,13 +12,9 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import the service class and config
-try:
-    from zmq_services.backtester.data_player import DataPlayerService
-    from config import zmq_config as config
-except ImportError as e:
-    # Use print here because logger might not be set up yet
-    print(f"CRITICAL: Error importing modules: {e}. Ensure paths are correct and dependencies installed.")
-    sys.exit(1)
+from zmq_services.backtester.data_player import DataPlayerService
+from config import zmq_config as config
+
 
 def main():
     """Runs the data player service."""
