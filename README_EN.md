@@ -293,25 +293,25 @@ Connect the market information publisher (market information gateway) and the or
 1. Replay today's data at maximum speed.
 
      ```bash
-     python zmq_services/backtester/run_data_player.py
+     python -m zmq_services.backtester.run_data_player
      ```
 
 3. Play back data from a specified date (e.g. 20250409) at near real-time speed (1x)
 
      ```bash
-     python zmq_services/backtester/run_data_player.py --date 20250409 --speed 1
+     python -m zmq_services.backtester.run_data_player --date 20250506 --speed 1
      ```
 
   4. Play back the data of the specified date at 10 times the speed
 
      ```bash
-     python zmq_services/backtester/run_data_player.py --date 20250409 --speed 10
+     python -m zmq_services.backtester.run_data_player --date 20250506 --speed 10
      ```
 
   5. Load data from different paths for playback
 
      ```bash
-     python zmq_services/backtester/run_data_player.py --date 20250409 --path /path/to/other/data
+     python -m zmq_services.backtester.run_data_player --date 20250506 --path /path/to/other/data
      ```
 
 - [ ] More precise costing: If needed, more complex costing methods such as FIFO or LIFO can be implemented.

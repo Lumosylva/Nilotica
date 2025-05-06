@@ -296,25 +296,25 @@ hatch build
   1. 回放今天的数据，以最大速度。
 
      ```bash
-     python zmq_services/backtester/run_data_player.py
+     python -m zmq_services.backtester.run_data_player
      ```
 
   3. 回放指定日期 (例如 20250409) 的数据，以接近实时的速度 (1x)
 
      ```bash
-     python zmq_services/backtester/run_data_player.py --date 20250409 --speed 1
+     python -m zmq_services.backtester.run_data_player --date 20250506 --speed 1
      ```
 
   4. 回放指定日期的数据，以 10 倍速度
 
      ```bash
-     python zmq_services/backtester/run_data_player.py --date 20250409 --speed 10
+     python -m zmq_services.backtester.run_data_player --date 20250506 --speed 10
      ```
 
   5. 从不同路径加载数据回放
 
      ```bash
-     python zmq_services/backtester/run_data_player.py --date 20250409 --path /path/to/other/data
+     python -m zmq_services.backtester.run_data_player --date 20250506 --path /path/to/other/data
      ```
 
 - [ ] 更精确的成本计算：如果需要，可以实现更复杂的成本计算方法，如 FIFO 或 LIFO。
