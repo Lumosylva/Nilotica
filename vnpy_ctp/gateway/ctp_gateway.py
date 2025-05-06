@@ -371,7 +371,7 @@ class CtpMdApi(MdApi):
         # 禁止重复发起连接，会导致异常崩溃
         if not self.connect_status:
             path: Path = get_folder_path(self.gateway_name.lower())
-            self.createFtdcMdApi((str(path) + "\\Md").encode("GBK"))
+            self.createFtdcMdApi((str(path) + "\\Md").encode("GBK").decode("utf-8"))  # 加上utf-8编码，否则中文路径会乱码
 
             self.registerFront(address)
             self.init()
