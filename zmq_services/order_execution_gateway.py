@@ -177,7 +177,7 @@ class OrderExecutionGatewayService(RpcServer):
         # VNPY setup
         self.event_engine = EventEngine()
         # Add env name to gateway name for potential clarity if running multiple
-        self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_TD_{environment_name}")
+        self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_{environment_name}")
 
         # --- Load and Select CTP Settings --- 
         self.ctp_setting: dict | None = None

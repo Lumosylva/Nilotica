@@ -58,7 +58,7 @@ class MarketDataGatewayService(ZmqPublisherBase):
         self.event_engine = EventEngine()
 
         # Create CTP gateway instance
-        self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_MD_{environment_name}")
+        self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_{environment_name}")
 
         # --- CTP Connection State --- 
         self._ctp_connected: bool = False
