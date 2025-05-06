@@ -89,6 +89,10 @@ class MarketDataGatewayService(ZmqPublisherBase):
         event_type = event.type
         if event_type == EVENT_TICK:
             tick: TickData = event.data
+            # +++ Add a very prominent log here +++
+            # logger.critical(f"@@@ EVENT_TICK RECEIVED in process_event for {tick.vt_symbol} @ {tick.datetime} - LastPrice: {tick.last_price} @@@") # <-- REMOVED
+            # +++ End Add +++
+
             logger.debug(f"发布Tick: {tick.vt_symbol} - Price: {tick.last_price}")
             # --- Use the publish method from ZmqPublisherBase --- 
             topic = f"tick.{tick.vt_symbol}"

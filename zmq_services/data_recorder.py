@@ -13,6 +13,11 @@ from collections import defaultdict
 from utils.logger import logger
 from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, ContractData, LogData
 from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status, Product, OptionType
+import msgpack # Add import
+
+# +++ Import the converter function +++
+# from .zmq_base import convert_vnpy_obj_to_dict # REMOVED (Relative import)
+from utils.converter import convert_vnpy_obj_to_dict # UPDATED IMPORT
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -65,51 +70,6 @@ class DataRecorderService:
         self.running = False
         # Log the instance's batch size
         logger.info(f"记录器批处理大小设置为: {self.batch_write_size}")
-
-    # +++ Add Helper Function to Convert VNPY Objects +++
-    def _convert_vnpy_obj_to_dict(self, obj: object) -> Any:
-        """Converts known VNPY objects to JSON-serializable dicts."""
-        if isinstance(obj, (TickData, OrderData, TradeData, AccountData, ContractData, LogData)):
-            d = obj.__dict__.copy() # Use a copy to avoid modifying original object's dict
-            for key, value in d.items():
-                if isinstance(value, (Direction, OrderType, Exchange, Offset, Status, Product, OptionType)):
-                    d[key] = value.value if value else None # Convert Enum to its value
-                elif isinstance(value, datetime):
-                    d[key] = value.isoformat() if value else None # Convert datetime to ISO string
-                elif isinstance(value, (list, tuple)):
-                    # Recursively convert items in lists/tuples if they are complex objects (basic implementation)
-                    try:
-                        d[key] = [self._convert_vnpy_obj_to_dict(item) for item in value]
-                    except TypeError: # Handle cases where list contains non-convertible items
-                        logger.warning(f"Could not convert items in list/tuple for key '{key}', using string representation.")
-                        d[key] = str(value)
-                elif not isinstance(value, (str, int, float, bool, dict, type(None))):
-                    # Handle other potential non-serializable types
-                    # Check if it has __dict__ as a generic approach
-                    if hasattr(value, '__dict__'):
-                         d[key] = self._convert_vnpy_obj_to_dict(value) # Recursive call
-                    else:
-                        logger.warning(f"Unhandled type '{type(value)}' for key '{key}', converting to string.")
-                        d[key] = str(value)
-            return d
-        elif isinstance(obj, dict):
-             # If it's already a dict, try converting its values recursively
-             return {k: self._convert_vnpy_obj_to_dict(v) for k, v in obj.items()}
-        elif isinstance(obj, (list, tuple)):
-            try:
-                 return [self._convert_vnpy_obj_to_dict(item) for item in obj]
-            except TypeError:
-                 logger.warning(f"Could not convert items in list/tuple, using string representation.")
-                 return str(obj)
-        elif isinstance(obj, (str, int, float, bool, type(None))):
-            return obj # Basic types are fine
-        elif isinstance(obj, datetime):
-             return obj.isoformat() # Handle standalone datetime
-        else:
-            # Fallback for completely unknown types
-            logger.warning(f"Unknown object type '{type(obj)}' encountered, converting to string.")
-            return str(obj)
-    # +++ End Helper Function +++
 
     def get_log_filename(self, topic: str) -> str | None:
         """Determines the log filename based on topic prefix."""
@@ -174,8 +134,14 @@ class DataRecorderService:
             if not filename:
                 return
 
-            data_obj = pickle.loads(data_bytes)
-            record_data = self._convert_vnpy_obj_to_dict(data_obj)
+            # Replace pickle.loads with msgpack.unpackb
+            # data_obj = pickle.loads(data_bytes)
+            data_obj = msgpack.unpackb(data_bytes, raw=False) # Use raw=False for auto string decoding
+
+            # +++ Call the imported function +++
+            # record_data = self._convert_vnpy_obj_to_dict(data_obj) # Old call removed
+            record_data = convert_vnpy_obj_to_dict(data_obj) # Call imported function
+            # +++ End call +++
 
             record = {
                 "zmq_topic": topic_str,
@@ -198,8 +164,8 @@ class DataRecorderService:
                  self._write_batch_to_file(filename_to_flush, batch_to_flush_data)
             # --- End Flush --- 
 
-        except pickle.UnpicklingError as e_pickle:
-            logger.error(f"Pickle 解码错误: {e_pickle}. Topic bytes: {topic_bytes!r}")
+        except (msgpack.UnpackException, msgpack.exceptions.ExtraData, TypeError, ValueError) as e_msgpack: # Catch broader msgpack errors
+            logger.error(f"Msgpack 解码错误: {e_msgpack}. Topic bytes: {topic_bytes!r}")
             # --- Save undecodable message to binary file --- 
             undecodable_filename = self.get_log_filename("__undecodable__")
             if undecodable_filename:

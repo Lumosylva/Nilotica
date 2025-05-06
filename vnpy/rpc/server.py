@@ -4,6 +4,7 @@ from time import time
 from collections.abc import Callable
 
 import zmq
+import msgpack
 
 from .common import HEARTBEAT_TOPIC, HEARTBEAT_INTERVAL
 
@@ -112,7 +113,20 @@ class RpcServer:
                 continue
 
             # Receive request data from Reply socket
-            req = self._socket_rep.recv_pyobj()
+            req_bytes = self._socket_rep.recv()
+            try:
+                req = msgpack.unpackb(req_bytes, raw=False)
+            except (msgpack.UnpackException, TypeError, ValueError) as e_unpack:
+                error_msg = f"Msgpack unpack error in RpcServer.run: {e_unpack}"
+                print(error_msg) # Or use logger if available
+                rep = [False, traceback.format_exc()]
+                # Pack and send error response
+                try:
+                    rep_bytes = msgpack.packb(rep, use_bin_type=True)
+                    self._socket_rep.send(rep_bytes)
+                except (msgpack.PackException, TypeError) as e_pack:
+                    print(f"Msgpack pack error sending error response: {e_pack}") # Or logger
+                continue # Skip processing this invalid request
 
             # Get function name and parameters
             name, args, kwargs = req
@@ -126,7 +140,11 @@ class RpcServer:
                 rep = [False, traceback.format_exc()]
 
             # send callable response by Reply socket
-            self._socket_rep.send_pyobj(rep)
+            try:
+                rep_bytes = msgpack.packb(rep, use_bin_type=True)
+                self._socket_rep.send(rep_bytes)
+            except (msgpack.PackException, TypeError) as e_pack:
+                 print(f"Msgpack pack error sending response for {name}: {e_pack}") # Or logger
 
         # Unbind socket address
         self._socket_pub.unbind(str(self._socket_pub.LAST_ENDPOINT))
@@ -137,7 +155,11 @@ class RpcServer:
         Publish data
         """
         with self._lock:
-            self._socket_pub.send_pyobj([topic, data])
+            try:
+                 packed_data = msgpack.packb([topic, data], use_bin_type=True)
+                 self._socket_pub.send(packed_data)
+            except (msgpack.PackException, TypeError) as e_pack:
+                 print(f"Msgpack pack error in RpcServer.publish (Topic: {topic}): {e_pack}") # Or logger
 
     def register(self, func: Callable) -> None:
         """

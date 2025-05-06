@@ -6,6 +6,7 @@ import time
 import sys
 import os
 import json
+import msgpack # +++ Add msgpack import +++
 from datetime import datetime, timedelta
 from collections import deque
 
@@ -42,6 +43,9 @@ except ImportError:
 
 # --- Serialization/Deserialization Helpers (Adapted from gateways) ---
 # We need these to process incoming requests and format outgoing reports
+
+# +++ Import the converter function +++
+from utils.converter import convert_vnpy_obj_to_dict # UPDATED IMPORT
 
 def create_tick_from_dict(tick_dict: dict) -> Optional[TickData]:
     """Creates a TickData object from a dictionary, handling potential errors."""
@@ -224,8 +228,10 @@ class SimulationEngineService:
 
         try:
             topic = topic_str.encode('utf-8')
-            packed_message = pickle.dumps(tick_object)
-            # --- End Pickle ---
+            # --- Convert object to dict THEN msgpack --- 
+            dict_data = convert_vnpy_obj_to_dict(tick_object)
+            packed_message = msgpack.packb(dict_data, use_bin_type=True)
+            # --- End Convert and Pack ---
             # +++ Log published topic using processed_count +++
             # --- FIX: Correct log frequency condition --- 
             if processed_count % 5000 == 1: # Log every 5000th tick (using the CORRECT loop counter)
@@ -233,8 +239,8 @@ class SimulationEngineService:
             # --- End FIX --- 
             # +++ End Log +++
             self.md_publisher.send_multipart([topic, packed_message])
-        except pickle.PicklingError as e:
-             logger.error(f"Pickle序列化Tick对象时出错 (Topic: {topic_str}): {e}")
+        except (msgpack.PackException, TypeError) as e_msgpack:
+             logger.error(f"Msgpack序列化Tick字典时出错 (Topic: {topic_str}): {e_msgpack}")
         except Exception as e:
             logger.error(f"发布模拟 Tick (Topic: {topic_str}) 时出错: {e}") 
     # --- End Modification ---
@@ -243,10 +249,10 @@ class SimulationEngineService:
         """Non-blockingly checks for and processes new order requests."""
         while True: 
             try:
-                # --- Still receive pickled request tuple --- 
+                # --- Receive msgpack request bytes --- 
                 packed_request = self.order_puller.recv(flags=zmq.NOBLOCK)
-                request_tuple = pickle.loads(packed_request) # Expecting ("send_order", (req_dict,), {})
-                # --- End Receive --- 
+                request_tuple = msgpack.unpackb(packed_request, raw=False) # Expecting ("send_order", (req_dict,), {})
+                # --- End Receive and Unpack ---
 
                 # +++ Add DEBUG log after receiving tuple +++
                 logger.debug(f"check_for_new_orders: Received request tuple: {request_tuple}")
@@ -292,6 +298,8 @@ class SimulationEngineService:
                 break # No more messages waiting
             except pickle.UnpicklingError as e:
                 logger.error(f"反序列化订单请求时出错: {e}")
+            except (msgpack.UnpackException, TypeError, ValueError) as e_unpack:
+                 logger.error(f"Msgpack反序列化订单请求时出错: {e_unpack}")
             except Exception as e:
                 logger.exception(f"处理订单请求时发生未知错误: {e}")
 
@@ -439,13 +447,13 @@ class SimulationEngineService:
         topic_str = f"order.{vt_symbol}" # Use generic order topic now
         try:
             topic = topic_str.encode('utf-8')
-            # --- Pickle the OBJECT --- 
-            packed_message = pickle.dumps(order_object)
-            # --- End Pickle --- 
+            # --- Convert object to dict THEN msgpack --- 
+            dict_data = convert_vnpy_obj_to_dict(order_object)
+            packed_message = msgpack.packb(dict_data, use_bin_type=True)
+            # --- End Convert and Pack ---
             self.report_publisher.send_multipart([topic, packed_message])
-        except pickle.PicklingError as e:
-            sim_time_str = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            logger.error(f"[{sim_time_str}] Pickle序列化Order对象时出错 (Status: {status.value}, Order: {vt_orderid}): {e}")
+        except (msgpack.PackException, TypeError) as e_msgpack:
+             logger.error(f"Msgpack序列化Order字典时出错 (Status: {status.value}, Order: {vt_orderid}): {e_msgpack}")
         except Exception as e:
             sim_time_str = datetime.fromtimestamp(self.current_tick_time_ns / 1_000_000_000).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             logger.error(f"[{sim_time_str}] 发布订单回报 (状态: {status.value}, 订单: {vt_orderid}) 时出错: {e}") 
@@ -545,12 +553,13 @@ class SimulationEngineService:
         topic_str = f"trade.{vt_symbol}" # Use generic trade topic
         try:
             topic = topic_str.encode('utf-8')
-            # --- Pickle the OBJECT --- 
-            packed_message = pickle.dumps(trade_object)
-            # --- End Pickle ---
+            # --- Convert object to dict THEN msgpack --- 
+            dict_data = convert_vnpy_obj_to_dict(trade_object)
+            packed_message = msgpack.packb(dict_data, use_bin_type=True)
+            # --- End Convert and Pack ---
             self.report_publisher.send_multipart([topic, packed_message])
-        except pickle.PicklingError as e:
-             logger.error(f"Pickle序列化Trade对象时出错 (Trade: {vt_tradeid}): {e}")
+        except (msgpack.PackException, TypeError) as e_msgpack:
+             logger.error(f"Msgpack序列化Trade字典时出错 (Trade: {vt_tradeid}): {e_msgpack}")
         except Exception as e:
              logger.error(f"发布成交回报 (Trade: {vt_tradeid}) 时出错: {e}")
     # --- End Modification ---

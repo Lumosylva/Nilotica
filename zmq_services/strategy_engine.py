@@ -7,6 +7,7 @@ import sys
 import os
 import pickle
 import logging
+import msgpack
 from utils.logger import logger
 import importlib
 
@@ -21,9 +22,12 @@ if project_root not in sys.path:
 from config import zmq_config as config
 
 # Import vnpy constants if needed for constructing order requests
-from vnpy.trader.constant import Direction, OrderType, Exchange, Offset
+from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status
 from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, LogData # Added AccountData, LogData, TickData
 
+# +++ Import helper functions for recreating objects +++
+from vnpy.trader.utility import extract_vt_symbol
+from datetime import datetime
 
 # Constants for Health Checks
 from datetime import datetime, time as dt_time # For trading hours check
@@ -38,13 +42,13 @@ HEARTBEAT_TIMEOUT_S = getattr(config, 'HEARTBEAT_TIMEOUT_SECONDS', 10.0) # Get f
 
 # --- Strategy Engine (Renamed from StrategySubscriber) ---
 class StrategyEngine: # Renamed class
-    def __init__(self, gateway_pub_url: str, order_req_url: str, order_report_url: str, strategies_config: Dict[str, Dict[str, Any]]):
+    def __init__(self, gateway_pub_url: str, order_gw_rep_url: str, order_report_url: str, strategies_config: Dict[str, Dict[str, Any]]):
         """
         Initializes the strategy engine, loads strategies, and sets up communication.
 
         Args:
             gateway_pub_url: ZMQ PUB URL for market data.
-            order_req_url: ZMQ REQ URL for sending order requests (to Order Gateway REP).
+            order_gw_rep_url: ZMQ REQ URL for sending order requests/RPC (to Order Gateway REP).
             order_report_url: ZMQ PUB URL for receiving order/trade reports.
             strategies_config: Configuration for strategies to load.
                 Example:
@@ -74,11 +78,18 @@ class StrategyEngine: # Renamed class
         # self.order_requester = self.context.socket(zmq.REQ)
         # self.order_requester.setsockopt(zmq.LINGER, 0)
         # self.order_requester.connect(order_req_url)
-        self.order_pusher = self.context.socket(zmq.PUSH)
-        self.order_pusher.setsockopt(zmq.LINGER, 0)
-        self.order_pusher.connect(order_req_url)
-        logger.info(f"策略引擎连接订单推送器 (PUSH): {order_req_url}")
-        # --- End Change --- 
+        # self.order_pusher = self.context.socket(zmq.PUSH)
+        # self.order_pusher.setsockopt(zmq.LINGER, 0)
+        # self.order_pusher.connect(order_req_url)
+        # logger.info(f"策略引擎连接订单推送器 (PUSH): {order_req_url}")
+        # --- Setup REQ socket for RPC communication (Live Mode) --- 
+        self.order_requester = self.context.socket(zmq.REQ)
+        self.order_requester.setsockopt(zmq.LINGER, 0)
+        self.order_requester.connect(order_gw_rep_url)
+        logger.info(f"策略引擎连接订单网关 REQ Socket (RPC): {order_gw_rep_url}")
+        # PUSH socket is only needed for backtesting, not created here.
+        self.order_pusher = None
+        # --- End Change ---
         # --- End ZMQ Setup ---
 
         # --- Strategy Loading and Management ---
@@ -148,25 +159,30 @@ class StrategyEngine: # Renamed class
         # --- End Strategy Loading ---
 
         # --- Determine Backtest Mode --- 
-        self.is_backtest_mode = False
-        # --- FIX: Compare passed URL with expected backtest URL --- 
-        expected_backtest_connect_url = config.BACKTEST_ORDER_REQUEST_PULL_URL.replace("*", "localhost")
-        if order_req_url == expected_backtest_connect_url:
-        # --- End FIX --- 
-            self.is_backtest_mode = True
-            logger.info("策略引擎检测到回测模式 (基于订单请求 URL)。")
-        else:
-            logger.info(f"策略引擎检测到实盘模式 (订单请求 URL: {order_req_url} 不匹配预期回测 URL: {expected_backtest_connect_url})。")
-        # --- End Determine Backtest Mode --- 
+        # Assuming running from run_strategy_engine.py means Live Mode
+        self.is_backtest_mode = False 
+        logger.info("策略引擎运行在实盘模式 (基于启动脚本 run_strategy_engine.py)。")
+        # --- End Determine Backtest Mode ---
 
-        # --- Update Subscription Logic ---
+        # --- Update Subscription Logic --- 
+        # --- Restore original subscription logic ---
+        # logger.info("DEBUG: Subscribing to ALL topics (\"\") on SUB socket.")
+        # try:
+        #     self.subscriber.subscribe(b"") # Subscribe to everything
+        # except Exception as sub_err:
+        #      logger.error(f"DEBUG: Failed to subscribe to all topics: {sub_err}")
+        # --- End Subscribe ALL ---
+
+        # --- Original subscription logic (Restored) ---
         self.subscribe_topics = []
+        # --- FIX: Change TICK. to tick. --- 
         self.topic_map = {
-            "tick": "TICK.", 
+            "tick": "tick.", # <-- LOWERCASE
             "trade": "trade.", "order": "order.",
             "account": "account.", "contract": "contract.", "log": "log",
             "heartbeat_ordergw": "heartbeat.ordergw" # 添加心跳主题
         }
+        # --- End FIX ---
 
         if not self.subscribed_symbols:
             logger.warning("没有加载任何策略或策略未指定合约，将不订阅任何特定合约数据！")
@@ -196,7 +212,7 @@ class StrategyEngine: # Renamed class
         # Logging the list is more reliable than getsockopt across versions
         logger.debug(f"Final SUB socket subscriptions list: {self.subscribe_topics}")
         # +++ End Log +++
-        # --- End Subscription Logic ---
+        # --- End Original Subscription Logic ---
 
         # --- Health Status Flags & Timers (Mostly unchanged) ---
         self.market_data_ok = True
@@ -224,7 +240,15 @@ class StrategyEngine: # Renamed class
         logger.info("所有策略初始化完成。")
 
         # Set a smaller high water mark for the subscriber socket
-        self.subscriber.set(zmq.RCVHWM, 5)
+        # self.subscriber.set(zmq.RCVHWM, 5) # <-- REMOVED OLD VALUE
+        # +++ Increase RCVHWM significantly +++
+        new_rcvhwm = 5000 # Or 1000, or higher if needed
+        try:
+            self.subscriber.set(zmq.RCVHWM, new_rcvhwm)
+            logger.info(f"为 SUB socket 设置了 ZMQ.RCVHWM: {new_rcvhwm}")
+        except Exception as e:
+             logger.error(f"为 SUB socket 设置 ZMQ.RCVHWM 时出错: {e}")
+        # +++ End Increase +++
 
     # --- RPC Helper (Should only be called in Live mode) --- 
     def _send_rpc_request(self, request_tuple: tuple, timeout_ms: int = RPC_TIMEOUT_MS, retries: int = RPC_RETRIES) -> Any | None:
@@ -259,7 +283,7 @@ class StrategyEngine: # Renamed class
                 poller.register(self.order_requester, zmq.POLLIN)
 
                 # Serialize and send request
-                packed_request = pickle.dumps(request_tuple)
+                packed_request = msgpack.packb(request_tuple, use_bin_type=True)
                 logger.debug(f"{log_prefix} Sending request...")
                 self.order_requester.send(packed_request)
 
@@ -267,7 +291,7 @@ class StrategyEngine: # Renamed class
                 readable = dict(poller.poll(timeout_ms))
                 if self.order_requester in readable and readable[self.order_requester] & zmq.POLLIN:
                     packed_reply = self.order_requester.recv()
-                    reply = pickle.loads(packed_reply)
+                    reply = msgpack.unpackb(packed_reply, raw=False)
 
                     # Check RpcServer reply format [True/False, result/traceback]
                     if isinstance(reply, (list, tuple)) and len(reply) == 2:
@@ -303,11 +327,8 @@ class StrategyEngine: # Renamed class
                      logger.error(f"与订单执行网关的连接丢失 (ZMQ Error {e.errno})!")
                 self.gateway_connected = False
                 return None # Indicate failure
-            except pickle.PicklingError as e:
-                 logger.exception(f"{log_prefix} 序列化 RPC 请求时出错: {e}")
-                 return None # Indicate failure
-            except pickle.UnpicklingError as e:
-                 logger.exception(f"{log_prefix} 反序列化 RPC 回复时出错: {e}")
+            except (msgpack.UnpackException, TypeError, ValueError) as e_unpack:
+                 logger.exception(f"{log_prefix} Msgpack反序列化 RPC 回复时出错: {e_unpack}")
                  return None # Indicate failure
             except Exception as e:
                 logger.exception(f"{log_prefix} 处理 RPC 时发生未知错误：{e}")
@@ -510,6 +531,14 @@ class StrategyEngine: # Renamed class
         # +++ Define poll_timeout_ms here +++
         poll_timeout_ms = 1000 # Check every second
 
+        # +++ Force initial ping on start +++
+        if not self.is_backtest_mode:
+            logger.info("启动后立即尝试 Ping 订单网关以建立初始连接状态...")
+            self._send_ping() 
+            # Optional: Add a small sleep to allow ping reply processing if needed
+            # time.sleep(0.1) 
+        # +++ End Force initial ping +++
+
         while self.running:
             try:
                 poller = zmq.Poller()
@@ -517,16 +546,23 @@ class StrategyEngine: # Renamed class
                 socks = dict(poller.poll(poll_timeout_ms))
 
                 if self.subscriber in socks and socks[self.subscriber] == zmq.POLLIN:
-                    parts = self.subscriber.recv_multipart(zmq.NOBLOCK)
-                    # +++ Log received parts +++
-                    if len(parts) == 2:
-                        topic_bytes, data_bytes = parts
-                        # Log lengths or partial content for confirmation
-                        logger.debug(f"Received multipart: Topic bytes len={len(topic_bytes)}, Data bytes len={len(data_bytes)}")
-                    else:
-                        logger.warning(f"Received unexpected multipart count: {len(parts)}. Parts: {parts}")
-                        continue
-                    # +++ End Log parts +++
+                    # +++ Add DEBUG log for raw received parts +++
+                    try:
+                        parts = self.subscriber.recv_multipart(zmq.NOBLOCK)
+                        if len(parts) == 2:
+                            topic_bytes, data_bytes = parts
+                            # Log only the topic and data length for brevity
+                            logger.debug(f"StrategyEngine Recv Loop: Received parts. Topic Bytes: {topic_bytes!r} (len={len(topic_bytes)}), Data Bytes Len: {len(data_bytes)}")
+                        else:
+                            logger.warning(f"StrategyEngine Recv Loop: Received unexpected multipart count: {len(parts)}. Parts: {parts}")
+                            continue # Skip processing this message
+                    except zmq.Again:
+                         logger.debug("StrategyEngine Recv Loop: zmq.Again caught on recv_multipart (should be rare after poll)")
+                         continue # No message available despite poll?
+                    except Exception as recv_err:
+                         logger.error(f"StrategyEngine Recv Loop: Error during recv_multipart: {recv_err}")
+                         continue # Skip processing on receive error
+                    # +++ End Add DEBUG log +++
 
                     if not self.running: break # Check running state again after recv
 
@@ -536,11 +572,12 @@ class StrategyEngine: # Renamed class
                         logger.debug(f"Decoded topic: '{topic_str}'")
                         # +++ End Log topic +++
 
-                        data_obj = pickle.loads(data_bytes)
+                        # Replace pickle with msgpack
+                        data_obj = msgpack.unpackb(data_bytes, raw=False)
                         # +++ Log object type and module UNCONDITIONALLY +++
                         obj_type = type(data_obj)
                         obj_module = getattr(data_obj.__class__, '__module__', 'N/A') # Get module name
-                        logger.debug(f"Pickle decoded: Object Type='{obj_type.__name__}', Module='{obj_module}'")
+                        logger.debug(f"Msgpack decoded: Object Type='{obj_type.__name__}', Module='{obj_module}'")
                         # +++ End Log type/module +++
 
                         # --- Event Dispatching (using data_obj and topic_map) ---
@@ -552,41 +589,99 @@ class StrategyEngine: # Renamed class
                                     self.process_tick(vt_symbol, data_obj)
                                 else:
                                     logger.warning(f"TickData object on topic {topic_str} is missing 'vt_symbol' attribute.")
+                            # +++ FIX: Pass dict to reconstruction helper +++
+                            elif isinstance(data_obj, dict): # Check if it's a dict
+                                 # --- Try to reconstruct TickData from dict ---
+                                 tick_object_from_dict = create_tick_from_dict(data_obj)
+                                 if tick_object_from_dict:
+                                     logger.debug(f"Successfully reconstructed TickData from dict for topic {topic_str}")
+                                     vt_symbol = getattr(tick_object_from_dict, 'vt_symbol', None)
+                                     if vt_symbol:
+                                         self.process_tick(vt_symbol, tick_object_from_dict)
+                                     else:
+                                         logger.warning(f"Reconstructed TickData object from dict is missing 'vt_symbol'. Topic: {topic_str}")
+                                 else:
+                                     logger.warning(f"Failed to reconstruct TickData from dict received on tick topic {topic_str}. Dict: {data_obj}")
+                                 # --- End Reconstruction ---
+                            # +++ End FIX +++
                             else:
-                                logger.warning(f"Received non-TickData object on tick topic {topic_str}: Type='{obj_type.__name__}', Module='{obj_module}'")
+                                logger.warning(f"Received non-TickData/non-dict object on tick topic {topic_str}: Type='{obj_type.__name__}', Module='{obj_module}'")
                         elif topic_str.startswith(self.topic_map["order"]):
+                            # +++ FIX: Handle dict or object +++
                             if isinstance(data_obj, OrderData):
-                                self.process_order_update(data_obj)
+                                self.process_order_update(data_obj) # Pass object
+                            elif isinstance(data_obj, dict):
+                                 order_object_from_dict = create_order_from_dict(data_obj)
+                                 if order_object_from_dict:
+                                     logger.debug(f"Successfully reconstructed OrderData from dict for topic {topic_str}")
+                                     self.process_order_update(order_object_from_dict)
+                                 else:
+                                     logger.warning(f"Failed to reconstruct OrderData from dict received on order topic {topic_str}. Dict: {data_obj}")
+                            # +++ End FIX +++
                             else:
-                                logger.warning(f"Received non-OrderData object on order topic {topic_str}: {type(data_obj)}")
+                                logger.warning(f"Received non-OrderData/non-dict object on order topic {topic_str}: {type(data_obj)}")
                         elif topic_str.startswith(self.topic_map["trade"]):
+                            # +++ FIX: Handle dict or object +++
                             if isinstance(data_obj, TradeData):
-                                self.process_trade_update(data_obj)
+                                self.process_trade_update(data_obj) # Pass object
+                            elif isinstance(data_obj, dict):
+                                trade_object_from_dict = create_trade_from_dict(data_obj)
+                                if trade_object_from_dict:
+                                     logger.debug(f"Successfully reconstructed TradeData from dict for topic {topic_str}")
+                                     self.process_trade_update(trade_object_from_dict)
+                                else:
+                                     logger.warning(f"Failed to reconstruct TradeData from dict received on trade topic {topic_str}. Dict: {data_obj}")
+                            # +++ End FIX +++
                             else:
-                                logger.warning(f"Received non-TradeData object on trade topic {topic_str}: {type(data_obj)}")
+                                logger.warning(f"Received non-TradeData/non-dict object on trade topic {topic_str}: {type(data_obj)}")
                         elif topic_str.startswith(self.topic_map["account"]):
+                            # +++ FIX: Handle dict or object +++
+                            account_object = None
                             if isinstance(data_obj, AccountData):
-                                self.process_account_update(data_obj)
+                                account_object = data_obj
+                            elif isinstance(data_obj, dict):
+                                account_object = create_account_from_dict(data_obj)
+                            # +++ End FIX +++
+                            if account_object:
+                                self.process_account_update(account_object) # Pass object
                             else:
-                                logger.warning(f"Received non-AccountData object on account topic {topic_str}: {type(data_obj)}")
+                                logger.warning(f"Received non-AccountData/non-dict or failed reconstruction on account topic {topic_str}. Original Type: {type(data_obj)}")
                         elif topic_str == self.topic_map["log"]: # Exact match for log
-                             if isinstance(data_obj, LogData):
-                                 self.process_log(data_obj)
-                             else:
-                                 logger.warning(f"Received non-LogData object on log topic: {type(data_obj)}")
+                            # +++ FIX: Handle dict or object +++
+                            log_object = None
+                            if isinstance(data_obj, LogData):
+                                log_object = data_obj
+                            elif isinstance(data_obj, dict):
+                                log_object = create_log_from_dict(data_obj)
+                            # +++ End FIX +++
+                            if log_object:
+                                self.process_log(log_object) # Pass object
+                            else:
+                                logger.warning(f"Received non-LogData/non-dict or failed reconstruction on log topic {topic_str}. Original Type: {type(data_obj)}")
                         elif topic_str.startswith(self.topic_map["contract"]):
+                             # +++ FIX: Handle dict or object (if needed) +++
+                             # If strategies need contract info, reconstruct here
+                             # contract_object = None
+                             # if isinstance(data_obj, ContractData): contract_object = data_obj
+                             # elif isinstance(data_obj, dict): contract_object = create_contract_from_dict(data_obj) # Assuming this helper exists
+                             # if contract_object: self.process_contract_update(contract_object)
+                             # else: logger...
+                             # +++ End FIX +++
                              pass # Ignore contract data for now
                         elif topic_str == self.topic_map["heartbeat_ordergw"]: # Exact match for heartbeat
-                             if isinstance(data_obj, float): # Expecting float timestamp
-                                 self.process_ordergw_heartbeat(data_obj)
+                             # --- NEW CHECK: Expecting dict --- 
+                             if isinstance(data_obj, dict):
+                                 self.process_ordergw_heartbeat(data_obj) # Pass the dict
                              else:
-                                 logger.warning(f"Received non-float object on heartbeat topic: {type(data_obj)}")
+                                 logger.warning(f"Received non-dict object on heartbeat topic: {type(data_obj)}")
                         # +++ End Use topic_map +++
                         else:
                             logger.warning(f"未知的消息主题: {topic_str}")
 
-                    except pickle.UnpicklingError as e:
-                        logger.error(f"Pickle 解码错误: {e}. Topic: {topic_bytes.decode('utf-8', errors='ignore')}")
+                    except (msgpack.UnpackException, TypeError, ValueError) as e_unpack:
+                        # +++ Add more details to unpack error log +++
+                        logger.error(f"Msgpack 解码错误: {e_unpack}. Topic: '{topic_bytes.decode('utf-8', errors='ignore')}', Data (first 100 bytes): {data_bytes[:100]!r}")
+                        # +++ End Add details +++
                     except Exception as msg_proc_e:
                         logger.exception(f"处理订阅消息时出错 (Topic: {topic_bytes.decode('utf-8', errors='ignore')}): {msg_proc_e}")
 
@@ -662,45 +757,64 @@ class StrategyEngine: # Renamed class
         # self.stop() # Ensure cleanup is called <<< REMOVED
 
 
-    # --- Original Processing Methods (Now receive objects) ---
+    # --- FIX: Update methods to handle dictionaries --- 
+    # --- FIX: Update methods to handle OBJECTS (after reconstruction) --- 
 
-    def process_tick(self, vt_symbol: str, tick: TickData):
+    def process_tick(self, vt_symbol: str, tick_object: TickData):
         """Dispatch tick data (TickData object) to relevant strategies."""
         self.last_tick_time[vt_symbol] = time.time() # Update timeout tracker
         
         strategies_for_symbol = self.symbol_strategy_map.get(vt_symbol, [])
         if strategies_for_symbol:
+            # --- REMOVED Object creation here, it's done in start loop --- 
+            # try:
+            #      tick_object = create_tick_from_dict(tick_dict)
+            #      if not tick_object: return
+            # except Exception as e:
+            #      logger.error(f"Error creating TickData object from dict in process_tick: {e}")
+            #      return
+
             for strategy in strategies_for_symbol:
                 if strategy.trading: 
                     try:
                         # --- Log before calling strategy.on_tick --- 
                         logger.debug(f"process_tick: Calling strategy '{strategy.strategy_name}' on_tick for vt_symbol '{vt_symbol}'.")
                         # --- End Log ---
-                        strategy.on_tick(tick)
+                        # Pass the object to the strategy
+                        strategy.on_tick(tick_object) # PASS OBJECT
                     except Exception as e:
                          logger.exception(f"策略 {strategy.strategy_name} 在 on_tick 处理 {vt_symbol} 时出错: {e}")
 
-    def process_order_update(self, order: OrderData):
+    def process_order_update(self, order_object: OrderData):
         """Dispatch order update (OrderData object) to relevant strategies."""
-        vt_symbol = getattr(order, 'vt_symbol', None)
-        if not vt_symbol:
-            logger.warning(f"Order update received without vt_symbol: {order}")
-            return
+        # Use object attributes
+        vt_symbol = order_object.vt_symbol
+        vt_orderid = order_object.vt_orderid
+        # if not vt_symbol or not vt_orderid: # Redundant check if object creation succeeded
+        #     logger.warning(f"Order object received without vt_symbol or vt_orderid: {order_object}")
+        #     return
         
-        logger.debug(f"process_order_update: Received OrderID={order.vt_orderid} Status={order.status}")
+        status_str = order_object.status.value # Get status value
+        logger.debug(f"process_order_update: Received OrderID={vt_orderid} Status={status_str}")
+
+        # --- REMOVED Object creation here --- 
+        # order_object = create_order_from_dict(order_dict)
+        # if not order_object: return
 
         strategies_for_symbol = self.symbol_strategy_map.get(vt_symbol, [])
         if strategies_for_symbol:
             for strategy in strategies_for_symbol:
                  try:
-                     strategy.on_order(order)
+                     strategy.on_order(order_object) # PASS OBJECT
                  except Exception as e:
-                     logger.exception(f"策略 {strategy.strategy_name} 在 on_order 处理 {order.vt_orderid} 时出错: {e}")
+                     logger.exception(f"策略 {strategy.strategy_name} 在 on_order 处理 {vt_orderid} 时出错: {e}")
 
-    def process_trade_update(self, trade: TradeData):
+    def process_trade_update(self, trade_object: TradeData):
         """Dispatch trade update (TradeData object) to relevant strategies, handling duplicates."""
-        vt_symbol = getattr(trade, 'vt_symbol', None)
-        vt_tradeid = getattr(trade, 'vt_tradeid', None)
+        # Use object attributes
+        vt_symbol = trade_object.vt_symbol
+        vt_tradeid = trade_object.vt_tradeid
+        vt_orderid = trade_object.vt_orderid
 
         # --- Duplicate Check --- 
         if vt_tradeid:
@@ -713,53 +827,79 @@ class StrategyEngine: # Renamed class
             logger.warning("Trade update received without vt_tradeid, cannot check for duplicates.")
         # --- End Duplicate Check ---
 
-        if not vt_symbol:
-            logger.warning(f"Trade update received without vt_symbol: {trade}")
-            return
+        # if not vt_symbol: # Redundant check
+        #     logger.warning(f"Trade update received without vt_symbol: {trade_object}")
+        #     return
 
-        logger.info(f"收到成交回报: {trade.vt_symbol} OrderID: {trade.vt_orderid} TradeID: {vt_tradeid} Offset: {trade.offset.value if hasattr(trade,'offset') else trade.offset} Price: {trade.price} Vol: {trade.volume}")
-        self.trades.append(trade) 
+        # Log using object attributes
+        offset_str = trade_object.offset.value
+        price = trade_object.price
+        volume = trade_object.volume
+        logger.info(f"收到成交回报: {vt_symbol} OrderID: {vt_orderid} TradeID: {vt_tradeid} Offset: {offset_str} Price: {price} Vol: {volume}")
+        # self.trades.append(trade_object) # Store object if needed
+
+        # --- REMOVED Object creation here --- 
+        # trade_object = create_trade_from_dict(trade_dict)
+        # if not trade_object: return
 
         strategies_for_symbol = self.symbol_strategy_map.get(vt_symbol, [])
         if strategies_for_symbol:
             for strategy in strategies_for_symbol:
                  try:
-                     strategy.on_trade(trade)
+                     strategy.on_trade(trade_object) # PASS OBJECT
                  except Exception as e:
                      logger.exception(f"策略 {strategy.strategy_name} 在 on_trade 处理 {vt_tradeid} 时出错: {e}")
 
-    def process_account_update(self, account: AccountData):
+    def process_account_update(self, account_object: AccountData):
         """Dispatch account data update (AccountData object) to relevant strategies."""
-        accountid = getattr(account, 'accountid', 'N/A')
+        # Use object attributes
+        accountid = account_object.accountid
         logger.debug(f"process_account_update: Received update for AccountID: '{accountid}'")
+
+        # --- REMOVED Object creation here --- 
+        # account_object = create_account_from_dict(account_dict)
+        # if not account_object: return
 
         for strategy in self.strategies.values():
              if hasattr(strategy, 'on_account'):
                  try:
-                     strategy.on_account(account)
+                     strategy.on_account(account_object) # PASS OBJECT
                  except Exception as e:
                      logger.exception(f"策略 {strategy.strategy_name} 在 on_account 处理时出错: {e}")
 
-    def process_log(self, log: LogData):
-        """Processes log messages from gateways (log globally)."""
-        gateway_name = getattr(log, 'gateway_name', 'UnknownGW')
-        msg = getattr(log, 'msg', '')
-        level = getattr(log, 'level', logging.INFO) # Default to INFO
+    def process_log(self, log_object: LogData):
+        """Processes log messages (LogData object) from gateways (log globally)."""
+        # --- REMOVED Object creation here --- 
+        # log_object = create_log_from_dict(log_dict)
+        # if not log_object: return
+
+        gateway_name = log_object.gateway_name
+        msg = log_object.msg
+        level_int = log_object.level # Already int
 
         # Use the engine's logger
         log_func = logger.info # Default
-        if level == logging.DEBUG: log_func = logger.debug
-        elif level == logging.WARNING: log_func = logger.warning
-        elif level == logging.ERROR: log_func = logger.error
-        elif level == logging.CRITICAL: log_func = logger.critical
+        if level_int == logging.DEBUG: log_func = logger.debug
+        elif level_int == logging.WARNING: log_func = logger.warning
+        elif level_int == logging.ERROR: log_func = logger.error
+        elif level_int == logging.CRITICAL: log_func = logger.critical
 
         log_func(f"[GW LOG - {gateway_name}] {msg}")
 
-    def process_ordergw_heartbeat(self, heartbeat_ts: float):
-        """Processes heartbeat message (float timestamp) from OrderExecutionGateway."""
+    def process_ordergw_heartbeat(self, heartbeat_dict: dict):
+        """Processes heartbeat message (dictionary) from OrderExecutionGateway."""
+        # Assuming heartbeat message is now a dict like {'timestamp': float}
+        heartbeat_ts = heartbeat_dict.get('timestamp')
+        if heartbeat_ts is None or not isinstance(heartbeat_ts, (float, int)):
+             logger.warning(f"Received invalid format for heartbeat: {heartbeat_dict}")
+             return
+
         try:
             now_ts = time.time()
-            logger.debug(f"(DEBUG HB Recv) TS={datetime.fromtimestamp(heartbeat_ts).isoformat()}, NOW={datetime.fromtimestamp(now_ts).isoformat()}")
+            # Log using ISO format for consistency
+            heartbeat_dt_str = datetime.fromtimestamp(heartbeat_ts).isoformat()
+            now_dt_str = datetime.fromtimestamp(now_ts).isoformat()
+            logger.debug(f"(DEBUG HB Recv) TS={heartbeat_dt_str}, NOW={now_dt_str}")
             self.last_ordergw_heartbeat_time = now_ts # Record reception time
 
             # +++ Set initial connection time only once +++
@@ -802,7 +942,7 @@ class StrategyEngine: # Renamed class
         logger.info("正在关闭策略引擎 ZMQ Sockets...")
         sockets_to_close = [
             self.subscriber, 
-            self.order_pusher
+            self.order_requester
         ]
 
         for sock in sockets_to_close:
@@ -817,3 +957,127 @@ class StrategyEngine: # Renamed class
         # --- End Add Socket Closing Logic ---
 
         # Context termination is handled by the caller (run_backtest.py)
+
+# Helper function to create OrderData from dict (handle potential errors)
+def create_order_from_dict(d: dict) -> Optional[OrderData]:
+    try:
+        symbol, exchange = extract_vt_symbol(d['vt_symbol'])
+        order = OrderData(
+            gateway_name=d.get('gateway_name', 'GATEWAY'), # Use default if missing
+            symbol=symbol,
+            exchange=exchange,
+            orderid=d['orderid'],
+            direction=Direction(d['direction']), # Enum from value
+            offset=Offset(d.get('offset', Offset.NONE.value)), # Enum from value
+            type=OrderType(d['type']), # Enum from value
+            price=float(d.get('price', 0.0)),
+            volume=float(d['volume']),
+            traded=float(d.get('traded', 0.0)),
+            status=Status(d['status']), # Enum from value
+            datetime=datetime.fromisoformat(d['datetime']) if d.get('datetime') else datetime.now()
+        )
+        order.vt_symbol = d['vt_symbol'] # Ensure vt_symbol is set
+        order.vt_orderid = d['vt_orderid']
+        return order
+    except (KeyError, ValueError, TypeError) as e:
+        logger.error(f"Error creating OrderData from dict: {e}. Dict: {d}")
+        return None
+
+# Helper function to create TradeData from dict
+def create_trade_from_dict(d: dict) -> Optional[TradeData]:
+    try:
+        symbol, exchange = extract_vt_symbol(d['vt_symbol'])
+        trade = TradeData(
+            gateway_name=d.get('gateway_name', 'GATEWAY'),
+            symbol=symbol,
+            exchange=exchange,
+            orderid=d['orderid'],
+            tradeid=d['tradeid'],
+            direction=Direction(d['direction']), # Enum from value
+            offset=Offset(d.get('offset', Offset.NONE.value)), # Enum from value
+            price=float(d['price']),
+            volume=float(d['volume']),
+            datetime=datetime.fromisoformat(d['datetime']) if d.get('datetime') else datetime.now()
+        )
+        trade.vt_symbol = d['vt_symbol']
+        trade.vt_orderid = d['vt_orderid']
+        trade.vt_tradeid = d['vt_tradeid']
+        # Add commission if present in dict
+        trade.commission = float(d.get('commission', 0.0))
+        return trade
+    except (KeyError, ValueError, TypeError) as e:
+        logger.error(f"Error creating TradeData from dict: {e}. Dict: {d}")
+        return None
+
+# Helper function to create TickData from dict (simplified)
+def create_tick_from_dict(d: dict) -> Optional[TickData]:
+    try:
+        symbol, exchange = extract_vt_symbol(d['vt_symbol'])
+        # Create TickData with necessary fields, add more if strategies need them
+        tick = TickData(
+            gateway_name=d.get('gateway_name', 'GATEWAY'),
+            symbol=symbol,
+            exchange=exchange,
+            datetime=datetime.fromisoformat(d['datetime']) if d.get('datetime') else datetime.now(),
+            last_price=float(d.get('last_price', 0.0)),
+            volume=float(d.get('volume', 0.0)), # Cumulative volume
+            ask_price_1=float(d.get('ask_price_1', 0.0)),
+            bid_price_1=float(d.get('bid_price_1', 0.0)),
+            ask_volume_1=float(d.get('ask_volume_1', 0.0)),
+            bid_volume_1=float(d.get('bid_volume_1', 0.0))
+            # Add other fields like open, high, low, pre_close, open_interest etc. if needed
+        )
+        tick.vt_symbol = d['vt_symbol']
+        return tick
+    except (KeyError, ValueError, TypeError) as e:
+        logger.error(f"Error creating TickData from dict: {e}. Dict: {d}")
+        return None
+
+# Helper function to create AccountData from dict
+def create_account_from_dict(d: dict) -> Optional[AccountData]:
+    try:
+        account = AccountData(
+            gateway_name=d.get('gateway_name', 'GATEWAY'),
+            accountid=d['accountid'],
+            balance=float(d.get('balance', 0.0)),
+            frozen=float(d.get('frozen', 0.0))
+            # Add other fields like available, commission, margin etc. if present
+        )
+        account.available = float(d.get('available', account.balance - account.frozen)) # Calculate if missing
+        return account
+    except (KeyError, ValueError, TypeError) as e:
+        logger.error(f"Error creating AccountData from dict: {e}. Dict: {d}")
+        return None
+
+# Helper function to create LogData from dict
+def create_log_from_dict(d: dict) -> Optional[LogData]:
+    try:
+        # --- FIX: Handle integer log level --- 
+        level_input = d.get('level', logging.INFO) # Default to INFO if missing
+        log_level = logging.INFO # Default
+        if isinstance(level_input, int):
+            # Map common logging level integers back to constants
+            level_map_int = {
+                logging.CRITICAL: logging.CRITICAL,
+                logging.ERROR: logging.ERROR,
+                logging.WARNING: logging.WARNING,
+                logging.INFO: logging.INFO,
+                logging.DEBUG: logging.DEBUG,
+                logging.NOTSET: logging.NOTSET
+            }
+            log_level = level_map_int.get(level_input, logging.INFO) # Use map, default INFO
+        elif isinstance(level_input, str):
+            # If it's a string, try getting attribute after converting to upper
+            log_level = getattr(logging, level_input.upper(), logging.INFO)
+        # Else: Keep default INFO if type is unexpected
+        # --- End FIX ---
+
+        log = LogData(
+            gateway_name=d.get('gateway_name', 'GATEWAY'),
+            msg=d.get('msg', ''),
+            level=log_level # Use the determined log_level
+        )
+        return log
+    except (KeyError, ValueError, TypeError) as e:
+        logger.error(f"Error creating LogData from dict: {e}. Dict: {d}")
+        return None

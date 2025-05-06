@@ -1,9 +1,25 @@
 # zmq_services/zmq_base.py
 import zmq
 import pickle
+import msgpack
 import threading
 import time
+from typing import Any # Add Any import
+from datetime import datetime # Add datetime import
+from decimal import Decimal # Add Decimal import
 from utils.logger import logger
+
+# +++ Add VNPY imports needed for the converter +++
+# from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, ContractData, LogData # REMOVED
+# from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status, Product, OptionType # REMOVED
+# +++ End VNPY imports +++
+
+
+# +++ Add the converter function (adapted from DataRecorder) +++
+# def convert_vnpy_obj_to_dict(obj: object) -> Any: # --- ENTIRE FUNCTION REMOVED --- 
+#     ...
+# +++ End converter function +++
+
 
 class ZmqPublisherBase:
     """
@@ -111,14 +127,7 @@ class ZmqPublisherBase:
 
     def publish(self, topic: str, data: object) -> bool:
         """
-        使用 pickle 序列化数据并通过 PUB socket 发布。
-
-        Args:
-            topic: 消息主题 (str).
-            data: 要发布的数据对象.
-
-        Returns:
-            True 如果发布成功，False 如果发生错误或服务未激活。
+        Converts data to a dict (if needed), serializes with msgpack, and publishes.
         """
         if not self._active or not self._socket_pub:
             logger.warning(f"发布失败：{self.__class__.__name__} 未激活或 PUB socket 不可用。 Topic: {topic}")
@@ -126,7 +135,12 @@ class ZmqPublisherBase:
 
         try:
             topic_bytes = topic.encode('utf-8')
-            data_bytes = pickle.dumps(data)
+            # +++ Convert data before packing +++
+            # --- IMPORT the converter function --- 
+            from utils.converter import convert_vnpy_obj_to_dict
+            data_to_pack = convert_vnpy_obj_to_dict(data)
+            # +++ End conversion +++
+            data_bytes = msgpack.packb(data_to_pack, use_bin_type=True) # Pack the converted data
 
             # 使用锁保护 socket 发送操作
             with self._lock:
@@ -134,16 +148,39 @@ class ZmqPublisherBase:
                 if not self._active or not self._socket_pub:
                     logger.warning(f"发布取消：在获取锁后发现服务已停止。Topic: {topic}")
                     return False
+                # +++ Add specific logging for tick sending +++
+                send_attempted = False
+                send_succeeded = False
+                if topic.startswith("tick."):
+                    logger.debug(f"[PUB Tick Send] Attempting send_multipart for Topic: {topic}")
+                    send_attempted = True
+                # +++ End Add +++
                 self._socket_pub.send_multipart([topic_bytes, data_bytes])
-            # logger.debug(f"Published topic: {topic}") # 减少日志噪音
+                # +++ Log success for tick +++
+                if send_attempted:
+                    logger.debug(f"[PUB Tick Send] send_multipart call completed for Topic: {topic}")
+                    send_succeeded = True # Assume success if no exception
+                # +++ End Log +++
+            # --- Adjust general publish log level to DEBUG --- 
+            # logger.debug(f"已发布数据 (主题: {topic}, 大小: {len(data_bytes)} B)") # Keep as DEBUG
+            # --- End Adjust ---
             return True
-        except zmq.ZMQError as e:
+        except (msgpack.PackException, TypeError) as e_msgpack:
+            logger.error(f"Msgpack 序列化错误 (发布数据, 主题: {topic}): {e_msgpack}") # Renamed
+            try:
+                # Log the type of the *original* data and the *converted* data
+                logger.error(f"  原始对象类型: {type(data)}")
+                logger.error(f"  转换后对象类型: {type(data_to_pack)}")
+            except Exception as log_err:
+                 logger.error(f"  记录对象细节时出错: {log_err}")
+            return False
+        except zmq.ZMQError as e_zmq:
             # 处理特定 ZMQ 错误，例如缓冲区满 (EAGAIN)
-            if e.errno == zmq.EAGAIN:
-                logger.warning(f"发布消息时 ZMQ 缓冲区可能已满 (EAGAIN). Topic: {topic}")
+            if e_zmq.errno == zmq.EAGAIN:
+                logger.warning(f"发布事件时 ZMQ 缓冲区可能已满 (EAGAIN). Topic: {topic}")
             else:
-                logger.error(f"发布消息时 ZMQ 错误: {e}. Topic: {topic}")
+                logger.error(f"发布事件时 ZMQ 错误: {e_zmq}. Topic: {topic}")
             return False
         except Exception as e:
-            logger.exception(f"发布消息时序列化或发送出错: {e}. Topic: {topic}")
+            logger.exception(f"发布事件时发生未知错误 (主题: {topic}): {e}")
             return False 

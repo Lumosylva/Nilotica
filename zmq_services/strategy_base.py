@@ -7,6 +7,7 @@ from utils.logger import setup_logging, logger
 import pickle
 import time
 import zmq
+import msgpack
 from vnpy.trader.constant import Direction, Offset, Exchange, Status, OrderType
 
 # Import necessary vnpy types
@@ -251,17 +252,20 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             }
             req_tuple = ("send_order", (order_req_dict,), {})
             try:
-                packed_request = pickle.dumps(req_tuple)
-                # --- Use order_pusher socket --- 
-                self.strategy_engine.order_pusher.send(packed_request) 
-                # --- End Use order_pusher --- 
+                # packed_request = pickle.dumps(req_tuple) # --- Replaced with msgpack ---
+                packed_request = msgpack.packb(req_tuple, use_bin_type=True)
+                # --- Use order_pusher socket ---
+                self.strategy_engine.order_pusher.send(packed_request)
+                # --- End Use order_pusher ---
                 vt_orderid = f"clientsim_{self.strategy_name}_{int(time.time_ns())}" 
                 logger.info(f"Backtest Mode: Sent order request tuple for {vt_orderid}")
             except pickle.PicklingError as e:
                  logger.error(f"Backtest Mode: Failed to pickle order request: {e}")
+            except (msgpack.PackException, TypeError) as e_pack:
+                 logger.error(f"Backtest Mode: Failed to msgpack order request: {e_pack}")
             except zmq.ZMQError as e:
                  logger.error(f"Backtest Mode: ZMQ error sending order request: {e}")
-            # --- End Backtest Send --- 
+            # --- End Backtest Send ---
         else:
             # --- Live Trading: Use RPC (via engine's method) --- 
             logger.debug("Live Mode: Sending order via RPC.")

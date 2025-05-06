@@ -4,6 +4,7 @@ from functools import lru_cache
 from typing import Any
 
 import zmq
+import msgpack
 
 from .common import HEARTBEAT_TOPIC, HEARTBEAT_TOLERANCE
 
@@ -67,7 +68,12 @@ class RpcClient:
 
             # Send request and wait for response
             with self._lock:
-                self._socket_req.send_pyobj(req)
+                try:
+                    req_bytes = msgpack.packb(req, use_bin_type=True)
+                    self._socket_req.send(req_bytes)
+                except (msgpack.PackException, TypeError) as e_pack:
+                    # Propagate packing error as RemoteException?
+                    raise RemoteException(f"Msgpack pack error in RpcClient request: {e_pack}")
 
                 # Timeout reached without any data
                 n: int = self._socket_req.poll(timeout)
@@ -75,7 +81,13 @@ class RpcClient:
                     msg: str = f"Timeout of {timeout}ms reached for {req}"
                     raise RemoteException(msg)
 
-                rep = self._socket_req.recv_pyobj()
+                # rep = self._socket_req.recv_pyobj() # --- Replaced with recv + unpackb ---
+                rep_bytes = self._socket_req.recv()
+                try:
+                    rep = msgpack.unpackb(rep_bytes, raw=False)
+                except (msgpack.UnpackException, TypeError, ValueError) as e_unpack:
+                    # Propagate unpacking error
+                    raise RemoteException(f"Msgpack unpack error in RpcClient response: {e_unpack}")
 
             # Return response if successed; Trigger exception if failed
             if rep[0]:
@@ -137,7 +149,22 @@ class RpcClient:
                 continue
 
             # Receive data from subscribe socket
-            topic, data = self._socket_sub.recv_pyobj(flags=zmq.NOBLOCK)
+            # topic, data = self._socket_sub.recv_pyobj(flags=zmq.NOBLOCK) # --- Replaced with recv + unpackb ---
+            try:
+                packed_data = self._socket_sub.recv(flags=zmq.NOBLOCK)
+                unpacked_data = msgpack.unpackb(packed_data, raw=False)
+                # Expecting [topic, data] structure from server publish
+                if isinstance(unpacked_data, (list, tuple)) and len(unpacked_data) == 2:
+                     topic, data = unpacked_data
+                else:
+                     # Log error if format is unexpected
+                     print(f"RpcClient received unexpected data format on SUB socket: {unpacked_data}") # Or logger
+                     continue
+            except zmq.Again:
+                 continue # Should not happen due to poll, but handle defensively
+            except (msgpack.UnpackException, TypeError, ValueError) as e_unpack:
+                 print(f"Msgpack unpack error in RpcClient SUB loop: {e_unpack}") # Or logger
+                 continue
 
             if topic == HEARTBEAT_TOPIC:
                 self._last_received_ping = data

@@ -8,6 +8,7 @@ from typing import Dict, Tuple, Any
 import configparser
 import pickle
 import queue
+import msgpack
 
 from vnpy.trader.utility import load_json
 
@@ -40,6 +41,7 @@ except ImportError as e:
 
 from config import zmq_config as config
 from config.zmq_config import PUBLISH_BATCH_SIZE # HEARTBEAT_INTERVAL_S likely unused
+from utils.converter import convert_vnpy_obj_to_dict
 
 # --- Add Heartbeat Constant ---
 HEARTBEAT_INTERVAL_S = 5.0 # Send heartbeat every 5 seconds
@@ -363,15 +365,10 @@ class OrderExecutionGatewayService(RpcServer):
                     if order.vt_orderid in self.active_order_ids:
                         self.active_order_ids.discard(order.vt_orderid)
                         logger.debug(f"订单 {order.vt_orderid} 状态变为非活动 ({order.status.value})，已从 active_order_ids 移除。")
-                    # else: # Optional: Log if a non-active order wasn't in the set (shouldn't happen ideally)
-                    #    logger.warning(f"试图移除的非活动订单 {order.vt_orderid} 不在 active_order_ids 集合中。")
                 # +++ End remove order ID +++
 
                 # +++ Add Order Status Logging (Conditional on active_order_ids) +++
-                # Note: This condition now more accurately reflects "orders originally sent by this gateway"
-                # rather than "currently active orders sent by this gateway" after the cleanup logic above.
-                # Consider if the logging condition itself should change. For now, keep original logic.
-                if order.vt_orderid in self.active_order_ids or not order.is_active(): # Log if it *was* active or just became inactive
+                if order.vt_orderid in self.active_order_ids or not order.is_active():
                     logger.info(
                         f"订单状态更新: [{order.datetime.strftime('%H:%M:%S')}] VTOrderID={order.vt_orderid}, "
                         f"状态={order.status.value}, "
@@ -383,39 +380,22 @@ class OrderExecutionGatewayService(RpcServer):
                     )
                 # --- End Order Status Logging ---
                 topic_bytes = f"order.{order.vt_orderid}".encode('utf-8')
-                data_bytes = pickle.dumps(order)
+                # Convert object to dict THEN msgpack
+                dict_data = convert_vnpy_obj_to_dict(order)
+                data_bytes = msgpack.packb(dict_data, use_bin_type=True)
             elif event_type == EVENT_TRADE:
                 trade: TradeData = data_obj
                 # +++ 无条件记录收到成交事件 +++
                 logger.info(f"收到 EVENT_TRADE: VTOrderID={getattr(trade, 'vt_orderid', 'N/A')}, Symbol={getattr(trade, 'vt_symbol', 'N/A')}")
                 # +++ 结束无条件记录 +++
 
-                # +++ 原来的条件日志 (可选保留，或暂时注释掉) +++
-                # if trade.vt_orderid in self.active_order_ids:
-                #     logger.info(
-                #         f"成交回报详情: [{trade.datetime.strftime('%H:%M:%S')}] VTOrderID={trade.vt_orderid}, "
-                #         f"成交ID={trade.vt_tradeid}, "
-                #         f"代码={trade.symbol}, "
-                #         f"方向={trade.direction.value}, "
-                #         f"开平={trade.offset.value}, "
-                #         f"价格={trade.price}, "
-                #         f"数量={trade.volume}"
-                #     )
-                # else:
-                #      logger.warning(f"收到的成交回报 VTOrderID {trade.vt_orderid} 不在 active_order_ids 集合中！")
-                # --- End Trade Logging ---
                 topic_bytes = f"trade.{trade.vt_symbol}".encode('utf-8')
-                data_bytes = pickle.dumps(trade)
-                # --- Put serialized data onto the publish queue ---
-                if topic_bytes and data_bytes:
-                    self._publish_queue.put((topic_bytes, data_bytes))
-                    # Log putting action occasionally for debugging
-                    if self._event_counter % 1000 == 1: # Log less frequently
-                        logger.debug(f"事件处理器: 将成交事件放入发布队列: Topic={topic_bytes.decode('utf-8', 'ignore')}")
+                # Convert object to dict THEN msgpack
+                dict_data = convert_vnpy_obj_to_dict(trade)
+                data_bytes = msgpack.packb(dict_data, use_bin_type=True)
             elif event_type == EVENT_ACCOUNT:
                 account: AccountData = data_obj
                 self.last_account_data = account # Update local cache
-                
                 # +++ Get accountid FIRST +++
                 accountid = account.accountid 
                 # +++ End Get +++
@@ -423,22 +403,19 @@ class OrderExecutionGatewayService(RpcServer):
                 # +++ Add Time Check for Account Update Logging +++
                 current_time = time.time()
                 if current_time - self._last_account_log_time >= 300:
-                    # Original change-driven logging logic (now inside time check)
-                    current_balance = account.balance
-                    current_available = account.available
-                    # (Removed the complex change check logic for simplicity, log every 5 mins if received)
                     logger.info(
                         f"账户资金更新 (每5分钟): AccountID={accountid}, "
-                        f"Balance={current_balance:.2f}, "
-                        f"Available={current_available:.2f}, "
+                        f"Balance={account.balance:.2f}, "
+                        f"Available={account.available:.2f}, "
                         f"Frozen={account.frozen:.2f}"
                     )
-                    # Update the last log time
                     self._last_account_log_time = current_time
                 # --- End Time Check and Logging Logic ---
 
                 topic_bytes = f"account.{accountid}".encode('utf-8')
-                data_bytes = pickle.dumps(account)
+                # Convert object to dict THEN msgpack
+                dict_data = convert_vnpy_obj_to_dict(account)
+                data_bytes = msgpack.packb(dict_data, use_bin_type=True)
             elif event_type == EVENT_POSITION:
                  position: PositionData = data_obj
                  # +++ Change Position Update Logging to DEBUG +++
@@ -452,12 +429,16 @@ class OrderExecutionGatewayService(RpcServer):
                  )
                  # --- End Position Update Logging ---
                  topic_bytes = f"position.{position.vt_symbol}".encode('utf-8')
-                 data_bytes = pickle.dumps(position)
+                 # Convert object to dict THEN msgpack
+                 dict_data = convert_vnpy_obj_to_dict(position)
+                 data_bytes = msgpack.packb(dict_data, use_bin_type=True)
             # elif event_type == EVENT_CONTRACT: # If publishing contracts is needed
             #     contract: ContractData = data_obj
             #     self.contracts[contract.vt_symbol] = contract # Update local cache
             #     topic_bytes = f"contract.{contract.vt_symbol}".encode('utf-8')
-            #     data_bytes = pickle.dumps(contract)
+            #     # Convert object to dict THEN msgpack
+            #     dict_data = convert_vnpy_obj_to_dict(contract)
+            #     data_bytes = msgpack.packb(dict_data, use_bin_type=True)
 
             # --- Put serialized data onto the publish queue ---
             if topic_bytes and data_bytes:
@@ -589,7 +570,8 @@ class OrderExecutionGatewayService(RpcServer):
             if socket_available:
                 try:
                     current_timestamp = time.time()
-                    data_bytes = pickle.dumps(current_timestamp)
+                    heartbeat_dict = {"timestamp": current_timestamp}
+                    data_bytes = msgpack.packb(heartbeat_dict, use_bin_type=True)
                     self._socket_pub.send_multipart([self._heartbeat_topic, data_bytes], flags=zmq.NOBLOCK)
                     # Log heartbeat sending occasionally
                     if loop_count % 12 == 1: # e.g., log every minute if interval is 5s

@@ -18,10 +18,10 @@ import json
 # This dictionary defines which strategies to load and their parameters.
 STRATEGIES_CONFIG = {
     "SA509_Trend_1": {  # Unique name for this strategy instance
-        "strategy_class": "zmq_services.strategies.sa509_strategy.SA509LiveStrategy", # Full path to the class
+        "strategy_class": "zmq_services.strategies.threshold_strategy.ThresholdLiveStrategy", # <-- UPDATED PATH
         "vt_symbol": "SA509.CZCE", # Symbol the strategy trades
         "setting": {             # Strategy-specific parameters (MUST provide all required)
-            "entry_threshold": "1330.0",      # Required: Decimal
+            "entry_threshold": "1310.0",      # Required: Decimal
             "profit_target_ticks": 10,        # Required: int
             "stop_loss_ticks": 5,           # Required: int
             "price_tick": "1.0",              # Required: Decimal
@@ -97,7 +97,7 @@ def main():
     try:
         engine = StrategyEngine(
             gateway_pub_url=md_pub_addr_connect,      # Use connect address
-            order_req_url=order_gw_rep_addr_connect,  # Use connect address
+            order_gw_rep_url=order_gw_rep_addr_connect, # <-- CORRECT KEYWORD
             order_report_url=order_gw_pub_addr_connect,# Use connect address
             strategies_config=STRATEGIES_CONFIG
         )
