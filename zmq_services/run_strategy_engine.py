@@ -2,6 +2,8 @@ import sys
 import os
 import argparse
 
+from vnpy.trader.utility import load_json
+
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
@@ -11,7 +13,6 @@ from zmq_services.strategy_engine import StrategyEngine
 from config import zmq_config as config
 from utils.logger import setup_logging, logger
 import json
-
 
 # --- Define Strategy Configuration ---
 # This dictionary defines which strategies to load and their parameters.
@@ -40,6 +41,9 @@ STRATEGIES_CONFIG = {
     # },
 }
 # --- End Strategy Configuration ---
+# Load global setting from json file.
+STRATEGIES_CONFIG_FILENAME: str = "strategies_setting.json"
+STRATEGIES_CONFIG.update(load_json(STRATEGIES_CONFIG_FILENAME))
 
 
 def main():
