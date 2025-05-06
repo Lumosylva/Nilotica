@@ -77,7 +77,24 @@ class DataRecorderService:
         today_str = datetime.now().strftime('%Y%m%d')
         # Use topic prefixes to determine file
         if topic.startswith("tick."):
-            return os.path.join(self.recording_path, f"ticks_{today_str}.jsonl")
+            # --- FIX: Extract symbol and create separate file ---
+            try:
+                parts = topic.split('.')
+                if len(parts) >= 3: # Expecting tick.SYMBOL.EXCHANGE
+                    vt_symbol = f"{parts[1]}.{parts[2]}" # Reconstruct vt_symbol
+                    # Sanitize vt_symbol for filename (replace . with _ for better compatibility)
+                    sanitized_symbol = vt_symbol.replace('.', '_')
+                    filename = os.path.join(self.recording_path, f"ticks_{sanitized_symbol}_{today_str}.jsonl")
+                    # No need for debug log here every time, it can be noisy.
+                    return filename
+                else:
+                    logger.warning(f"无法从 tick 主题解析合约代码: {topic}. 将使用通用 Ticks 文件名。")
+                    # Fallback to generic filename if parsing fails
+                    return os.path.join(self.recording_path, f"ticks_{today_str}.jsonl")
+            except Exception as e:
+                 logger.exception(f"解析 tick 主题 '{topic}' 时出错: {e}. 将使用通用 Ticks 文件名。")
+                 return os.path.join(self.recording_path, f"ticks_{today_str}.jsonl")
+            # --- End FIX ---
         elif topic.startswith("order."):
             return os.path.join(self.recording_path, f"orders_{today_str}.jsonl")
         elif topic.startswith("trade."):
@@ -91,7 +108,7 @@ class DataRecorderService:
         elif topic == "__undecodable__": # Special topic name for undecodable file
             return os.path.join(self.recording_path, f"undecodable_{today_str}.bin")
         else:
-            logger.warning(f"收到未知主题，不记录: {topic}")
+            # logger.warning(f"收到未知主题，不记录: {topic}") # Can be noisy, disable if needed
             return None
 
     @staticmethod

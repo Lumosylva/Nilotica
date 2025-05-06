@@ -166,7 +166,7 @@ hatch build
 ├── bat - Windows BAT服务启动脚本
 │   ├── 1_run_market_gateway.bat - 行情网关启动脚本
 │   ├── 2_run_order_gateway.bat - 订单执行网关启动脚本
-│   ├── 3_run_strategy_subscriber.bat - 策略订阅器启动脚本
+│   ├── 3_run_strategy_engine.bat - 策略订阅器启动脚本
 │   ├── 4_run_risk_manager.bat - 风控管理启动脚本
 │   ├── 5_run_data_recorder.bat - 数据记录启动脚本
 │   └── 6_run_backtest.bat - 策略回测demo脚本
@@ -199,7 +199,7 @@ hatch build
 │   ├── run_market_gateway.py - 行情网关启动脚本
 │   ├── run_order_gateway.py - 订单执行网关启动脚本
 │   ├── run_risk_manager.py - 风控管理器启动脚本
-│   ├── run_strategy_subscriber.py - 策略引擎启动脚本
+│   ├── run_strategy_engine.py - 策略引擎启动脚本
 │   ├── strategy_base.py - 策略基类
 │   └── strategy_subscriber.py - 策略订阅器
 ├── .python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
@@ -231,7 +231,7 @@ hatch build
 
    <img src="assets/run_order_gateway.png" style="zoom:67%;" />
 
-3. 运行策略订阅器：
+3. 运行策略引擎：
 
    <img src="assets/run_strategy_subscriber.png" style="zoom:67%;" />
 
@@ -265,9 +265,9 @@ hatch build
 
   处理来自策略订阅器的订单请求，将请求发送到vnpy中CTP网关。
 
-- [x] 策略订阅器
+- [x] 策略引擎
 
-  连接到行情网关，将策略订单发送到订单执行网关，打印订单回报和成交回报。
+  连接到行情网关，导入策略和执行策略，将订单发送到订单执行网关，打印订单回报和成交回报。
 
 - [x] 风控管理
 
