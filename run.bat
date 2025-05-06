@@ -12,6 +12,6 @@ REM 等待行情网关和订单执行网关完全启动后再启动其他服务
 ping 127.0.0.1 -n 14 >nul
 start %current_path%/bat/3_run_data_recorder.bat
 start %current_path%/bat/4_run_risk_manager.bat
-start %current_path%/bat/5_run_strategy_subscriber.bat
+start %current_path%/bat/5_run_strategy_engine.bat
 echo Finished.
 exit
