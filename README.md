@@ -171,16 +171,15 @@ hatch build
 │   ├── 5_run_data_recorder.bat - 数据记录启动脚本
 │   └── 6_run_backtest.bat - 策略回测demo脚本
 ├── config - 项目配置目录
-├── logs - 日志存放目录
 │   ├── constants - 常量目录
 │   │   ├── params.py - 常量
 │   │   └── path.py - 路径常量
 │   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录。
-├── run_image - 服务运行截图目录
 ├── ta-lib - ta-lib库源文件
 ├── utils - 工具类包，包含日志、路径等
 ├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎。
-├── vnpy_ctp - vnpy官方的ctp库，主要功能是提供底层与行情和交易服务器交互的接口。
+├── vnpy_ctp - vnpy官方的ctp库，主要功能是提供底层与simnow和实盘行情和交易服务器交互的接口。
+├── vnpy_tts - vnpy官方的tts库，主要功能是提供底层与tts和实盘行情和交易服务器交互的接口。
 ├── zmq_services - 系统核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测、行情回放。
 │   ├── backtester - 回测目录
 │   │   ├── data_player.py - 数据回放

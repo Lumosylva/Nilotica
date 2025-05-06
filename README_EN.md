@@ -168,16 +168,15 @@ hatch build
 │ ├── 5_run_data_recorder.bat - Data recording startup script
 │ └── 6_run_backtest.bat - Strategy backtesting demo script
 ├── config - Project configuration directory
-├── logs - Log storage directory
 │ ├── constants - Constant directory
 │ │ ├── params.py - Constants
 │ │ └── path.py - Path constants
 │ └── project_files - directory for storing holidays, contract multipliers and rates, contract and exchange mapping, etc.
-├── run_image - directory for service running screenshots
 ├── ta-lib - ta-lib library source files
 ├── utils - tool package, including logs, paths, etc.
 ├── vnpy - vnpy's official core library, the main function is the event-driven engine.
 ├── vnpy_ctp - vnpy's official ctp library, the main function is to provide an interface for the underlying interaction with the market and trading servers.
+├── vnpy_tts - vnpy's official tts library, its main function is to provide an interface for interacting with tts, real market information and trading servers.
 ├── zmq_services - system core, including market gateway, order execution gateway, strategy subscriber, risk control management, data recording, strategy backtesting, market playback.
 │ ├── backtester - backtest directory
 │ │ ├── data_player.py - data playback
