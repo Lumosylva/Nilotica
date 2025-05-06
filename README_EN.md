@@ -16,7 +16,7 @@ The functions currently implemented by the system are:
 
 - Market Gateway
 - Order Execution Gateway
-- Strategy Subscriber
+- Strategy Engine
 - Risk control management
 - Data Recording
 - Strategy backtesting
