@@ -1,5 +1,3 @@
-# zmq_services/strategies/sa509_strategy.py
-
 import logging
 from typing import Any, Dict
 from decimal import Decimal, InvalidOperation
@@ -10,10 +8,7 @@ from vnpy.trader.object import TickData, OrderData, TradeData
 from vnpy.trader.constant import Offset, Status
 
 
-# --- Rename Class --- 
-# class SA509LiveStrategy(BaseLiveStrategy):
 class ThresholdLiveStrategy(BaseLiveStrategy):
-# --- End Rename ---
     """
     Simple threshold-based strategy.
     Inherits from BaseLiveStrategy for live trading via ZMQ/RPC.
@@ -21,14 +16,12 @@ class ThresholdLiveStrategy(BaseLiveStrategy):
     """
 
     # --- Strategy Parameters (Types only - Values must be set via 'setting' dict) ---
-    # --- Remove SA509_ prefix from annotations --- 
     entry_threshold: Decimal
     profit_target_ticks: int
     stop_loss_ticks: int
     price_tick: Decimal
     order_volume: Decimal # Use Decimal for volume too
     order_price_offset_ticks: int
-    # --- End Remove Prefix ---
 
     # --- Strategy State Variables --- 
     long_entry_active: bool = False 
@@ -79,14 +72,6 @@ class ThresholdLiveStrategy(BaseLiveStrategy):
             # self.inited = False # Mark as not inited
             raise ValueError(error_msg) # Raise error to stop engine loading this strategy
         # --- End Parameter Verification ---
-
-        # --- Remove or Comment Out Hardcoded Symbol Check ---
-        # Verify vt_symbol matches expected after base init
-        # if self.vt_symbol != "SA509.CZCE":
-        #     self.write_log(f"Initialized with potentially incorrect vt_symbol: {self.vt_symbol}. "
-        #                    f"Expected SA509.CZCE.", logging.WARNING)
-        #     # Continue for now, but be aware logic might be symbol-specific
-        # --- End Removal/Comment Out ---
 
         # Log the parameters that were successfully loaded from settings
         self.write_log(f"{self.__class__.__name__} ({self.strategy_name}) Parameters Loaded:") # Use class name
@@ -250,9 +235,6 @@ class ThresholdLiveStrategy(BaseLiveStrategy):
                 # --- End State Transition ---
                 self.write_log(f"Position fully closed. Resetting state.") # Simplified
             # else: Partial close - long_entry_active remains True (still holding position)
-
-    # --- Remove Helper Methods (_calculate_and_set_targets, _reset_targets) ---
-    # Targets are now calculated dynamically in on_tick based on base class entry_price
 
     # --- Helper Methods ---
     def _calculate_and_set_targets(self, entry_price: float, context: str) -> None:
