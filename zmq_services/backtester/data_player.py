@@ -53,69 +53,82 @@ class DataPlayerService:
         self.running = False
 
     def load_data(self) -> bool:
-        """Loads tick data from the specified single file."""
-        # --- Reverted logic to load single combined file --- 
-        logger.info(f"尝试从 {self.tick_data_file} 加载数据...")
-        if not os.path.exists(self.tick_data_file):
-            logger.error(f"错误: 数据文件不存在: {self.tick_data_file}")
+        """Loads tick data from the specified file(s) matching the date pattern."""
+        # --- Updated logic to load multiple files matching the pattern --- 
+        file_pattern = os.path.join(self.data_source_path, f"ticks_*_{self.date_str}.jsonl")
+        tick_files = glob.glob(file_pattern)
+        
+        logger.info(f"查找 Ticks 数据文件，模式: {file_pattern}")
+        if not tick_files:
+            logger.error(f"错误: 未找到匹配模式的数据文件: {file_pattern}")
             return False
-
+        
+        logger.info(f"找到 {len(tick_files)} 个 Ticks 数据文件: {tick_files}")
         self.all_ticks = [] # Ensure list is clear before loading
         loaded_count = 0
-        total_lines = 0
-
-        logger.info(f"  正在加载文件: {self.tick_data_file}")
-        try:
-            with open(self.tick_data_file, 'r', encoding='utf-8') as f:
-                for line_num, line in enumerate(f, 1):
-                    total_lines += 1
-                    try:
-                        record = json.loads(line.strip())
-                        # Use the inner 'data' field which is the dict representation of the VNPY object
-                        data_dict = record.get("data")
-                        if not isinstance(data_dict, dict):
-                            logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] 跳过记录，'data' 字段不是字典: {record}")
-                            continue
-
-                        original_ts_ns = record.get("reception_timestamp_ns") # Use reception time
-                        topic_str = record.get("zmq_topic")
-
-                        if not original_ts_ns or not topic_str:
-                            logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] 跳过记录，缺少时间戳或主题: {record}")
-                            continue
-
-                        # --- Serialize the data_dict using msgpack --- 
+        total_lines_processed = 0
+        skipped_records = 0
+        
+        for tick_file in tick_files:
+            filename_short = os.path.basename(tick_file)
+            logger.info(f"  正在加载文件: {filename_short}")
+            file_line_count = 0
+            try:
+                with open(tick_file, 'r', encoding='utf-8') as f:
+                    for line_num, line in enumerate(f, 1):
+                        total_lines_processed += 1
+                        file_line_count = line_num
                         try:
-                            # No need to convert again, 'data' is already the dict from convert_vnpy_obj_to_dict
-                            msgpacked_data_bytes = msgpack.packb(data_dict, use_bin_type=True)
-                        except (msgpack.PackException, TypeError) as pe:
-                            logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] Msgpack 序列化错误: {pe}. Data: {data_dict}")
-                            continue # Skip this record
-                        # --- End Serialize ---
-                             
-                        topic_bytes = topic_str.encode('utf-8')
-                        self.all_ticks.append((original_ts_ns, topic_bytes, msgpacked_data_bytes))
-                        loaded_count += 1
+                            record = json.loads(line.strip())
+                            data_dict = record.get("data")
+                            original_ts_ns = record.get("reception_timestamp_ns")
+                            topic_str = record.get("zmq_topic")
 
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] 解析 JSON 行时出错: {e}. 行: {line.strip()}")
-                    except Exception as e_line:
-                        logger.warning(f"[{os.path.basename(self.tick_data_file)}:{line_num}] 处理记录时发生未知错误: {e_line}. 记录: {record}")
-        except IOError as e_io:
-            logger.error(f"读取文件 {self.tick_data_file} 时出错: {e_io}")
-            return False # Stop if file reading fails
-        except Exception as e_file:
-            logger.exception(f"加载文件 {self.tick_data_file} 时发生未知错误: {e_file}")
-            return False # Stop on other file loading errors
-        # --- End Reverted logic ---
+                            if not isinstance(data_dict, dict) or not original_ts_ns or not topic_str:
+                                logger.warning(f"[{filename_short}:{line_num}] 跳过无效记录 (缺少 data/ts/topic 或 data 类型错误): {record}")
+                                skipped_records += 1
+                                continue
+
+                            # Serialize the data_dict using msgpack
+                            try:
+                                msgpacked_data_bytes = msgpack.packb(data_dict, use_bin_type=True)
+                            except (msgpack.PackException, TypeError) as pe:
+                                logger.warning(f"[{filename_short}:{line_num}] Msgpack 序列化错误: {pe}. Data: {data_dict}")
+                                skipped_records += 1
+                                continue # Skip this record
+                                 
+                            topic_bytes = topic_str.encode('utf-8')
+                            self.all_ticks.append((original_ts_ns, topic_bytes, msgpacked_data_bytes))
+                            loaded_count += 1
+
+                        except json.JSONDecodeError as e:
+                            logger.warning(f"[{filename_short}:{line_num}] 解析 JSON 行时出错: {e}. 行: {line.strip()}")
+                            skipped_records += 1
+                        except Exception as e_line:
+                            logger.warning(f"[{filename_short}:{line_num}] 处理记录时发生未知错误: {e_line}. 记录: {record}")
+                            skipped_records += 1
+            except IOError as e_io:
+                logger.error(f"读取文件 {filename_short} 时出错: {e_io}")
+                # Decide whether to continue with other files or stop
+                # return False # Option: Stop if any file fails
+                logger.warning(f"跳过文件 {filename_short}，继续处理其他文件...")
+                continue # Option: Continue with next file
+            except Exception as e_file:
+                logger.exception(f"加载文件 {filename_short} 时发生未知错误: {e_file}")
+                # return False # Option: Stop on other errors
+                logger.warning(f"跳过文件 {filename_short}，继续处理其他文件...")
+                continue # Option: Continue with next file
+            logger.info(f"  文件 {filename_short} 处理完成 ({file_line_count} 行).")
+        # --- End Updated logic ---
 
         if not self.all_ticks:
-            logger.error(f"错误：未能从文件 {self.tick_data_file} 中加载任何有效的 Tick 数据 (共处理 {total_lines} 行)。")
+            logger.error(f"错误：未能从任何匹配的文件中加载任何有效的 Tick 数据 (模式: {file_pattern}, 共处理 {total_lines_processed} 行, 跳过 {skipped_records} 条记录)。")
             return False
 
         # Sort data by original timestamp
+        logger.info("所有文件加载完成，正在按时间戳排序...")
         self.all_ticks.sort(key=lambda x: x[0])
-        logger.info(f"数据加载完成并排序。总共 {loaded_count} 条有效 Tick 数据 (来自文件: {os.path.basename(self.tick_data_file)}, 共 {total_lines} 行)。")
+        logger.info(f"数据加载完成并排序。总共 {loaded_count} 条有效 Tick 数据 (来自 {len(tick_files)} 个文件, 共处理 {total_lines_processed} 行, 跳过 {skipped_records} 条记录)。")
         return True
 
     def start_playback(self, playback_speed: float = 0):

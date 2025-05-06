@@ -369,8 +369,10 @@ class OrderExecutionGatewayService(RpcServer):
 
                 # +++ Add Order Status Logging (Conditional on active_order_ids) +++
                 if order.vt_orderid in self.active_order_ids or not order.is_active():
+                    # --- FIX: Add check for None datetime before formatting ---
+                    time_str = order.datetime.strftime('%H:%M:%S') if order.datetime else "NoTime"
                     logger.info(
-                        f"订单状态更新: [{order.datetime.strftime('%H:%M:%S')}] VTOrderID={order.vt_orderid}, "
+                        f"订单状态更新: [{time_str}] VTOrderID={order.vt_orderid}, " # Use time_str
                         f"状态={order.status.value}, "
                         f"已成交={order.traded}/{order.volume}, "
                         f"价格={order.price}, "
@@ -378,6 +380,7 @@ class OrderExecutionGatewayService(RpcServer):
                         f"方向={order.direction.value}, "
                         f"开平={order.offset.value}"
                     )
+                    # --- End FIX ---
                 # --- End Order Status Logging ---
                 topic_bytes = f"order.{order.vt_orderid}".encode('utf-8')
                 # Convert object to dict THEN msgpack
