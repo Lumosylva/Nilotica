@@ -1,0 +1,76 @@
+# Global System Configuration
+# version: 1.0 # Optional versioning for your config file
+
+# Notes:
+# - Paths like 'data_recording_path' are relative to the project root.
+#   The config_manager.py will be responsible for resolving them to absolute paths.
+# - Strategy-specific parameters are typically managed in a separate file (e.g., strategies_setting.json or strategies.yaml).
+# - Dynamic configurations or those requiring runtime logic (like CHINA_TZ) are handled in Python code.
+
+logging:
+  # Default log level for services if not overridden by command-line arguments.
+  # Services can still use their own --log-level argument to specify.
+  default_level: "INFO"
+  # Future: Add more logging configurations here, like file output, rotation, format.
+
+paths:
+  data_recording_path: "zmq_services/recorded_data/" # Relative to project root
+  backtest_data_source_path: "zmq_services/recorded_data/" # Will be resolved by config_manager or defaults to data_recording_path
+  product_info_ini: "config/project_files/product_info.ini" # Path to product info, if needed globally
+
+zmq_addresses:
+  market_data_pub: "tcp://*:5555"    # Market data publisher (行情发布地址)
+  market_data_rep: "tcp://*:2015"    # Market data request/reply (if any service needs it)
+  order_gateway_pub: "tcp://*:5557"  # Order/trade report publisher (订单/成交回报发布地址)
+  order_gateway_rep: "tcp://*:5558"  # Order gateway command REQ/REP (订单网关指令接收地址)
+  risk_alert_pub: "tcp://*:5559"     # Risk alert publisher (风险管理警报发布地址)
+
+  # Backtester specific ZMQ addresses
+  backtest_data_pub: "tcp://*:5560"             # Backtest market data publisher (回测行情发布地址)
+  backtest_order_report_pub: "tcp://*:5561"      # Backtest order/trade report publisher (回测订单/成交回报发布地址)
+  backtest_order_request_pull: "tcp://*:5562"    # Backtest order request PULL (回测订单请求接收地址)
+
+# General service configurations
+service_settings:
+  # Batch size for processing messages in publisher queues (e.g., in OrderExecutionGateway)
+  publish_batch_size: 1000
+  recorder_batch_size: 100 # 您可以按需调整这个值
+
+# Risk Management specific configurations (can be expanded)
+risk_management:
+  max_position_limits:
+    SA509.CZCE: 5
+    rb2510.SHFE: 10
+    MA509.CZCE: 5
+  max_pending_orders_per_contract: 5
+  global_max_pending_orders: 20
+  margin_usage_limit: 0.8  # Example: 80%
+  # Trading sessions can also be part of risk management checks
+  futures_trading_sessions:
+    - ["09:00", "11:00"] # Morning session 1
+    - ["10:15", "11:30"] # Morning session 2
+    - ["13:30", "15:00"] # Afternoon session
+    - ["21:00", "23:00"] # Evening session
+
+# Strategy Engine & Communication Parameters (migrated from zmq_config.py)
+# These are primarily used by the StrategyEngine when communicating with other services.
+engine_communication:
+  market_data_timeout_seconds: 30.0
+  initial_tick_grace_period_multiplier: 2.0
+  ping_interval_seconds: 5.0
+  ping_timeout_ms: 2500
+  rpc_timeout_ms: 3000
+  rpc_retries: 1
+  heartbeat_timeout_seconds: 10.0
+
+# List of symbols to subscribe to by default (e.g., for MarketDataGateway, DataRecorder)
+# Individual strategies might override or specify their own symbols.
+default_subscribe_symbols:
+  - "SA509.CZCE"
+  - "rb2510.SHFE"
+  - "MA509.CZCE"
+
+
+# A more global parameter:
+order_submission:
+  default_cool_down_seconds: 2 # Default cool-down for orders if not specified by strategy 
