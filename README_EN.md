@@ -91,12 +91,23 @@ This project uses `uv` to manage Python virtual environments and dependent packa
    ```bash
    .venv\Scripts\activate
    ```
+2. Install ta_lib library
+
+   ```bash
+   .\build.bat
+   ```
+
+   or
+
+   ```bash
+   .\build.sh
+   ```
 
 ### **5. Compile VNPY_CTP**
 
-When `vnpy_ctp` needs to be compiled, execute the `hatch build` command to compile the dynamic link library `.pyd` file of the market and transaction under the project vnpy_ctp\api\. The build hook `hatch_build.py` is responsible for compiling the CTP C++ extension, and uses `pybind11-stubgen` to generate `.pyi` stub files for the compiled modules.
+When `vnpy_ctp` needs to be compiled, executing the `hatch build` command will use the `hatch_build.py` build script under the project vnpy_ctp\api\ to compile the vnctpmd and vnctptd modules into .pyd files (on Windows) or .so files (on Linux), and generate the corresponding Python interface stub files (.pyi). The script uses the pybind11 library to simplify the binding process between C++ and Python, and performs the build operation through setuptools and hatchling.
 
-When `vnpy_tts` needs to be compiled, please modify the `path` of the `[tool.hatch.build.hooks.custom]` build script in `pyproject.toml` to `hatch_build_tts.py`, and then execute `hatch build` to compile the process similar to the above.
+When `vnpy_tts` needs to be compiled, please modify the `path` of the `[tool.hatch.build.hooks.custom]` build script in `pyproject.toml` to `hatch_build_tts.py`, and then execute `hatch build` to compile a similar process as above.
 
 #### **(1) Clean up old builds**
 
@@ -208,8 +219,8 @@ hatch build
 ├── banner.png - Project banner image
 ├── build.bat - Windows project automatic build script
 ├── build.sh - Linux project automatic build script
-├── hatch_build.py - vnpy_ctp build hook is responsible for compiling C++ extensions
-├── hatch_build_tts.py - vnpy_tts build hook is responsible for compiling C++ extensions
+├── hatch_build.py - The vnpy_ctp build script is responsible for compiling the C++ extension
+├── hatch_build_tts.py - The vnpy_tts build script is responsible for compiling the C++ extension
 ├── install.bat - Windows installation script for ta-lib 0.6.3, temporarily unused
 ├── install.sh - Linux installation script for ta-lib 0.6.3, temporarily unused
 ├── main.py - Main project file, no definition for now

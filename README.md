@@ -94,12 +94,25 @@ Language: [ENGLISH](README_EN.md)
    ```bash
    .venv\Scripts\activate
    ```
+   
+3. 安装ta_lib库
+
+   ```bash
+   .\build.bat
+   ```
+
+   或
+
+   ```bash
+   .\build.sh
+   ```
+
 
 ### **5. 编译VNPY_CTP**
 
-需要对`vnpy_ctp`编译时，执行 `hatch build` 命令将会在项目 vnpy_ctp\api\ 下编译出行情和交易的动态链接库 `.pyd` 文件，由构建钩子 `hatch_build.py` 负责编译出CTP C++  扩展，并使用 `pybind11-stubgen` 为编译好的模块生成  `.pyi` 存根文件。
+需要对`vnpy_ctp`编译时，执行 `hatch build` 命令将会在项目 vnpy_ctp\api\ 下利用`hatch_build.py`构建脚本，编译vnctpmd和vnctptd模块为.pyd文件（在Windows上）或.so文件（在Linux上），并生成对应的Python接口存根文件（.pyi）。该脚本使用了pybind11库来简化C++与Python之间的绑定过程，并通过setuptools和hatchling来执行构建操作。
 
-需要对`vnpy_tts`编译时，请修改`pyproject.toml`中`[tool.hatch.build.hooks.custom]`构建脚本的`path`为`hatch_build_tts.py`，再执行`hatch build`即可编译同上述类似的过程。
+需要对`vnpy_tts`编译时，请修改`pyproject.toml`中`[tool.hatch.build.hooks.custom]`构建脚本的`path`为`hatch_build_tts.py`，再执行`hatch build`可编译同上述类似的过程。
 
 #### **(1) 清理旧的构建**
 
@@ -211,8 +224,8 @@ hatch build
 ├── banner.png - 项目banner图片
 ├── build.bat - Windows项目自动构建脚本
 ├── build.sh - Linux项目自动构建脚本
-├── hatch_build.py - vnpy_ctp构建钩子负责编译 C++ 扩展
-├── hatch_build_tts.py - vnpy_tts构建钩子负责编译 C++ 扩展
+├── hatch_build.py - vnpy_ctp构建脚本负责编译 C++ 扩展
+├── hatch_build_tts.py - vnpy_tts构建脚本负责编译 C++ 扩展
 ├── install.bat - Windows安装ta-lib 0.6.3的脚本，暂时无用
 ├── install.sh - Linux安装ta-lib 0.6.3的脚本，暂时无用
 ├── main.py - 项目主文件，暂时无定义
