@@ -7,10 +7,11 @@
 @Author     : Donny
 @Email      : donnymoving@gmail.com
 @Software   : PyCharm
-@Description: description
+@Description: 日志模块
 """
 import sys
 from pathlib import Path
+from typing import Optional
 
 from loguru import logger
 
@@ -21,8 +22,9 @@ from vnpy.trader.utility import get_folder_path
 # --- Default Configuration ---
 DEFAULT_LOG_FORMAT = (
     "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> - "
-    "<level>{level}</level> - " # Adjusted level padding
-    "<cyan>{extra[service]}</cyan> - " # Added service name placeholder from extra
+    "<level>{level}</level> - "
+    "<cyan>{extra[service]}</cyan>"
+    " <magenta>{extra[config_env]}</magenta> - "
     "<level>{message}</level>"
 )
 DEFAULT_SERVICE_NAME = "nilotica_default" # Default service name if not patched
@@ -31,22 +33,11 @@ DEFAULT_LOG_RETENTION = "7 days" # Keep logs for 7 days
 
 # --- Global Logger Object ---
 # Re-export the logger object from loguru
-__all__ = ["logger", "setup_logging"]
+__all__ = ["logger", "setup_logging", "INFO", "DEBUG", "WARNING", "WARN", "ERROR", "FATAL", "CRITICAL", "NOTSET"]
 
 # Read log level from vnpy settings
 DEFAULT_LOG_LEVEL: str = SETTINGS.get("log.level", "INFO") # Use .get for safety
 
-
-# def int_level_to_str(level: int) -> str:
-#     level_mapping = {
-#         50: "CRITICAL",
-#         40: "ERROR",
-#         30: "WARNING",
-#         20: "INFO",
-#         10: "DEBUG",
-#         0: "NOTSET"
-#     }
-#     return level_mapping.get(level, "UNKNOWN")
 
 CRITICAL = 50
 FATAL = CRITICAL
@@ -91,6 +82,7 @@ def setup_logging(
     level: str | int = DEFAULT_LOG_LEVEL, # Allow int type
     format_ft: str = DEFAULT_LOG_FORMAT,
     service_name: str = DEFAULT_SERVICE_NAME, # Service name mainly for filename now
+    config_env: Optional[str] = None,
     rotation: str = DEFAULT_LOG_ROTATION,
     retention: str = DEFAULT_LOG_RETENTION,
     **kwargs  # Pass additional arguments to loguru.add() if needed
@@ -102,70 +94,60 @@ def setup_logging(
         level (str | int): The minimum log level to output (e.g., "DEBUG", "INFO", or logging.INFO).
         format_ft (str): The log format string (should include {extra[service]}).
         service_name (str): Name used for the log filename pattern.
+        config_env (Optional[str]): Name of the configuration environment (e.g., 'dev', 'prod').
         rotation (str): Log file rotation condition (e.g., "100 MB", "1 day").
         retention (str): How long to keep old log files (e.g., "7 days", "1 month").
         **kwargs: Additional keyword arguments passed directly to logger.add().
     """
-    # Remove default handler to avoid potential duplicates if called multiple times
-    # or if loguru was imported elsewhere before setup
     try:
         logger.remove()
     except ValueError:
-        # No handlers configured yet, safe to continue
         pass
 
-    level = get_level_name(level)
-    # --- Configure Console Logging ---
-    # Read console setting from vnpy settings
-    if SETTINGS.get("log.console", True): # Use .get for safety
+    level_name = get_level_name(level)
+    
+    current_config_env = config_env if config_env else "base" # Use "base" if None
+
+    def filter_func(record):
+        record["extra"].setdefault("service", service_name)
+        record["extra"].setdefault("config_env", current_config_env) # Always set a value
+        return True
+
+    # Clean kwargs from our custom parameter if it was accidentally passed via **kwargs
+    kwargs_cleaned = kwargs.copy()
+    if 'config_env' in kwargs_cleaned:
+        del kwargs_cleaned['config_env']
+
+    if SETTINGS.get("log.console", True):
         try:
             logger.add(
                 sys.stderr,
-                level=level, # Use processed level
+                level=level_name,
                 format=format_ft,
-                colorize=True,  # Enable colors for console output
-                # Add default service name to extra for logs before patch or outside patched context
-                filter=lambda record: record["extra"].setdefault("service", service_name) is not None,
-                **kwargs
+                colorize=True,
+                filter=filter_func,
+                **kwargs_cleaned
             )
         except Exception as e:
             print(f"Error adding console logger: {e}", file=sys.stderr)
 
-    # --- Configure File Logging ---
-    # Read file logging setting from vnpy settings
-    if SETTINGS.get("log.file", False): # Use .get for safety
-        log_path: Path = get_folder_path("log") # Get log directory from vnpy
-        # Use service_name in the filename pattern directly
+    if SETTINGS.get("log.file", False):
+        log_path: Path = get_folder_path("log")
         file_sink = log_path.joinpath(f"{service_name}_{{time:YYYYMMDD}}.log")
         try:
             logger.add(
                 sink=file_sink,
-                level=level, # Use processed level
+                level=level_name,
                 format=format_ft,
                 rotation=rotation,
                 retention=retention,
                 encoding="utf-8",
-                enqueue=True,  # Make file logging asynchronous for better performance
-                # Add default service name to extra for logs before patch or outside patched context
-                filter=lambda record: record["extra"].setdefault("service", service_name) is not None,
-                **kwargs
+                enqueue=True,
+                filter=filter_func,
+                **kwargs_cleaned
             )
         except Exception as e:
-             # Use logger itself if possible, otherwise print
              try:
                  logger.error(f"Error adding file logger for path '{file_sink}': {e}")
-             except Exception as e:
-                 print(f"Error adding file logger for path '{file_sink}': {e}", file=sys.stderr)
-
-    # Initialize extra dict for safety, though patch should handle it
-    # logger.configure(extra={"service": DEFAULT_SERVICE_NAME})
-
-# --- Example of initial configuration (optional, can be removed if setup is always called explicitly) ---
-# setup_logging() # Sets up basic INFO level logging to console by default when module is imported
-# --- Patch logger to include service name in 'extra' ---
-# All logs generated after this line within this scope will have the service name
-# logger.patch(lambda record: record["extra"].update(service=DEFAULT_SERVICE_NAME)).info(
-#     f"Logging patched with service name: {DEFAULT_SERVICE_NAME}"
-# )
-
-
+             except Exception as e_log:
+                 print(f"Error adding file logger for path '{file_sink}': {e_log}", file=sys.stderr)
