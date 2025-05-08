@@ -12,7 +12,9 @@ Language: [ENGLISH](README_EN.md)
 
 ### **1. 前言**
 
-本项目基于 [vnpy](https://github.com/vnpy/vnpy) 和 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp)  之上实现，目的是简化国内期货量化交易的上手程度，让手动交易者更容易转向量化交易，更加专注于策略的开发。
+本项目以 [vnpy](https://github.com/vnpy/vnpy) 与 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) 为基石，vnpy 作为开源量化交易平台开发框架，凭借丰富组件、灵活架构，为策略设计、交易执行全方位支撑；vnpy_ctp 则深度对接国内期货市场，确保交易信号精准传递、交易执行高效顺畅。
+
+项目致力于降低国内期货量化交易准入门槛，助力手动交易者轻松跨越至量化交易领域，使其摆脱繁琐技术束缚，心无旁骛投身策略创意构思与优化打磨，尽情探索量化交易无限可能，畅享技术赋能交易升级新体验。
 
 目前系统已实现的功能：
 

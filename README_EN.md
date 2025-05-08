@@ -12,7 +12,9 @@ Language: [CHINESE](README.md)
 
 ### **1. Introduction**
 
-This project is based on [vnpy](https://github.com/vnpy/vnpy) and [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) , and aims to simplify the domestic futures quantitative trading experience, making it easier for manual traders to switch to quantitative trading and focus more on strategy development.
+This project is based on [vnpy](https://github.com/vnpy/vnpy) and [vnpy_ctp](https://github.com/vnpy/vnpy_ctp). As an open source quantitative trading platform development framework, vnpy provides all-round support for strategy design and transaction execution with rich components and flexible architecture; vnpy_ctp is deeply connected to the domestic futures market to ensure accurate transmission of trading signals and efficient and smooth transaction execution.
+
+The project is committed to lowering the entry threshold for domestic futures quantitative trading, helping manual traders to easily cross over to the field of quantitative trading, freeing them from the constraints of cumbersome technology, and focusing on strategy creative conception and optimization, exploring the infinite possibilities of quantitative trading, and enjoying the new experience of technology-enabled trading upgrades.
 
 The functions currently implemented by the system are:
 
