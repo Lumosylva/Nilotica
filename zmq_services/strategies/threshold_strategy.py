@@ -124,8 +124,14 @@ class ThresholdLiveStrategy(BaseLiveStrategy):
             last_price = Decimal(str(getattr(tick, 'last_price', 'NaN'))) # Already tried above, but keep for main logic
             ask_price = Decimal(str(getattr(tick, 'ask_price_1', 'NaN')))
             bid_price = Decimal(str(getattr(tick, 'bid_price_1', 'NaN')))
+
+            # +++ REMOVE TEMPORARY DEBUG LOG FOR ASK PRICE +++
+            # if ask_price <= Decimal("1329.0"):
+            #     self.write_log(f"@@@ POTENTIAL FILL TICK @@@ ask_price_1 ({ask_price}) <= 1329.0. Tick: {tick.__dict__}", logging.CRITICAL)
+            # +++ END REMOVAL +++
+
             current_entry_price = self.get_entry_price() # 获取当前基类中的入场价
-            log_msg = (
+            log_msg_core = (
                 f"on_tick: Time={tick.datetime.strftime('%H:%M:%S.%f')[:-3]} "
                 f"Last={last_price} Ask={ask_price} Bid={bid_price} | "
                 f"Pos={self.pos} EntryActive={self.long_entry_active} ClosePending={self.close_pending} | "
@@ -135,21 +141,36 @@ class ThresholdLiveStrategy(BaseLiveStrategy):
             # self.write_log(f"Tick data price conversion error for {self.vt_symbol}. Skipping logic.", logging.DEBUG)
             return # Skip logic if prices are invalid
 
-        self.write_log(log_msg, logging.DEBUG) # Move log here
-
         # --- Entry Logic ----
         if self.pos.is_zero() and not self.long_entry_active and not self.close_pending:
-            entry_condition_met = last_price > self.entry_threshold
-            self.write_log(f"  Entry Check: PosZero={self.pos.is_zero()} NotActive={not self.long_entry_active} NotPending={not self.close_pending} -> Can Enter? {self.pos.is_zero() and not self.long_entry_active and not self.close_pending}", logging.DEBUG)
-            self.write_log(f"  Entry Condition: last_price({last_price}) > entry_threshold({self.entry_threshold})? {entry_condition_met}", logging.DEBUG)
-            if entry_condition_met: 
-                self.write_log(f"ENTRY TRIGGERED ({self.vt_symbol}): Price {last_price} > {self.entry_threshold}. Preparing BUY order.", logging.INFO) # Add symbol
-                self.write_log(f"触发 {self.strategy_name} 开多仓条件: Price {last_price} > {self.entry_threshold}") # Use strategy_name
-                buy_order_price = ask_price + Decimal(str(self.order_price_offset_ticks)) * self.price_tick
-                self.write_log(f"计算开多仓限价: ask_price({ask_price}) + offset_ticks({self.order_price_offset_ticks}) * price_tick({self.price_tick}) = {buy_order_price}", logging.DEBUG)
-                vt_orderid = self.buy(price=float(buy_order_price), volume=float(self.order_volume))
-                if vt_orderid:
-                    self.long_entry_active = True 
+            entry_condition_met = False
+            if current_entry_price:
+                if last_price > current_entry_price: # Price has moved above base, consider entry
+                    # For LONG: entry if current price is HIGHER than threshold (e.g. breakout)
+                    entry_condition_met = last_price > self.entry_threshold
+            else: # No base_entry_px, direct threshold check
+                entry_condition_met = last_price > self.entry_threshold
+
+            if entry_condition_met:
+                self.write_log(f"ENTRY TRIGGERED ({self.vt_symbol}, 突破): Last {last_price} vs Thresh {self.entry_threshold}", level=logging.INFO)
+                if not self.trading:
+                    self.write_log("Trading is False, cannot send entry order.", level=logging.WARNING)
+                    return
+                
+                price = ask_price + Decimal(str(self.order_price_offset_ticks)) * self.price_tick
+                self.write_log(f"计算开多仓限价: ask_price({ask_price}) + offset_ticks({self.order_price_offset_ticks}) * price_tick({self.price_tick}) = {price}", logging.DEBUG)
+                self.write_log(f"Attempting to BUY {self.order_volume} at {price} or better. Current ask: {tick.ask_price_1}, bid: {tick.bid_price_1}", logging.INFO)
+                vt_orderid = self.buy(price=float(price), volume=float(self.order_volume))
+                self.long_entry_active = True # Set unconditionally to reflect intent
+
+                # Log based on mode for clarity
+                is_backtest_mode = getattr(self.strategy_engine, 'is_backtest_mode', False)
+                if is_backtest_mode:
+                    self.write_log("Set long_entry_active=True after sending BUY request (Mode: Backtest).", logging.DEBUG)
+                elif vt_orderid: # Live mode
+                    self.write_log("Set long_entry_active=True after sending BUY request (Mode: Live, vtOrderID received).", logging.DEBUG)
+                else: # Live mode, but order send might have failed (no vt_orderid)
+                    self.write_log("Set long_entry_active=True after sending BUY request (Mode: Live, vtOrderID NOT received - order send likely failed).", logging.DEBUG)
 
         # --- Exit Logic (Take Profit / Stop Loss) --- 
         elif self.pos > 0 and not self.close_pending:
@@ -171,8 +192,13 @@ class ThresholdLiveStrategy(BaseLiveStrategy):
                  sell_order_price = bid_price - Decimal(str(self.order_price_offset_ticks)) * self.price_tick
                  self.write_log(f"计算平多仓限价: bid_price({bid_price}) - offset_ticks({self.order_price_offset_ticks}) * price_tick({self.price_tick}) = {sell_order_price}", logging.DEBUG)
                  vt_orderid = self.sell(price=float(sell_order_price), volume=float(self.pos.copy_abs()))
-                 if vt_orderid:
-                     self.close_pending = True
+                 # --- Set close pending flag IMMEDIATELY after sending request --- 
+                 is_backtest_mode = getattr(self.strategy_engine, 'is_backtest_mode', False)
+                 # Assume send attempt means we are now pending close, regardless of mode or return ID
+                 # The actual state (pos=0) will be confirmed by on_trade
+                 self.close_pending = True
+                 self.write_log(f"Set close_pending=True after sending SELL request (Mode: {'Backtest' if is_backtest_mode else 'Live'}).", logging.DEBUG)
+                 # --- End Set Flag --- 
 
     def on_order(self, order: OrderData) -> None:
         """Process order updates."""
