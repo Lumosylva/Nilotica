@@ -1,0 +1,5 @@
+{"zmq_topic": "log", "reception_timestamp_ns": 1746684411113446300, "data": {"gateway_name": "CTP_simnow", "msg": "交易服务器连接断开，原因8193", "level": 20, "time": "2025-05-08T14:06:51.113446"}}
+{"zmq_topic": "log", "reception_timestamp_ns": 1746684411621300900, "data": {"gateway_name": "CTP_simnow", "msg": "交易服务器连接成功", "level": 20, "time": "2025-05-08T14:06:51.619302"}}
+{"zmq_topic": "log", "reception_timestamp_ns": 1746684412070741800, "data": {"gateway_name": "CTP_simnow", "msg": "交易服务器授权验证成功", "level": 20, "time": "2025-05-08T14:06:51.766452"}}
+{"zmq_topic": "log", "reception_timestamp_ns": 1746684412137922100, "data": {"gateway_name": "CTP_simnow", "msg": "交易服务器登录成功", "level": 20, "time": "2025-05-08T14:06:52.137922"}}
+{"zmq_topic": "log", "reception_timestamp_ns": 1746684423646755800, "data": {"gateway_name": "CTP_simnow", "msg": "结算信息确认成功", "level": 20, "time": "2025-05-08T14:07:03.646755"}}
