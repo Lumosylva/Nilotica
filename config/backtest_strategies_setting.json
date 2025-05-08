@@ -1,0 +1,14 @@
+{
+  "BACKTEST_EXAMPLE_Strategy_1": {
+    "strategy_class": "zmq_services.strategies.threshold_strategy.ThresholdLiveStrategy",
+    "vt_symbol": "SA509.CZCE",
+    "setting": {
+      "entry_threshold": 1310,
+      "profit_target_ticks": 10,
+      "stop_loss_ticks": 10,
+      "price_tick": 1,
+      "order_volume": 1,
+      "order_price_offset_ticks": 1
+    }
+  }
+} 
