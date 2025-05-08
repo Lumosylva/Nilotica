@@ -6,6 +6,8 @@ Language: [CHINESE](README.md)
 
 **A futures quantitative trading system based on vnpy**
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lumosylva/Nilotica)
+
 ------
 
 ### **1. Introduction**

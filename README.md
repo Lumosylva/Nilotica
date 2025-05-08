@@ -6,6 +6,8 @@ Language: [ENGLISH](README_EN.md)
 
 ​																						**基于vnpy的期货量化交易系统**
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lumosylva/Nilotica)
+
 ------
 
 ### **1. 前言**
@@ -190,6 +192,7 @@ hatch build
 │   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录。
 ├── ta-lib - ta-lib库源文件
 ├── utils - 工具类包，包含日志、路径等
+│   ├── config_models.py - 含PathsConfig、ZmqAddressesConfig、LoggingConfig、GlobalConfigStructure Pydantic 模型。
 ├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎。
 ├── vnpy_ctp - vnpy官方的ctp库，主要功能是提供底层与simnow和实盘行情和交易服务器交互的接口。
 ├── vnpy_tts - vnpy官方的tts库，主要功能是提供底层与tts和实盘行情和交易服务器交互的接口。
