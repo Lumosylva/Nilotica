@@ -168,6 +168,12 @@ export TA_LIBRARY_PATH="$PATH:/ta-lib/lib"
 hatch build
 ```
 
+The build effect is as follows:
+
+<img src="assets/hatch_build1.png" style="zoom:67%;" />
+
+<img src="assets/hatch_build2.png" style="zoom:67%;" />
+
 ### **6. Project Structure**
 
 ```reStructuredText
@@ -235,35 +241,47 @@ hatch build
 
 1. Run the market gateway:
 
-<img src="assets/run_market_gateway.png" style="zoom:67%;" />
+<img src="assets/01_run_market_gateway.png" style="zoom:67%;" />
 
 2. Run the order execution gateway:
 
-<img src="assets/run_order_gateway.png" style="zoom:67%;" />
+<img src="assets/02_run_order_gateway1.png" style="zoom:67%;" />
+
+<img src="assets/03_run_order_gateway2.png" style="zoom:67%;" />
 
 3. Run the strategy engine:
 
-<img src="assets/run_strategy_engine.png" style="zoom:67%;" />
+<img src="assets/04_run_strategy_engine1.png" style="zoom:67%;" />
+
+<img src="assets/05_run_strategy_engine2.png" style="zoom:67%;" />
 
 4. Operational risk control management:
 
-<img src="assets/run_risk_manager.png" style="zoom:67%;" />
+<img src="assets/06_run_risk_manager1.png" style="zoom:67%;" />
+
+<img src="assets/07_run_risk_manager2.png" style="zoom:67%;" />
 
 5. Operation data recording:
 
-<img src="assets/run_data_recorder.png" style="zoom:67%;" />
+<img src="assets/08_run_data_recorder.png" style="zoom:67%;" />
 
 6. Run the backtest
 
-<img src="assets/run_backtest1.png" style="zoom:67%;" />
+<img src="assets/09_run_backtest1.png" style="zoom:67%;" />
 
-<img src="assets/run_backtest2.png" style="zoom:67%;" />
+<img src="assets/10_run_backtest2.png" style="zoom:67%;" />
 
-<img src="assets/run_backtest3.png" style="zoom:67%;" />
+<img src="assets/11_run_backtest3.png" style="zoom:67%;" />
 
-<img src="assets/run_backtest4.png" style="zoom:67%;" />
+<img src="assets/12_run_backtest4.png" style="zoom:67%;" />
 
-<img src="assets/run_backtest5.png" style="zoom:67%;" />
+<img src="assets/13_run_backtest5.png" style="zoom:67%;" />
+
+ 7. Data player
+
+    <img src="assets/14_run_data_player1.png" style="zoom:67%;" />
+
+    <img src="assets/15_run_data_player2.png" style="zoom:67%;" />
 
 ### **8. Project Progress**
 

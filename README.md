@@ -173,6 +173,12 @@ export TA_LIBRARY_PATH="$PATH:/ta-lib/lib"
 hatch build
 ```
 
+构建效果如下：
+
+<img src="assets/hatch_build1.png" style="zoom:67%;" />
+
+<img src="assets/hatch_build2.png" style="zoom:67%;" />
+
 ### **6. 项目结构**
 
 ```reStructuredText
@@ -241,35 +247,47 @@ hatch build
 
 1. 运行行情网关：
 
-   <img src="assets/run_market_gateway.png" style="zoom:67%;" />
+   <img src="assets/01_run_market_gateway.png" style="zoom:67%;" />
 
 2. 运行订单执行网关：
 
-   <img src="assets/run_order_gateway.png" style="zoom:67%;" />
+   <img src="assets/02_run_order_gateway1.png" style="zoom:67%;" />
+
+   <img src="assets/03_run_order_gateway2.png" style="zoom:67%;" />
 
 3. 运行策略引擎：
 
-   <img src="assets/run_strategy_engine.png" style="zoom:67%;" />
+   <img src="assets/04_run_strategy_engine1.png" style="zoom:67%;" />
+
+   <img src="assets/05_run_strategy_engine2.png" style="zoom:67%;" />
 
 4. 运行风控管理：
 
-   <img src="assets/run_risk_manager.png" style="zoom:67%;" />
+   <img src="assets/06_run_risk_manager1.png" style="zoom:67%;" />
+
+   <img src="assets/07_run_risk_manager2.png" style="zoom:67%;" />
 
 5. 运行数据记录：
 
-   <img src="assets/run_data_recorder.png" style="zoom:67%;" />
+   <img src="assets/08_run_data_recorder.png" style="zoom:67%;" />
 
 6. 运行回测
 
-   <img src="assets/run_backtest1.png" style="zoom:67%;" />
+   <img src="assets/09_run_backtest1.png" style="zoom:67%;" />
 
-   <img src="assets/run_backtest2.png" style="zoom:67%;" />
+   <img src="assets/10_run_backtest2.png" style="zoom:67%;" />
 
-   <img src="assets/run_backtest3.png" style="zoom:67%;" />
+   <img src="assets/11_run_backtest3.png" style="zoom:67%;" />
    
-   <img src="assets/run_backtest4.png" style="zoom:67%;" />
+   <img src="assets/12_run_backtest4.png" style="zoom:67%;" />
    
-   <img src="assets/run_backtest5.png" style="zoom:67%;" />
+   <img src="assets/13_run_backtest5.png" style="zoom:67%;" />
+   
+   7. 数据回放
+   
+      <img src="assets/14_run_data_player1.png" style="zoom:67%;" />
+   
+      <img src="assets/15_run_data_player2.png" style="zoom:67%;" />
 
 ### **8. 项目进度**
 
