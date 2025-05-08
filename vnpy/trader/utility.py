@@ -78,13 +78,13 @@ def get_folder_path(folder_name: str) -> Path:
     return folder_path
 
 
-def get_icon_path(filepath: str, ico_name: str) -> str:
-    """
-    Get path for icon file with ico name.
-    """
-    ui_path: Path = Path(filepath).parent
-    icon_path: Path = ui_path.joinpath("ico", ico_name)
-    return str(icon_path)
+# def get_icon_path(filepath: str, ico_name: str) -> str:
+#     """
+#     Get path for icon file with ico name.
+#     """
+#     ui_path: Path = Path(filepath).parent
+#     icon_path: Path = ui_path.joinpath("ico", ico_name)
+#     return str(icon_path)
 
 
 def load_json(filename: str) -> dict:

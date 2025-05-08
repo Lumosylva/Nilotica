@@ -40,7 +40,6 @@ dependencies = [
     "pandas>=2.2.3",
     "hatch>=1.14.1",
     "setuptools>=78.1.0",
-    "ta-lib>=0.6.3",
     "tzdata>=2025.2",
     "pathlib>=1.0.1",
     "pip>=25.0.1",
@@ -49,6 +48,8 @@ dependencies = [
     "polars>=1.26.0",
     "websocket-client>=1.8.0",
     "importlib-metadata>=8.6.1",
+    "pyyaml>=6.0.2",
+    "pydantic>=2.11.4",
 ]
 
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
@@ -56,7 +57,7 @@ keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
 [project.urls]
 "Homepage" = "https://github.com/Lumosylva/Nilotica"
 "Documentation" = "https://github.com/Lumosylva/Nilotica/README.md"
-"Repository" = "git@github.com:Lumosylva/Nilotica.git"
+"Repository" = "https://github.com/Lumosylva/Nilotica.git"
 "Issues" = "https://github.com/Lumosylva/Nilotica/issues"
 "Changes" = "https://github.com/Lumosylva/Nilotica/CHANGELOG.md"
 "Source" = "https://github.com/Lumosylva/Nilotica"
@@ -69,7 +70,6 @@ requires = [
     "pybind11-stubgen>=2.5.3",
     "setuptools",
     "numpy",
-    "ta-lib>=0.6.3",
     "tzdata>=2025.2",
 ]
 build-backend = "hatchling.build"
@@ -94,11 +94,13 @@ include = [
     "vnpy_websocket*",
     "zmq_services*",
     "__init__.py",
+    "banner.png",
     "build.bat",
     "build.sh",
     "CHANGELOG.md",
     "hatch_build.py",
     "LICENSE.txt",
+    "main.py",
     "pyproject.toml",
     "README.md",
     "README_EN.md",
@@ -149,6 +151,7 @@ docs = [
 dependencies = [
   "nilotica[dev,docs] @ ."
 ]
+
 scripts.test = "pytest {args}"
 scripts.lint = [
   "black .",
