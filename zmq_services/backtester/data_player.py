@@ -10,25 +10,11 @@ import heapq # For efficient sorting/merging if loading multiple project_files
 import pickle
 # +++ Add Logger Import +++
 from utils.logger import logger # Assuming logger is configured elsewhere
-# +++ Correct Config Import +++
-# from zmq_services import config
-from config import zmq_config as config
-# +++ End Correction +++
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')) # Go up two levels
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
-# Import local config (need to adjust relative path)
-# try:
-#     from zmq_services import config
-# except ImportError:
-#      print("无法导入 zmq_services.config。请确保路径设置正确。")
-     # Define fallback config values if necessary for testing standalone
-# --- Use the same top-level config import as run_data_player --- 
-# from config import zmq_config as config
-# --- End Use top-level import ---
 
 # --- Data Player Service ---
 class DataPlayerService:
@@ -218,12 +204,25 @@ class DataPlayerService:
 
 # --- Main execution block (Example Usage) ---
 if __name__ == "__main__":
+    # +++ Import ConfigManager for __main__ block +++
+    from utils.config_manager import ConfigManager
+    # +++ Initialize with default 'backtest' environment for standalone runs +++
+    config_service = ConfigManager(environment="backtest") 
+
     # Example: Play back data for today's date (or specific date)
     playback_date = datetime.now().strftime('%Y%m%d')
     # Or set a specific date: playback_date = "20231027"
 
-    data_path = config.BACKTEST_DATA_SOURCE_PATH
-    pub_url = config.BACKTEST_DATA_PUB_URL
+    # +++ Get paths/URLs from ConfigManager for __main__ block +++
+    data_path = config_service.get_backtest_data_source_path()
+    pub_url = config_service.get_global_config("zmq_addresses.backtest_data_pub", "tcp://*:5560")
+
+    if not data_path:
+        logger.error("错误：未能从配置中获取 backtest_data_source_path。请检查 global_config.yaml")
+        sys.exit(1)
+    if not pub_url:
+        logger.error("错误：未能从配置中获取 zmq_addresses.backtest_data_pub。请检查 global_config.yaml")
+        sys.exit(1)
 
     player = DataPlayerService(data_path, pub_url, playback_date)
 
