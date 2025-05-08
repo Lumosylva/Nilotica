@@ -196,8 +196,15 @@ hatch build
 │   │   ├── params.py - 常量
 │   │   └── path.py - 路径常量
 │   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录。
+│   │   ├── backtest_config.yaml - 回测参数配置
+│   │   ├── backtest_strategies_setting.json - 回测策略参数配置
+│   │   ├── dev_config.yaml - 开发模式配置
+│   │   ├── global_config.yaml - 全局配置
+│   │   └──prod_config.yaml - 生产模式配置
 ├── ta-lib - ta-lib库源文件
 ├── utils - 工具类包，包含日志、路径等
+│   ├── logger - 日志记录工具
+│   ├── path - 路径工具
 │   ├── config_models.py - 含PathsConfig、ZmqAddressesConfig、LoggingConfig、GlobalConfigStructure Pydantic 模型。
 ├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎。
 ├── vnpy_ctp - vnpy官方的ctp库，主要功能是提供底层与simnow和实盘行情和交易服务器交互的接口。
@@ -211,7 +218,7 @@ hatch build
 │   │   └── simulation_engine.py - 模拟引擎
 │   ├── strategies - 策略存放位置
 │   ├── recorded_data - accounts、tick、order、trader数据本地存储目录
-│   ├── config.py - 项目配置文件
+│   ├── dev_recorded_data - 开发模式数据存放目录
 │   ├── data_recorder.py - 数据记录器
 │   ├── market_data_gateway.py - 行情网关
 │   ├── order_execution_gateway.py - 订单执行网关
@@ -223,7 +230,8 @@ hatch build
 │   ├── run_risk_manager.py - 风控管理器启动脚本
 │   ├── run_strategy_engine.py - 策略引擎启动脚本
 │   ├── strategy_base.py - 策略基类
-│   └── strategy_subscriber.py - 策略订阅器
+│   ├── zmq_base.py - 用于管理 ZMQ Context 和 PUB Socket的基类
+│   └── strategy_engine.py - 策略引擎
 ├── .python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
 ├── CHANGELOG.md - 系统版本更新日志
 ├── LICENSE.txt - license文件
