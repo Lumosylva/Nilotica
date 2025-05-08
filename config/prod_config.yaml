@@ -1,0 +1,20 @@
+# Production specific overrides
+logging:
+  default_level: "INFO"
+
+zmq_addresses:
+  # 生产环境通常绑定所有接口
+  market_data_pub: "tcp://*:5555"    # Market data publisher (行情发布地址)
+  market_data_rep: "tcp://*:2015"    # Market data request/reply (if any service needs it)
+  order_gateway_pub: "tcp://*:5557"  # Order/trade report publisher (订单/成交回报发布地址)
+  order_gateway_rep: "tcp://*:5558"  # Order gateway command REQ/REP (订单网关指令接收地址)
+  risk_alert_pub: "tcp://*:5559"     # Risk alert publisher (风险管理警报发布地址)
+
+paths:
+  # 开发时可能使用不同的数据路径
+  data_recording_path: "zmq_services/dev_recorded_data/"
+
+# 可以在这里添加生产环境特定的数据库连接、API密钥等，
+# 这些信息不应出现在基础配置或版本控制中（后续可以考虑 secret 管理）
+# external_api:
+#   key: "PROD_API_KEY_XYZ"

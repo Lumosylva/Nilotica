@@ -1,0 +1,38 @@
+# Backtest Environment Specific Configuration
+
+# Override paths for backtesting
+paths:
+  # Optional: Override data recording path if backtests write different kinds of data
+  # data_recording_path: "zmq_services/backtest_recorded_data/"
+
+  # Crucial: Specify the source for backtest historical data
+  # This might be the same as global or a dedicated backtest data store
+  backtest_data_source_path: "zmq_services/dev_recorded_data/" # Updated path to include zmq_services
+
+  # Optional: Override product_info.ini if backtest uses different contract specs/fees
+  product_info_ini: "config/project_files/backtest_product_info.ini"
+
+  # NEW: Path to the strategies configuration file specifically for backtesting
+  # This allows using different strategies or settings for backtests vs. live.
+  strategies_config_path: "config/backtest_strategies_setting.json" # Relative to project root
+
+# Optional: Override logging for backtests if needed
+logging:
+  default_level: "DEBUG" # More verbose logging during backtests
+
+# Optional: Override ZMQ addresses if backtester uses a different setup
+# (less common if backtester is self-contained or uses direct function calls)
+# zmq_addresses:
+#   backtest_data_pub: "ipc:///tmp/backtest_data_pub.ipc"
+#   backtest_order_report_pub: "ipc:///tmp/backtest_order_report_pub.ipc"
+#   backtest_order_request_pull: "ipc:///tmp/backtest_order_request_pull.ipc"
+
+# Example: Backtester specific settings (if your backtester reads from here)
+backtester_settings:
+  start_date: "2023-01-01"
+  end_date: "2023-12-31"
+  initial_capital: 1000000
+  # slippage_pct: 0.0001 # Example slippage setting
+  # transaction_fee_pct: 0.00005 # Example fee setting
+
+# Note: Strategy parameters themselves are in the 'strategies_config_path' defined above.

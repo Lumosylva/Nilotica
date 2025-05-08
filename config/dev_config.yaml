@@ -1,0 +1,27 @@
+# Development specific overrides
+logging:
+  default_level: "DEBUG" # 开发时用更详细日志
+
+paths:
+  # 开发时可能使用不同的数据路径
+  data_recording_path: "zmq_services/dev_recorded_data/"
+  backtest_data_source_path: "zmq_services/dev_recorded_data/" # Ensure dev backtests use dev recorded data
+
+zmq_addresses:
+  # 使用不同端口或 localhost 避免与生产冲突
+  market_data_pub: "tcp://localhost:15555"
+  market_data_rep: "tcp://localhost:12015"
+  order_gateway_pub: "tcp://localhost:15557"
+  order_gateway_rep: "tcp://localhost:15558"
+  risk_alert_pub: "tcp://localhost:15559"
+
+  # Backtester specific ZMQ addresses
+  backtest_data_pub: "tcp://localhost:15560"             # Backtest market data publisher (回测行情发布地址)
+  backtest_order_report_pub: "tcp://localhost:15561"      # Backtest order/trade report publisher (回测订单/成交回报发布地址)
+  backtest_order_request_pull: "tcp://localhost:15562"    # Backtest order request PULL (回测订单请求接收地址)
+
+# General service configurations
+service_settings:
+  # Batch size for processing messages in publisher queues (e.g., in OrderExecutionGateway)
+  publish_batch_size: 1000
+  recorder_batch_size: 100 # 您可以按需调整这个值
