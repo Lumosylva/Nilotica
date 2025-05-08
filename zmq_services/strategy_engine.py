@@ -7,8 +7,11 @@ import sys
 import os
 import logging
 import msgpack
-from utils.logger import logger
+from utils.logger import logger, setup_logging, DEBUG, INFO
 import importlib
+
+# +++ Import ConfigManager +++
+from utils.config_manager import ConfigManager
 
 from zmq_services.strategy_base import BaseLiveStrategy
 
@@ -17,53 +20,68 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import new config location
-from config import zmq_config as config
-
 # Import vnpy constants if needed for constructing order requests
 from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status
 from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, LogData # Added AccountData, LogData, TickData
 
 # +++ Import helper functions for recreating objects +++
 from vnpy.trader.utility import extract_vt_symbol
-from datetime import datetime
 
 # Constants for Health Checks
 from datetime import datetime, time as dt_time # For trading hours check
-MARKET_DATA_TIMEOUT = getattr(config, 'MARKET_DATA_TIMEOUT_SECONDS', 30.0) # Get from config or default
-INITIAL_TICK_GRACE_PERIOD_MULTIPLIER = getattr(config, 'INITIAL_TICK_GRACE_PERIOD_MULTIPLIER', 2.0) # Grace period multiplier
-PING_INTERVAL = getattr(config, 'PING_INTERVAL_SECONDS', 5.0)        # Get from config or default
-PING_TIMEOUT_MS = getattr(config, 'PING_TIMEOUT_MS', 2500)         # Get from config or default
-RPC_TIMEOUT_MS = getattr(config, 'RPC_TIMEOUT_MS', 3000)          # Get from config or default
-RPC_RETRIES = getattr(config, 'RPC_RETRIES', 1)                    # Get from config or default
-HEARTBEAT_TIMEOUT_S = getattr(config, 'HEARTBEAT_TIMEOUT_SECONDS', 10.0) # Get from config or default
-
 
 # --- Strategy Engine (Renamed from StrategySubscriber) ---
 class StrategyEngine: # Renamed class
-    def __init__(self, gateway_pub_url: str, order_gw_rep_url: str, order_report_url: str, strategies_config: Dict[str, Dict[str, Any]]):
+    def __init__(self,
+                 config_manager: ConfigManager,
+                 gateway_pub_url: str,
+                 order_gw_rep_url: str,
+                 order_report_url: str,
+                 strategies_config: Dict[str, Dict[str, Any]],
+                 # +++ Add new parameters for logging context +++
+                 strategy_context_name: Optional[str] = None,
+                 log_level_for_strat_engine: str = "INFO" # Default to INFO
+                 # +++ End new parameters +++
+                 ):
         """
         Initializes the strategy engine, loads strategies, and sets up communication.
 
         Args:
+            config_manager: ConfigManager instance for loading configuration.
             gateway_pub_url: ZMQ PUB URL for market data.
             order_gw_rep_url: ZMQ REQ URL for sending order requests/RPC (to Order Gateway REP).
             order_report_url: ZMQ PUB URL for receiving order/trade reports.
             strategies_config: Configuration for strategies to load.
-                Example:
-                {
-                    "SA509_1": {
-                        "strategy_class": "zmq_services.strategies.sa509_strategy.SA509LiveStrategy",
-                        "vt_symbol": "SA509.CZCE",
-                        "setting": {
-                            "entry_threshold": 3050, # Example override
-                            "order_volume": 2
-                        }
-                    },
-                    # Add other strategies here...
-                }
+            strategy_context_name: Optional name of the primary strategy for logging context.
+            log_level_for_strat_engine: Log level for this StrategyEngine instance.
         """
+        # +++ Setup logging with context +++
+        self.config_service = config_manager # Assign early for config_env access
+        service_name_base = self.__class__.__name__
+        final_service_name = f"{service_name_base}[{strategy_context_name}]" if strategy_context_name else service_name_base
+        # Use the passed log_level and config_env from its own config_manager
+        setup_logging(service_name=final_service_name, level=log_level_for_strat_engine, config_env=self.config_service._environment)
+        # +++ End setup logging +++
+
+        # logger.info(f"StrategyEngine Logging Initialized: Name='{final_service_name}', Level='{log_level_for_strat_engine}', ConfigEnv='{self.config_service.environment}'")
+        
+        # +++ Initialize is_backtest_mode +++
+        self.is_backtest_mode: bool = False # Default to False for live/normal mode
+        # +++ End Initialize +++
+
         self.context = zmq.Context()
+        # self.config_service = config_manager # Moved up
+
+        # +++ Load engine communication parameters from config_service +++
+        self.market_data_timeout = self.config_service.get_global_config("engine_communication.market_data_timeout_seconds", 30.0)
+        self.initial_tick_grace_period_multiplier = self.config_service.get_global_config("engine_communication.initial_tick_grace_period_multiplier", 2.0)
+        self.ping_interval = self.config_service.get_global_config("engine_communication.ping_interval_seconds", 5.0)
+        self.ping_timeout_ms = self.config_service.get_global_config("engine_communication.ping_timeout_ms", 2500)
+        self.rpc_timeout_ms = self.config_service.get_global_config("engine_communication.rpc_timeout_ms", 3000)
+        self.rpc_retries = self.config_service.get_global_config("engine_communication.rpc_retries", 1)
+        self.heartbeat_timeout_s = self.config_service.get_global_config("engine_communication.heartbeat_timeout_seconds", 10.0)
+        self.order_cool_down_seconds = self.config_service.get_global_config("order_submission.default_cool_down_seconds", 1)
+        # For _is_trading_hours, we load it directly in the method to keep __init__ cleaner, or make it an attribute if frequently used.
 
         # --- ZMQ Socket Setup --- 
         self.subscriber = self.context.socket(zmq.SUB)
@@ -157,12 +175,6 @@ class StrategyEngine: # Renamed class
              # For now, allow continuing but log error.
         # --- End Strategy Loading ---
 
-        # --- Determine Backtest Mode --- 
-        # Assuming running from run_strategy_engine.py means Live Mode
-        self.is_backtest_mode = False 
-        logger.info("策略引擎运行在实盘模式 (基于启动脚本 run_strategy_engine.py)。")
-        # --- End Determine Backtest Mode ---
-
         # --- Update Subscription Logic --- 
         # --- Restore original subscription logic ---
         # logger.info("DEBUG: Subscribing to ALL topics (\"\") on SUB socket.")
@@ -250,11 +262,17 @@ class StrategyEngine: # Renamed class
         # +++ End Increase +++
 
     # --- RPC Helper (Should only be called in Live mode) --- 
-    def _send_rpc_request(self, request_tuple: tuple, timeout_ms: int = RPC_TIMEOUT_MS, retries: int = RPC_RETRIES) -> Any | None:
+    def _send_rpc_request(self, request_tuple: tuple, timeout_ms: int = -1, retries: int = -1) -> Any | None:
         """
         Helper method to send an RPC request via REQ socket with timeout and retries.
         ONLY FOR LIVE TRADING.
         """
+        # Use instance variables for default timeout and retries
+        if timeout_ms == -1:
+            timeout_ms = self.rpc_timeout_ms
+        if retries == -1:
+            retries = self.rpc_retries
+
         # +++ Add check for backtest mode +++
         if self.is_backtest_mode:
             logger.error("_send_rpc_request 不应在回测模式下调用！")
@@ -355,10 +373,13 @@ class StrategyEngine: # Renamed class
     # --- Add missing _is_trading_hours method ---
     def _is_trading_hours(self) -> bool:
         """Checks if the current time is within any defined trading session."""
+        from datetime import datetime, time as dt_time # Import here
         now_dt = datetime.now()
         current_time = now_dt.time()
         try:
-            for start_str, end_str in config.FUTURES_TRADING_SESSIONS:
+            # +++ Get trading sessions from ConfigManager +++
+            futures_trading_sessions = self.config_service.get_global_config("risk_management.futures_trading_sessions", [])
+            for start_str, end_str in futures_trading_sessions:
                 start_time = dt_time.fromisoformat(start_str) 
                 end_time = dt_time.fromisoformat(end_str)
                 if start_time <= end_time: # Simple case: session within the same day
@@ -385,7 +406,7 @@ class StrategyEngine: # Renamed class
         self.last_ping_time = current_time # Update last ping attempt time
 
         # Use the helper method with specific ping timeout and no retries for ping itself
-        result = self._send_rpc_request(req_tuple, timeout_ms=PING_TIMEOUT_MS, retries=0)
+        result = self._send_rpc_request(req_tuple, timeout_ms=self.ping_timeout_ms, retries=0) # Use instance variable
 
         if result == "pong":
             # Success is handled inside _send_rpc_request by setting gateway_connected=True
@@ -418,10 +439,10 @@ class StrategyEngine: # Renamed class
             return None # Indicate failure
 
         # Apply cooling down period (logic remains the same)
-        cool_down_period = getattr(config, 'ORDER_COOL_DOWN_SECONDS', 1) # Get from config with default
+        # +++ Use instance variable for cool_down_period +++
         last_sent = self.last_order_time.get(symbol, 0)
-        if time.time() - last_sent < cool_down_period:
-            logger.warning(f"订单发送冷却中 ({symbol}): 距离上次发送不足 {cool_down_period} 秒。")
+        if time.time() - last_sent < self.order_cool_down_seconds: # Use instance variable
+            logger.warning(f"订单发送冷却中 ({symbol}): 距离上次发送不足 {self.order_cool_down_seconds} 秒。")
             return None
 
         logger.info(f"准备发送限价单: {symbol}.{exchange.value} {direction.value} {volume} @ {price} Offset: {offset.value}")
@@ -690,14 +711,14 @@ class StrategyEngine: # Renamed class
                 # 1. Check Order Gateway Heartbeat (Live mode only? Or backtest reports heartbeat?)
                 # Assume heartbeat only relevant in live mode for now.
                 if not self.is_backtest_mode and self.last_ordergw_heartbeat_time > 0 and \
-                   (current_time - self.last_ordergw_heartbeat_time > HEARTBEAT_TIMEOUT_S):
+                   (current_time - self.last_ordergw_heartbeat_time > self.heartbeat_timeout_s): # Use instance variable
                     if self.gateway_connected:
                         logger.error(f"订单网关心跳超时 ...")
                         self.gateway_connected = False
                         self.initial_connection_time = None
 
                 # 2. Send periodic PING via RPC (Live mode only)
-                if not self.is_backtest_mode and current_time - self.last_ping_time >= PING_INTERVAL:
+                if not self.is_backtest_mode and current_time - self.last_ping_time >= self.ping_interval: # Use instance variable
                     self._send_ping() 
 
                 # 3. Check market data timeout (Improved logic)
@@ -705,7 +726,7 @@ class StrategyEngine: # Renamed class
                     found_stale_symbol = False
                     stale_symbols = []
                     check_time = time.time()
-                    initial_grace_period = MARKET_DATA_TIMEOUT * INITIAL_TICK_GRACE_PERIOD_MULTIPLIER
+                    initial_grace_period = self.market_data_timeout * self.initial_tick_grace_period_multiplier # Use instance variables
 
                     for symbol in self.subscribed_symbols:
                         last_ts = self.last_tick_time.get(symbol)
@@ -721,7 +742,7 @@ class StrategyEngine: # Renamed class
                                     found_stale_symbol = True
                                     stale_symbols.append(f"{symbol} (no tick since connect+{initial_grace_period:.0f}s)")
                         else: # --- Check for symbols that have received ticks before ---
-                            if check_time - last_ts > MARKET_DATA_TIMEOUT:
+                            if check_time - last_ts > self.market_data_timeout: # Use instance variable
                                 found_stale_symbol = True
                                 stale_symbols.append(f"{symbol} (last {check_time - last_ts:.1f}s ago)")
 
@@ -755,6 +776,18 @@ class StrategyEngine: # Renamed class
         # --- Remove redundant self.stop() call --- 
         # self.stop() # Ensure cleanup is called <<< REMOVED
 
+        # Context termination is handled by the caller (run_backtest.py) or by stop() method
+        # if self.context and not self.context.closed: # Check if context exists and not already closed
+        #     try:
+        #         logger.info("正在终止策略引擎的 ZMQ Context...")
+        #         self.context.term()
+        #         logger.info("策略引擎的 ZMQ Context 已成功终止。")
+        #     except zmq.ZMQError as e:
+        #         logger.error(f"终止策略引擎的 ZMQ Context 时发生 ZMQ 错误: {e}")
+        #     except Exception as e:
+        #         logger.error(f"终止策略引擎的 ZMQ Context 时发生未知错误: {e}")
+        # else:
+        #     logger.warning("策略引擎的 ZMQ Context 未找到或已关闭，跳过终止。")
 
     # --- FIX: Update methods to handle dictionaries --- 
     # --- FIX: Update methods to handle OBJECTS (after reconstruction) --- 
@@ -912,7 +945,7 @@ class StrategyEngine: # Renamed class
 
             # Warn if received timestamp is too old (potential clock skew or major delay)
             # Use the global constant HEARTBEAT_TIMEOUT_S - Use correct parameter name
-            if (now_ts - heartbeat_ts) > (HEARTBEAT_TIMEOUT_S / 2):
+            if (now_ts - heartbeat_ts) > (self.heartbeat_timeout_s / 2):
                  logger.warning(
                      f"收到过期的 OrderGW 心跳 (Timestamp: {datetime.fromtimestamp(heartbeat_ts).isoformat()}, "
                      f"Now: {datetime.fromtimestamp(now_ts).isoformat()}) - 可能存在时钟不同步或延迟。"
@@ -923,6 +956,8 @@ class StrategyEngine: # Renamed class
     def stop(self):
         """Stops the strategy engine and all strategies."""
         if not self.running:
+            # +++ Add a log if stop is called when not running +++
+            logger.info("StrategyEngine.stop() 被调用，但引擎未在运行或已被停止。")
             return
 
         logger.info("开始停止策略引擎服务...")
@@ -943,6 +978,9 @@ class StrategyEngine: # Renamed class
             self.subscriber, 
             self.order_requester
         ]
+        # Add order_pusher to the list if it exists (for backtest mode)
+        if hasattr(self, 'order_pusher') and self.order_pusher:
+            sockets_to_close.append(self.order_pusher)
 
         for sock in sockets_to_close:
             if sock and not sock.closed:
@@ -955,7 +993,19 @@ class StrategyEngine: # Renamed class
         logger.info("策略引擎 ZMQ Sockets 已关闭。")
         # --- End Add Socket Closing Logic ---
 
-        # Context termination is handled by the caller (run_backtest.py)
+        # +++ Terminate context here in stop() method +++
+        if self.context and not self.context.closed:
+            try:
+                logger.info("正在终止策略引擎的 ZMQ Context (from stop method)...")
+                self.context.term()
+                logger.info("策略引擎的 ZMQ Context 已成功终止 (from stop method)。")
+            except zmq.ZMQError as e_term:
+                logger.error(f"终止策略引擎的 ZMQ Context 时发生 ZMQ 错误: {e_term}")
+            except Exception as e_term_general:
+                logger.exception(f"终止策略引擎的 ZMQ Context 时发生未知错误: {e_term_general}")
+        else:
+            logger.info("策略引擎的 ZMQ Context 未找到或已关闭 (from stop method)，跳过终止。")
+        # +++ End Terminate context +++
 
 # Helper function to create OrderData from dict (handle potential errors)
 def create_order_from_dict(d: dict) -> Optional[OrderData]:

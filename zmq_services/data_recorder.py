@@ -15,6 +15,9 @@ from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, Cont
 from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status, Product, OptionType
 import msgpack # Add import
 
+# +++ Import ConfigManager +++
+from utils.config_manager import ConfigManager
+
 # +++ Import the converter function +++
 # from .zmq_base import convert_vnpy_obj_to_dict # REMOVED (Relative import)
 from utils.converter import convert_vnpy_obj_to_dict # UPDATED IMPORT
@@ -24,18 +27,20 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import local config
-from config import zmq_config as config
+# --- Remove old config import ---
+# from config import zmq_config as config
 
-# +++ Batch Writing Configuration +++
-# Use getattr to safely get values from config, with defaults
-BATCH_WRITE_SIZE = getattr(config, 'RECORDER_BATCH_SIZE', 100)  # Records per flush
-# +++ End Configuration +++
+# --- Remove old module-level BATCH_WRITE_SIZE definition ---
+# BATCH_WRITE_SIZE = getattr(config, 'RECORDER_BATCH_SIZE', 100)  # Records per flush
 
 # --- Data Recorder Service ---
 class DataRecorderService:
-    def __init__(self, market_data_pub_addr: str, order_gateway_pub_addr: str, recording_path: str):
+    def __init__(self, config_manager: ConfigManager, market_data_pub_addr: str, order_gateway_pub_addr: str, recording_path: str):
         """Initializes the data recorder service."""
+        # +++ Use passed ConfigManager instance +++
+        self.config_service = config_manager
+        # --- Remove self.config_service = ConfigManager() ---
+
         self.context = zmq.Context()
         self.subscriber = self.context.socket(zmq.SUB)
         self.subscriber.setsockopt(zmq.LINGER, 0) # Avoid blocking on close
@@ -63,7 +68,8 @@ class DataRecorderService:
         # --- Batch Writing State ---
         # Restore initialization of batch writing variables
         self.file_batches: dict[str, list] = defaultdict(list) # Maps filename -> list of records
-        self.batch_write_size: int = BATCH_WRITE_SIZE
+        # +++ Get batch_write_size from ConfigManager +++
+        self.batch_write_size: int = self.config_service.get_global_config("service_settings.recorder_batch_size", 100)
         self.batch_lock = threading.Lock() # Lock for accessing file_batches
         # --- End Batch Writing State ---
 

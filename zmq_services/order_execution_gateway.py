@@ -4,9 +4,8 @@ import threading
 import sys
 import os
 from datetime import datetime
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, Optional
 import configparser
-import pickle
 import queue
 import msgpack
 
@@ -18,6 +17,8 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from utils.logger import logger
+# +++ Import ConfigManager +++
+from utils.config_manager import ConfigManager
 
 # VNPY imports
 try:
@@ -39,8 +40,9 @@ except ImportError as e:
         print(f"CRITICAL: Current sys.path: {sys.path}")
     sys.exit(1)
 
-from config import zmq_config as config
-from config.zmq_config import PUBLISH_BATCH_SIZE # HEARTBEAT_INTERVAL_S likely unused
+# --- Remove old config imports ---
+# from config import zmq_config as config
+# from config.zmq_config import PUBLISH_BATCH_SIZE # HEARTBEAT_INTERVAL_S likely unused
 from utils.converter import convert_vnpy_obj_to_dict
 
 # --- Add Heartbeat Constant ---
@@ -157,10 +159,14 @@ class OrderExecutionGatewayService(RpcServer):
     Handles order sending/canceling via RPC calls and publishes order/trade updates.
     Uses a dedicated publisher thread for thread-safety.
     """
-    def __init__(self, environment_name: str):
+    def __init__(self, config_manager: ConfigManager, environment_name: str):
         """Initializes the execution gateway service for a specific environment."""
         super().__init__()
-        logger.info(f"Initializing OrderExecutionGatewayService for environment: [{environment_name}]...")
+        # +++ Use passed ConfigManager instance +++
+        self.config_service = config_manager
+        # --- Remove self.config_service = ConfigManager() ---
+
+        logger.info(f"Initializing OrderExecutionGatewayService for environment: [{environment_name}] using provided ConfigManager.")
         self.environment_name = environment_name # Store for logging
 
         self._event_counter = 0
@@ -172,6 +178,11 @@ class OrderExecutionGatewayService(RpcServer):
         # +++ End Add +++
         # +++ Add cache for active orders +++
         self.order_cache: Dict[str, OrderData] = {}
+        # +++ End Add +++
+        # +++ Add for CTP reconnection +++
+        self._stored_ctp_setting: Optional[Dict[str, Any]] = None
+        self._last_reconnect_attempt_time: float = 0.0
+        self._reconnect_interval_seconds: int = 30 # Minimum interval between reconnect attempts
         # +++ End Add +++
 
         # VNPY setup
@@ -188,10 +199,13 @@ class OrderExecutionGatewayService(RpcServer):
                 logger.info(f"Loaded CTP settings for environment: [{environment_name}]")
             else:
                 logger.error(f"Environment '{environment_name}' not found in connect_ctp.json! Cannot connect CTP.")
+                self.ctp_setting = None # Ensure it's None if not found
         except FileNotFoundError:
             logger.error("connect_ctp.json not found! Cannot connect CTP.")
-        except Exception as e:
-            logger.exception(f"Error loading or parsing connect_ctp.json: {e}")
+            self.ctp_setting = None # Ensure it's None
+        except Exception as err:
+            logger.exception(f"Error loading or parsing connect_ctp.json: {err}")
+            self.ctp_setting = None # Ensure it's None
         # --- End Load and Select --- 
 
         self.contracts: Dict[str, ContractData] = {}
@@ -249,10 +263,13 @@ class OrderExecutionGatewayService(RpcServer):
             else:
                 # Log if the gateway itself failed to send without raising an exception
                 logger.error(f"RPC: send_order - CTP 网关未能发送订单 (gateway.send_order 返回 None): {order_request.symbol}")
+                # Potentially an issue, maybe try reconnecting?
+                self._attempt_ctp_reconnect(reason=f"gateway.send_order returned None for {order_request.symbol}")
                 return None
         except Exception as e:
             # Log exceptions raised by the gateway's send_order
             logger.exception(f"RPC: send_order - 发送订单时 CTP 网关出错: {e}")
+            self._attempt_ctp_reconnect(reason=f"send_order exception: {e}")
             return None
 
     def cancel_order(self, req_dict: Dict[str, Any]) -> Dict[str, str]:
@@ -310,6 +327,41 @@ class OrderExecutionGatewayService(RpcServer):
     def ping(self) -> str:
         """Handles ping request from client."""
         return "pong"
+
+    # +++ Add CTP Reconnect Method +++
+    def _attempt_ctp_reconnect(self, reason: str = "generic error"):
+        """Attempts to reconnect to CTP if not recently attempted."""
+        current_time = time.time()
+        if not self._stored_ctp_setting:
+            logger.error("无法尝试 CTP 重连：未存储 CTP 配置。")
+            return
+
+        if current_time - self._last_reconnect_attempt_time < self._reconnect_interval_seconds:
+            logger.info(f"CTP 重连请求过于频繁，已跳过。上次尝试在 {self._reconnect_interval_seconds} 秒内。原因: {reason}")
+            return
+
+        logger.warning(f"检测到 CTP 连接问题 (原因: {reason})，尝试重新连接 CTP...")
+        self._last_reconnect_attempt_time = current_time
+        try:
+            # Ensure gateway object exists
+            if not hasattr(self, 'gateway') or not self.gateway:
+                 logger.error("无法重连 CTP：网关对象不存在。")
+                 return
+
+            # It's good practice to close before reconnecting if the API supports it well,
+            # but simple connect might also work or be required by vnpy's gateway.
+            # self.gateway.close() # Optional: and if close is idempotent
+            # time.sleep(1) # Brief pause before reconnect
+            
+            logger.info(f"调用 self.gateway.connect 使用已存储的配置进行 CTP 重连...")
+            self.gateway.connect(self._stored_ctp_setting)
+            logger.info("CTP 重新连接请求已发送。请监控后续日志确认连接状态。")
+            # Note: Confirmation of successful reconnect would typically come via
+            # CTP's OnFrontConnected and OnRspUserLogin callbacks, which vnpy_ctp
+            # CtpGateway should handle and potentially log.
+        except Exception as e:
+            logger.exception(f"尝试 CTP 重新连接时发生错误: {e}")
+    # +++ End Add CTP Reconnect Method +++
 
     # --- Event Processing (Restored with Filtering) ---
     def process_vnpy_event(self, event: Event):
@@ -467,6 +519,9 @@ class OrderExecutionGatewayService(RpcServer):
         hwm_warning_interval = 10
         loop_count = 0
 
+        # +++ Get PUBLISH_BATCH_SIZE from ConfigManager +++
+        publish_batch_size = self.config_service.get_global_config("service_settings.publish_batch_size", 1000)
+
         while self._publisher_active.is_set():
             loop_count += 1
             current_time = time.time()
@@ -491,7 +546,7 @@ class OrderExecutionGatewayService(RpcServer):
                 first_item = self._publish_queue.get(timeout=0.1)
                 batch.append(first_item)
                 # Get subsequent items without blocking
-                for _ in range(PUBLISH_BATCH_SIZE - 1):
+                for _ in range(publish_batch_size - 1): # Use the fetched publish_batch_size
                      try:
                          item = self._publish_queue.get_nowait()
                          batch.append(item)
@@ -609,13 +664,21 @@ class OrderExecutionGatewayService(RpcServer):
 
         logger.info(f"启动订单执行网关服务(RPC模式) for [{self.environment_name}]...")
 
+        # +++ Get ZMQ addresses from ConfigManager +++
+        order_gateway_rep_address = self.config_service.get_global_config("zmq_addresses.order_gateway_rep", "tcp://*:5558")
+        order_gateway_pub_address = self.config_service.get_global_config("zmq_addresses.order_gateway_pub", "tcp://*:5557")
+
+        if not order_gateway_rep_address or not order_gateway_pub_address:
+            logger.error("错误：未能从配置中获取订单网关 REP 或 PUB 地址。服务无法启动。")
+            return
+
         # Start RpcServer first
         try:
             super().start(
-                rep_address=config.ORDER_GATEWAY_REP_ADDRESS,
-                pub_address=config.ORDER_GATEWAY_PUB_ADDRESS
+                rep_address=order_gateway_rep_address, # Use fetched address
+                pub_address=order_gateway_pub_address  # Use fetched address
             )
-            logger.info(f"RPC 服务器已启动。 REP: {config.ORDER_GATEWAY_REP_ADDRESS}, PUB: {config.ORDER_GATEWAY_PUB_ADDRESS}")
+            logger.info(f"RPC 服务器已启动。 REP: {order_gateway_rep_address}, PUB: {order_gateway_pub_address}")
             # Set socket options...
             if hasattr(self, '_socket_pub') and self._socket_pub:
                 try:
@@ -671,6 +734,8 @@ class OrderExecutionGatewayService(RpcServer):
             # Optionally stop the service here if CTP is essential
             # self.stop()
             return
+        
+        self._stored_ctp_setting = self.ctp_setting # Store for potential reconnection
 
         try:
             logger.info(f"CTP 连接配置 (Env: {self.environment_name}): UserID={self.ctp_setting.get('userid')}, "

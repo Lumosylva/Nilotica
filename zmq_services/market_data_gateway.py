@@ -9,6 +9,8 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from utils.logger import logger
+# +++ Import ConfigManager +++
+from utils.config_manager import ConfigManager
 
 from vnpy.trader.utility import load_json
 
@@ -28,8 +30,8 @@ except ImportError as e:
     print(f"CRITICAL: Current sys.path: {sys.path}")
     sys.exit(1)
 
-# Import new config location
-from config import zmq_config as config # Ensure this has PUB address
+# --- Remove old config import ---
+# from config import zmq_config as config # Ensure this has PUB address
 
 # +++ Import the new base class +++
 from .zmq_base import ZmqPublisherBase
@@ -47,11 +49,15 @@ class MarketDataGatewayService(ZmqPublisherBase):
     and ZmqPublisherBase for publishing data via ZMQ PUB socket.
     Uses event-driven check for CTP connection success.
     """
-    def __init__(self, environment_name: str):
+    def __init__(self, config_manager: ConfigManager, environment_name: str):
         """Initializes the gateway service for a specific environment."""
         super().__init__() # Initialize the ZmqPublisherBase base class
 
-        logger.info(f"Initializing MarketDataGatewayService for environment: [{environment_name}]...")
+        # +++ Use passed ConfigManager instance +++
+        self.config_service = config_manager
+        # --- Remove self.config_service = ConfigManager() ---
+
+        logger.info(f"Initializing MarketDataGatewayService for environment: [{environment_name}] using provided ConfigManager.") # Updated log
         self.environment_name = environment_name
 
         # Create EventEngine for the gateway
@@ -144,9 +150,12 @@ class MarketDataGatewayService(ZmqPublisherBase):
 
     def start(self, pub_address=None):
         """Starts the publisher, EventEngine, and connects the gateway."""
-        # Use pub_address from config
-        pub_address = config.MARKET_DATA_PUB_ADDRESS
-        
+        # Use pub_address from config_service
+        pub_address = self.config_service.get_global_config("zmq_addresses.market_data_pub", "tcp://*:5555")
+        if not pub_address:
+            logger.error(f"行情发布地址 'zmq_addresses.market_data_pub' 未在配置中找到，无法启动。")
+            return
+
         # 1. Start the ZmqPublisherBase (binds PUB socket)
         if not super().start(pub_address=pub_address):
              logger.error(f"无法启动 ZmqPublisherBase (绑定到 {pub_address})，行情网关启动中止。")
@@ -194,7 +203,12 @@ class MarketDataGatewayService(ZmqPublisherBase):
             self._subscribe_list = []
             subscribe_count = 0
             failed_symbols = []
-            for vt_symbol in config.SUBSCRIBE_SYMBOLS:
+            # +++ Get subscribe_symbols from ConfigManager +++
+            subscribe_symbols = self.config_service.get_global_config("default_subscribe_symbols", [])
+            if not subscribe_symbols:
+                logger.warning("'default_subscribe_symbols' 未在配置中找到或为空，不订阅任何合约。")
+
+            for vt_symbol in subscribe_symbols:
                 try:
                     symbol, exchange_str = vt_symbol.split('.')
                     exchange = Exchange(exchange_str)

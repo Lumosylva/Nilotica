@@ -1,0 +1,2 @@
+{"zmq_topic": "log", "reception_timestamp_ns": 1746684984942207400, "data": {"gateway_name": "CTP_simnow", "msg": "CtpTdApi: onRspQryInstrument finished. Last: True, ErrorID: N/A", "level": 20, "time": "2025-05-08T14:16:24.930260"}}
+{"zmq_topic": "log", "reception_timestamp_ns": 1746684984943210100, "data": {"gateway_name": "CTP_simnow", "msg": "合约信息查询成功", "level": 20, "time": "2025-05-08T14:16:24.930260"}}

@@ -41,7 +41,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         self.vt_symbol: str = vt_symbol
         self.setting: Dict[str, Any] = setting
 
-        setup_logging(service_name=f"{__class__.__name__}.{self.strategy_name}", level=logging.INFO)
+        # setup_logging(service_name=f"{(self).__class__.__name__}.{self.strategy_name}", level=logging.INFO)
 
         # Strategy state variables
         self.inited: bool = False
@@ -256,9 +256,11 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 packed_request = msgpack.packb(req_tuple, use_bin_type=True)
                 # --- Use order_pusher socket ---
                 self.strategy_engine.order_pusher.send(packed_request)
+                # +++ 添加日志：确认 PUSH 发送操作已执行 +++
+                logger.debug(f"[BaseLiveStrategy SendOrder Backtest] PUSH send executed for request tuple: {req_tuple}")
+                # +++ 结束添加 +++
                 # --- End Use order_pusher ---
-                vt_orderid = f"clientsim_{self.strategy_name}_{int(time.time_ns())}" 
-                logger.info(f"Backtest Mode: Sent order request tuple for {vt_orderid}")
+                vt_orderid = None # ID will come from SimulationEngine via OrderData
             except pickle.PicklingError as e:
                  logger.error(f"Backtest Mode: Failed to pickle order request: {e}")
             except (msgpack.PackException, TypeError) as e_pack:
@@ -280,13 +282,16 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             )
             # --- End Live Trading Send --- 
 
-        # --- Common Logic: Add to active orders if ID generated --- 
-        if vt_orderid:
-            self.active_orders.add(vt_orderid) # Add either client-sim or real ID
-            logger.info(f"Sent Order: {self.vt_symbol} {direction.value} {offset.value} {volume} @ {price} -> {vt_orderid} (Mode: {'Backtest' if is_backtest_mode else 'Live'})")
+        # --- Common Logic: Add to active orders ONLY in live mode --- 
+        if vt_orderid and not is_backtest_mode:
+            self.active_orders.add(vt_orderid)
+            logger.info(f"Sent Order: {self.vt_symbol} {direction.value} {offset.value} {volume} @ {price} -> {vt_orderid} (Mode: Live)")
+        elif is_backtest_mode:
+            # Log that request was sent, but ID is pending
+            logger.info(f"Sent Order Request: {self.vt_symbol} {direction.value} {offset.value} {volume} @ {price} (Mode: Backtest, ID Pending)")
         # Error logging is handled within each branch or by the engine's live method
 
-        return vt_orderid
+        return vt_orderid # Returns real ID in live, None in backtest
 
     def cancel_order(self, vt_orderid: str) -> None:
         """Cancel an active order."""
@@ -295,20 +300,41 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             return
 
         if vt_orderid not in self.active_orders:
+            logger.debug(f"Order {vt_orderid} not in active orders list for strategy {self.strategy_name}. Maybe already inactive? Skipping cancel request.")
             # Avoid logging warning if order might have become inactive just before cancel call
             # logger.warning(f"Order {vt_orderid} not in active orders list for strategy {self.strategy_name}.")
-            pass # Simply don't send cancel if not tracked as active
+            return # Simply don't send cancel if not tracked as active
 
-        # Delegate cancellation to the engine
-        # Assuming the engine has a method like cancel_limit_order
-        if not hasattr(self.strategy_engine, 'cancel_limit_order'):
-             logger.error("Strategy engine does not have 'cancel_limit_order' method.")
-             return
+        # --- Detect Backtest Mode --- 
+        is_backtest_mode = getattr(self.strategy_engine, 'is_backtest_mode', False)
 
-        logger.info(f"Requesting Cancel for order {vt_orderid}")
-        self.strategy_engine.cancel_limit_order(vt_orderid)
+        logger.info(f"Requesting Cancel for order {vt_orderid} (Mode: {'Backtest' if is_backtest_mode else 'Live'}) ")
+        
+        if is_backtest_mode:
+            # --- Backtest: Send cancel request via PUSH --- 
+            cancel_req_dict = {
+                "action": "cancel",
+                "vt_orderid": vt_orderid
+            }
+            try:
+                packed_request = msgpack.packb(cancel_req_dict, use_bin_type=True)
+                self.strategy_engine.order_pusher.send(packed_request)
+                logger.info(f"Backtest Mode: Sent cancel request for {vt_orderid}")
+            except (msgpack.PackException, TypeError) as e_pack:
+                 logger.error(f"Backtest Mode: Failed to msgpack cancel request: {e_pack}")
+            except zmq.ZMQError as e:
+                 logger.error(f"Backtest Mode: ZMQ error sending cancel request: {e}")
+            # --- End Backtest Send --- 
+        else:
+            # --- Live Trading: Use RPC --- 
+            # Delegate cancellation to the engine via RPC
+            if not hasattr(self.strategy_engine, 'cancel_limit_order'):
+                 logger.error("Strategy engine does not have 'cancel_limit_order' method for live trading.")
+                 return
+            self.strategy_engine.cancel_limit_order(vt_orderid)
+            # --- End Live Trading Send --- 
+
         # Note: Order remains in active_orders until confirmed cancelled/inactive via on_order
-
 
     def cancel_all(self) -> None:
         """Cancel all active orders managed by this strategy."""
@@ -495,14 +521,21 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         # Ensure the order belongs to this strategy's symbol
         if order.vt_symbol == self.vt_symbol:
             is_active_order = order.vt_orderid in self.active_orders
+            
+            # If order is now inactive and we were tracking it, remove it.
             if not order.is_active() and is_active_order:
                 self.active_orders.remove(order.vt_orderid)
-                self.write_log(f"Order {order.vt_orderid} removed from active list (Status: {order.status}). Active count: {len(self.active_orders)}", logging.DEBUG)
-            elif order.is_active() and not is_active_order and order.status not in [Status.CANCELLED, Status.REJECTED]:
-                 # If an order becomes active unexpectedly (e.g., engine resends state), add it back if needed
-                 # self.active_orders.add(order.vt_orderid) # Be cautious adding orders not sent by strategy
-                 # self.write_log(f"Received update for active order {order.vt_orderid} not initially tracked by strategy.", logging.WARNING)
-                 self.write_log(f"Received update for active order {order.vt_orderid} not initially tracked by strategy.", logging.DEBUG)
+                self.write_log(f"Order {order.vt_orderid} removed from active list (Status: {order.status}). Active count: {len(self.active_orders)}.", logging.DEBUG)
+            # If order is now active and we were NOT tracking it, add it.
+            # This handles the case where the real ID arrives in backtest, or live orders appearing.
+            elif order.is_active() and not is_active_order:
+                 # Check status to avoid adding already cancelled/rejected orders if initial update was missed
+                 if order.status not in [Status.CANCELLED, Status.REJECTED]:
+                      self.active_orders.add(order.vt_orderid)
+                      self.write_log(f"Order {order.vt_orderid} added to active list (Status: {order.status}). Active count: {len(self.active_orders)}.", logging.DEBUG)
+                 else:
+                      self.write_log(f"Order {order.vt_orderid} update received but status is {order.status}, not adding to active list.", logging.DEBUG)
+
         # If order belongs to another symbol, ignore for active order tracking of this instance.
 
     #----------------------------------------------------------------------

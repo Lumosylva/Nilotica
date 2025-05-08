@@ -14,8 +14,11 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# +++ Import ConfigManager +++
+from utils.config_manager import ConfigManager
 from utils.logger import logger
-from config import zmq_config as config
+# --- Remove old config import --- 
+# from config import zmq_config as config
 
 # Import necessary vnpy constants and objects
 try:
@@ -33,29 +36,29 @@ except ImportError:
     class LogData: pass
     class ContractData: pass
 
-# Attempt to import CHINA_TZ from config, fallback if needed
-try:
-    from config.zmq_config import CHINA_TZ
-except ImportError:
-    # Fallback if not defined in config (requires zoneinfo package)
-    try:
-        from zoneinfo import ZoneInfo
-        CHINA_TZ = ZoneInfo("Asia/Shanghai")
-        logger.warning("CHINA_TZ not found in config, using zoneinfo fallback.")
-    except ImportError:
-        logger.error("zoneinfo package not found and CHINA_TZ not in config. Trading hours check might be inaccurate.")
-        # Define a dummy TZ or raise error if critical
-        # from datetime import timedelta # Need timedelta for DummyTZ (already imported)
-        class DummyTZ: # Basic placeholder, WILL NOT handle DST correctly
-            def utcoffset(self, dt): return timedelta(hours=8)
-            def dst(self, dt): return timedelta(0)
-            def tzname(self, dt): return "Asia/Shanghai_Fallback"
-        CHINA_TZ = DummyTZ()
+# --- Remove CHINA_TZ specific import/fallback --- 
+# try:
+#     from config.zmq_config import CHINA_TZ
+# except ImportError:
+#     # Fallback if not defined in config (requires zoneinfo package)
+#     try:
+#         from zoneinfo import ZoneInfo
+#         CHINA_TZ = ZoneInfo("Asia/Shanghai")
+#         logger.warning("CHINA_TZ not found in config, using zoneinfo fallback.")
+#     except ImportError:
+#         logger.error("zoneinfo package not found and CHINA_TZ not in config. Trading hours check might be inaccurate.")
+#         # Define a dummy TZ or raise error if critical
+#         # from datetime import timedelta # Need timedelta for DummyTZ (already imported)
+#         class DummyTZ: # Basic placeholder, WILL NOT handle DST correctly
+#             def utcoffset(self, dt): return timedelta(hours=8)
+#             def dst(self, dt): return timedelta(0)
+#             def tzname(self, dt): return "Asia/Shanghai_Fallback"
+#         CHINA_TZ = DummyTZ()
 
-# Constants for Heartbeat
-MARKET_DATA_TIMEOUT = 30.0 # seconds - Timeout for considering market data stale
-PING_INTERVAL = 5.0  # seconds
-PING_TIMEOUT_MS = 2500 # milliseconds
+# --- Remove module-level constants, will be fetched via ConfigManager ---
+# MARKET_DATA_TIMEOUT = 30.0 # seconds - Timeout for considering market data stale
+# PING_INTERVAL = 5.0  # seconds
+# PING_TIMEOUT_MS = 2500 # milliseconds
 
 # --- Helper Function for Active Order Check --- 
 def is_order_active_dict(order_dict: dict) -> bool:
@@ -70,30 +73,55 @@ def is_order_active_dict(order_dict: dict) -> bool:
 
 # --- Risk Manager Service ---
 class RiskManagerService:
-    def __init__(self, market_data_url: str, order_report_url: str, position_limits: dict):
+    def __init__(self, config_manager: ConfigManager):
         """Initializes the risk manager service."""
-        self.market_data_url = market_data_url
-        self.order_report_url = order_report_url
-        self.position_limits = position_limits
-        # Load additional risk parameters from config
-        self.max_pending_per_contract = getattr(config, 'MAX_PENDING_ORDERS_PER_CONTRACT', 5) # Default 5
-        self.global_max_pending = getattr(config, 'GLOBAL_MAX_PENDING_ORDERS', 20) # Default 20
-        self.margin_limit_ratio = getattr(config, 'MARGIN_USAGE_LIMIT', 0.8) # Default 80%
+        # +++ Use passed ConfigManager instance +++
+        self.config_service = config_manager
 
+        # +++ Load configuration using ConfigManager +++
+        # ZMQ Addresses
+        md_pub_addr = self.config_service.get_global_config("zmq_addresses.market_data_pub", "tcp://*:5555")
+        order_report_pub_addr = self.config_service.get_global_config("zmq_addresses.order_gateway_pub", "tcp://*:5557")
+        order_gateway_rep_addr = self.config_service.get_global_config("zmq_addresses.order_gateway_rep", "tcp://*:5558")
+        self.alert_pub_url = self.config_service.get_global_config("zmq_addresses.risk_alert_pub") # Optional, might be None
+        
+        # Convert bind addresses to connect addresses for client sockets
+        self.market_data_url = self._get_connect_url(md_pub_addr)
+        self.order_report_url = self._get_connect_url(order_report_pub_addr)
+        self._command_connect_url = self._get_connect_url(order_gateway_rep_addr)
+
+        # Risk Parameters
+        self.position_limits = self.config_service.get_global_config("risk_management.max_position_limits", {})
+        self.max_pending_per_contract = self.config_service.get_global_config("risk_management.max_pending_orders_per_contract", 5)
+        self.global_max_pending = self.config_service.get_global_config("risk_management.global_max_pending_orders", 20)
+        self.margin_limit_ratio = self.config_service.get_global_config("risk_management.margin_usage_limit", 0.8)
+        self.subscribed_symbols = set(self.config_service.get_global_config("default_subscribe_symbols", []))
+        self.market_data_timeout = self.config_service.get_global_config("engine_communication.market_data_timeout_seconds", 30.0) # Borrow from engine settings
+        self.ping_interval = self.config_service.get_global_config("engine_communication.ping_interval_seconds", 5.0)
+        # +++ Fetch ping timeout +++
+        self.ping_timeout_ms = self.config_service.get_global_config("engine_communication.ping_timeout_ms", 2500)
+
+        # Log fetched config
+        logger.info(f"Risk Manager Config: MD URL={self.market_data_url}, Report URL={self.order_report_url}, Command URL={self._command_connect_url}")
+        logger.info(f"Risk Manager Config: Alert URL={self.alert_pub_url}")
+        logger.info(f"Risk Manager Config: Position Limits={self.position_limits}")
+        logger.info(f"Risk Manager Config: Max Pending/Contract={self.max_pending_per_contract}, Global Max Pending={self.global_max_pending}")
+        logger.info(f"Risk Manager Config: Margin Limit Ratio={self.margin_limit_ratio}")
+        logger.info(f"Risk Manager Config: Symbols to Check Timeout={self.subscribed_symbols}")
+
+        # Initialize ZMQ components
         self.context = zmq.Context()
-        self.command_socket = self.context.socket(zmq.REQ)
-        # Connect to the RPC gateway's REP address
-        self._command_connect_url = self._get_connect_url(config.ORDER_GATEWAY_REP_ADDRESS)
+        self.command_socket = None # Initialized in _setup_command_socket
         self._setup_command_socket() # Setup initial command socket
 
         # Subscriber socket
         self.subscriber = self.context.socket(zmq.SUB)
 
         # Connect to both publishers
-        self.subscriber.connect(market_data_url)
-        self.subscriber.connect(order_report_url)
-        logger.info(f"数据订阅器连接到: {market_data_url}")
-        logger.info(f"数据订阅器连接到: {order_report_url}")
+        self.subscriber.connect(self.market_data_url)
+        self.subscriber.connect(self.order_report_url)
+        logger.info(f"数据订阅器连接到: {self.market_data_url}")
+        logger.info(f"数据订阅器连接到: {self.order_report_url}")
 
         # Subscribe to relevant topics (lowercase prefixes)
         prefixes_to_subscribe = [
@@ -120,8 +148,8 @@ class RiskManagerService:
         self.market_data_ok: bool = True
         # Assume we need ticks for symbols we might have limits for or defined in config
         # A more robust way might be to dynamically get subscribed symbols if possible
-        self.subscribed_symbols: set = set(config.SUBSCRIBE_SYMBOLS)
-        logger.info(f"将监控以下合约行情超时: {self.subscribed_symbols}")
+        # self.subscribed_symbols: set = set(config.SUBSCRIBE_SYMBOLS) # Moved loading to above
+        # logger.info(f"将监控以下合约行情超时: {self.subscribed_symbols}") # Moved logging to above
 
         # Gateway Connection Status
         self.gateway_connected = True # Assume connected initially
@@ -178,8 +206,22 @@ class RiskManagerService:
         handling overnight sessions and skipping weekends.
         """
         try:
+            # +++ Import ZoneInfo here for timezone calculation +++
+            try:
+                from zoneinfo import ZoneInfo
+                china_tz = ZoneInfo("Asia/Shanghai")
+            except ImportError:
+                logger.error("zoneinfo package not found. Trading hours check might be inaccurate.")
+                # Define a dummy TZ or return True (fail open)
+                class DummyTZ: 
+                    def utcoffset(self, dt): return timedelta(hours=8)
+                    def dst(self, dt): return timedelta(0)
+                    def tzname(self, dt): return "Asia/Shanghai_Fallback"
+                china_tz = DummyTZ()
+            # +++ End Import ZoneInfo +++
+
             # Get current time in China Standard Time
-            now_dt_aware = datetime.now(CHINA_TZ)
+            now_dt_aware = datetime.now(china_tz)
             current_time = now_dt_aware.time()
             current_weekday = now_dt_aware.weekday() # Monday is 0 and Sunday is 6
 
@@ -191,7 +233,9 @@ class RiskManagerService:
                 return False
 
             # Check against defined sessions
-            for start_str, end_str in config.FUTURES_TRADING_SESSIONS:
+            # +++ Get sessions from config_service +++
+            futures_trading_sessions = self.config_service.get_global_config("risk_management.futures_trading_sessions", [])
+            for start_str, end_str in futures_trading_sessions:
                 start_time = dt_time.fromisoformat(start_str) # HH:MM
                 end_time = dt_time.fromisoformat(end_str)
 
@@ -455,7 +499,7 @@ class RiskManagerService:
             self.command_socket.send(packed_request) # Use blocking send, rely on timeout/error for issues
 
             # Wait for PONG reply with timeout
-            readable = dict(poller.poll(PING_TIMEOUT_MS))
+            readable = dict(poller.poll(self.ping_timeout_ms))
             if self.command_socket in readable and readable[self.command_socket] & zmq.POLLIN:
                 packed_reply = self.command_socket.recv(zmq.NOBLOCK)
                 # Decode PONG using msgpack - RpcServer's ping returns "pong"
@@ -473,7 +517,7 @@ class RiskManagerService:
                          self.gateway_connected = False
             else:
                 # Timeout waiting for reply
-                logger.warning(f"{log_prefix} PING request timed out after {PING_TIMEOUT_MS}ms.")
+                logger.warning(f"{log_prefix} PING request timed out after {self.ping_timeout_ms}ms.")
                 # Mark as disconnected (if not already) and trigger reconnection
                 if self.gateway_connected: # Log error only on first detection
                     logger.error(f"与订单执行网关的连接丢失 (PING timeout)!")
@@ -583,7 +627,7 @@ class RiskManagerService:
 
                 # --- Periodic Health Checks (moved from _run_processing_loop) ---
                 current_time = time.time()
-                if current_time - self.last_ping_time >= PING_INTERVAL:
+                if current_time - self.last_ping_time >= self.ping_interval:
                      self._send_ping()
                 # --- End Heartbeat Check --- 
 
@@ -599,10 +643,10 @@ class RiskManagerService:
                         last_ts = self.last_tick_time.get(symbol)
                         if last_ts is None:
                             # If a subscribed symbol NEVER received a tick, consider it stale after a grace period
-                            if check_time - self.last_ping_time > PING_INTERVAL * 2: # Allow some time after start
+                            if check_time - self.last_ping_time > self.ping_interval * 2: # Allow some time after start
                                 found_stale_symbol = True
                                 stale_symbols.append(f"{symbol} (no tick received)")
-                        elif check_time - last_ts > MARKET_DATA_TIMEOUT:
+                        elif check_time - last_ts > self.market_data_timeout:
                             found_stale_symbol = True
                             stale_symbols.append(f"{symbol} (last {check_time - last_ts:.1f}s ago)")
 
