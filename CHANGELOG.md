@@ -1,42 +1,3 @@
-# 0.1.0版本
-
-1. 使用`vnpy`版本3.9.4。
-2. 使用`vnpy_ctp`版本6.7.2.1，基于CTP期货版的6.7.2接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件。
-3. 对`vnpy_ctp`中CTP编译的支持修改。
-4. 行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测、行情回放的实现。
-5. 使用uv管理Python虚拟环境及依赖包。
-6. 使用hatch构建项目。
-
-
-
-Version 0.1.0
-
-1. Use `vnpy` version 3.9.4.
-
-2. Use `vnpy_ctp` version 6.7.2.1, based on the 6.7.2 interface package development of CTP futures version, the interface comes with the dll file of [penetrating real-time environment].
-3. Modify the support of CTP compilation in `vnpy_ctp`.
-4. Implementation of market gateway, order execution gateway, strategy subscriber, risk control management, data recording, strategy backtesting, and market playback.
-5. Use uv to manage Python virtual environment and dependent packages.
-6. Use hatch to build the project.
-
-   
-
-# 0.1.1版本
-
-1. 使用新的`vnpy`版本4.0.0。
-2. 使用新的`vnpy_ctp`版本6.7.7.1，基于CTP期货版的6.7.7接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件。
-3. 修改pyproject.toml文件。
-
-
-
-Version 0.1.1
-
-1. Use the new `vnpy` version 4.0.0.
-2. Use the new `vnpy_ctp` version 6.7.7.1, which is developed based on the 6.7.7 interface package of the CTP futures version. The interface comes with the dll file of the [penetrating real-time environment].
-3. Modify the pyproject.toml file.
-
-
-
 # 0.1.2版本
 
 1. 优化风险管理器 (RiskManagerService) 和策略引擎 (StrategyEngine) 与订单执行网关 (OrderExecutionGatewayService) 连接状态的机制，到订单执行网关的连接，优化了心跳检测，实现了更健壮的超时和重试逻辑。策略引擎使用了两种机制结合的方式来判断与网关的连接状态，1. 监听 PUB/SUB 心跳 (主要检测超时)，2. 主动 RPC Ping (检查/恢复 RPC 连接)。风险管理器使用了单一机制来判断连接状态，主动 RPC Ping。
@@ -74,3 +35,45 @@ Version 0.1.2
 13. Enhance the type safety and verification of the system, and define the expected structure and type of the configuration (using Pydantic models). ConfigManager uses these models for verification after loading and merging the configuration. If the verification fails, detailed errors are recorded and the service may be prevented from starting or fall back to safe default values. When accessing configuration items, each service module can assume that the type is basically correct.
 14. Optimize the backtest strategy configuration loading of the backtest and replay modules, and obtain the backtest parameters from ConfigManager, including: backtest data source path, backtest ZMQ address, product information file path, strategy configuration, and backtest specific parameters.
 15. Strengthen the backtest framework and result analysis, improve the authenticity of order execution simulation, configurable fee model, different types of slippage models, and standardized performance indicators.
+
+------
+
+# 0.1.1版本
+
+1. 使用新的`vnpy`版本4.0.0。
+2. 使用新的`vnpy_ctp`版本6.7.7.1，基于CTP期货版的6.7.7接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件。
+3. 修改pyproject.toml文件。
+
+
+
+Version 0.1.1
+
+1. Use the new `vnpy` version 4.0.0.
+2. Use the new `vnpy_ctp` version 6.7.7.1, which is developed based on the 6.7.7 interface package of the CTP futures version. The interface comes with the dll file of the [penetrating real-time environment].
+3. Modify the pyproject.toml file.
+
+------
+
+# 0.1.0版本
+
+1. 使用`vnpy`版本3.9.4。
+2. 使用`vnpy_ctp`版本6.7.2.1，基于CTP期货版的6.7.2接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件。
+3. 对`vnpy_ctp`中CTP编译的支持修改。
+4. 行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测、行情回放的实现。
+5. 使用uv管理Python虚拟环境及依赖包。
+6. 使用hatch构建项目。
+
+
+
+Version 0.1.0
+
+1. Use `vnpy` version 3.9.4.
+
+2. Use `vnpy_ctp` version 6.7.2.1, based on the 6.7.2 interface package development of CTP futures version, the interface comes with the dll file of [penetrating real-time environment].
+3. Modify the support of CTP compilation in `vnpy_ctp`.
+4. Implementation of market gateway, order execution gateway, strategy subscriber, risk control management, data recording, strategy backtesting, and market playback.
+5. Use uv to manage Python virtual environment and dependent packages.
+6. Use hatch to build the project.
+
+
+
