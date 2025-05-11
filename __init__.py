@@ -7,6 +7,7 @@
 @Author     : Donny
 @Email      : donnymoving@gmail.com
 @Software   : PyCharm
-@Description: description
+@Description: 系统版本号
+System version number
 """
 __version__ = "0.1.2"
