@@ -87,19 +87,14 @@ Language: [ENGLISH](README_EN.md)
    uv sync
    ```
 
-   或不使用`uv sync`命令，手动创建虚拟环境
+   或不使用`uv sync`命令，手动创建虚拟环境，激活虚拟环境
 
    ```bash
    uv venv --python 3.12.9 .venv
-   ```
-
-   激活虚拟环境
-
-   ```bash
    .venv\Scripts\activate
-   ```
+```
    
-3. 安装ta_lib库
+3. 安装ta-lib库
 
    ```bash
    .\build.bat

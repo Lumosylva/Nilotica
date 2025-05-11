@@ -84,18 +84,14 @@ This project uses `uv` to manage Python virtual environments and dependent packa
    uv sync
    ```
 
-   Or do not use the `uv sync` command and manually create a virtual environment
+   Or do not use the `uv sync` command, manually create a virtual environment, activate the virtual environment
 
    ```bash
    uv venv --python 3.12.9 .venv
-   ```
-
-   Activate the virtual environment
-
-   ```bash
    .venv\Scripts\activate
-   ```
-2. Install ta_lib library
+```
+   
+2. Install ta-lib library
 
    ```bash
    .\build.bat
