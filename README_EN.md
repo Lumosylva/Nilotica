@@ -89,9 +89,9 @@ This project uses `uv` to manage Python virtual environments and dependent packa
    ```bash
    uv venv --python 3.12.9 .venv
    .venv\Scripts\activate
-```
+   ```
    
-2. Install ta_lib library
+3. Install ta_lib library
 
    ```bash
    .\build.bat
