@@ -94,7 +94,7 @@ Language: [ENGLISH](README_EN.md)
    .venv\Scripts\activate
 ```
    
-3. 安装ta-lib库
+3. 安装ta_lib库
 
    ```bash
    .\build.bat
