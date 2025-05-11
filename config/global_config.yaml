@@ -1,3 +1,12 @@
+# 全局系统配置
+# 版本：1.0 # 配置文件的可选版本控制
+
+# 注意事项：
+# - 像“data_recording_path”这样的路径是相对于项目根目录的。
+# config_manager.py 将负责将它们解析为绝对路径。
+# - 特定于策略的参数通常在单独的文件中管理（例如，strategies_setting.json 或 Strategies.yaml）。
+# - 动态配置或需要运行时逻辑的配置（例如 CHINA_TZ）由 Python 代码处理。
+
 # Global System Configuration
 # version: 1.0 # Optional versioning for your config file
 
@@ -7,36 +16,48 @@
 # - Strategy-specific parameters are typically managed in a separate file (e.g., strategies_setting.json or strategies.yaml).
 # - Dynamic configurations or those requiring runtime logic (like CHINA_TZ) are handled in Python code.
 
+# 系统语言配置 (System language Configuration)
+system:
+  language: "en" # 或 "en" 或 "zh_CN"
+
 logging:
+  # 如果未被命令行参数覆盖，则服务的默认日志级别。
+  # 服务仍然可以使用自己的 --log-level 参数来指定。
   # Default log level for services if not overridden by command-line arguments.
   # Services can still use their own --log-level argument to specify.
   default_level: "INFO"
+  # 未来：在此处添加更多日志配置，如文件输出、旋转、格式。
   # Future: Add more logging configurations here, like file output, rotation, format.
 
 paths:
-  data_recording_path: "zmq_services/recorded_data/" # Relative to project root
-  backtest_data_source_path: "zmq_services/recorded_data/" # Will be resolved by config_manager or defaults to data_recording_path
-  product_info_ini: "config/project_files/product_info.ini" # Path to product info, if needed globally
+  # 相对于项目根目录 (Relative to project root)
+  data_recording_path: "zmq_services/recorded_data/"
+  # 将由 config_manager 解析或默认为 data_recording_path
+  # Will be resolved by config_manager or defaults to data_recording_path
+  backtest_data_source_path: "zmq_services/recorded_data/"
+  # 如果全局需要，则指向产品信息的路径 (Path to product info, if needed globally)
+  product_info_ini: "config/project_files/product_info.ini"
 
 zmq_addresses:
-  market_data_pub: "tcp://*:5555"    # Market data publisher (行情发布地址)
-  market_data_rep: "tcp://*:2015"    # Market data request/reply (if any service needs it)
-  order_gateway_pub: "tcp://*:5557"  # Order/trade report publisher (订单/成交回报发布地址)
-  order_gateway_rep: "tcp://*:5558"  # Order gateway command REQ/REP (订单网关指令接收地址)
-  risk_alert_pub: "tcp://*:5559"     # Risk alert publisher (风险管理警报发布地址)
+  market_data_pub: "tcp://*:5555"    # 行情发布地址 (Market data publisher)
+  market_data_rep: "tcp://*:2015"    # 市场数据请求/回复（如果有任何服务需要） Market data request/reply (if any service needs it)
+  order_gateway_pub: "tcp://*:5557"  # 订单/成交回报发布地址 (Order/trade report publisher)
+  order_gateway_rep: "tcp://*:5558"  # 订单网关指令接收地址 (Order gateway command REQ/REP)
+  risk_alert_pub: "tcp://*:5559"     # 风险管理警报发布地址 (Risk alert publisher)
 
-  # Backtester specific ZMQ addresses
-  backtest_data_pub: "tcp://*:5560"             # Backtest market data publisher (回测行情发布地址)
-  backtest_order_report_pub: "tcp://*:5561"      # Backtest order/trade report publisher (回测订单/成交回报发布地址)
-  backtest_order_request_pull: "tcp://*:5562"    # Backtest order request PULL (回测订单请求接收地址)
+  # 回测器特定的 ZMQ 地址 (Backtester specific ZMQ addresses)
+  backtest_data_pub: "tcp://*:5560"             # 回测行情发布地址 (Backtest market data publisher)
+  backtest_order_report_pub: "tcp://*:5561"      # 回测订单/成交回报发布地址r (Backtest order/trade report publishe)
+  backtest_order_request_pull: "tcp://*:5562"    # 回测订单请求接收地址 (Backtest order request PULL)
 
-# General service configurations
+# 通用服务配置 (General service configurations)
 service_settings:
+  # 处理发布者队列中的消息的批量大小（例如，在 OrderExecutionGateway 中）
   # Batch size for processing messages in publisher queues (e.g., in OrderExecutionGateway)
   publish_batch_size: 1000
   recorder_batch_size: 100 # 您可以按需调整这个值
 
-# Risk Management specific configurations (can be expanded)
+# 风险管理特定配置（可扩展） (Risk Management specific configurations (can be expanded))
 risk_management:
   max_position_limits:
     SA509.CZCE: 5
@@ -45,15 +66,15 @@ risk_management:
   max_pending_orders_per_contract: 5
   global_max_pending_orders: 20
   margin_usage_limit: 0.8  # Example: 80%
-  # Trading sessions can also be part of risk management checks
+  # 交易时段也可以成为风险管理检查的一部分 (Trading sessions can also be part of risk management checks)
   futures_trading_sessions:
     - ["09:00", "11:00"] # Morning session 1
     - ["10:15", "11:30"] # Morning session 2
     - ["13:30", "15:00"] # Afternoon session
     - ["21:00", "23:00"] # Evening session
 
-# Strategy Engine & Communication Parameters (migrated from zmq_config.py)
-# These are primarily used by the StrategyEngine when communicating with other services.
+# 策略引擎和通信参数（从 zmq_config.py 迁移） (Strategy Engine & Communication Parameters (migrated from zmq_config.py))
+# 这些主要由策略引擎在与其他服务通信时使用。 (These are primarily used by the StrategyEngine when communicating with other services.)
 engine_communication:
   market_data_timeout_seconds: 30.0
   initial_tick_grace_period_multiplier: 2.0
@@ -63,6 +84,8 @@ engine_communication:
   rpc_retries: 1
   heartbeat_timeout_seconds: 10.0
 
+# 默认订阅的合约列表（例如，MarketDataGateway、DataRecorder）
+# 个别策略可能会覆盖或指定自己的合约。
 # List of symbols to subscribe to by default (e.g., for MarketDataGateway, DataRecorder)
 # Individual strategies might override or specify their own symbols.
 default_subscribe_symbols:
@@ -70,7 +93,6 @@ default_subscribe_symbols:
   - "rb2510.SHFE"
   - "MA509.CZCE"
 
-
-# A more global parameter:
+# 更多全局的参数 (A more global parameter)
 order_submission:
   default_cool_down_seconds: 2 # Default cool-down for orders if not specified by strategy 

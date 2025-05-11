@@ -1,24 +1,43 @@
-# Backtest Environment Specific Configuration
+# 回测环境特定配置
+# 覆盖回测路径
 
+# Backtest Environment Specific Configuration
 # Override paths for backtesting
 paths:
+  # 可选：如果回测写入不同类型的数据，则覆盖数据记录路径
+  # data_recording_path: "zmq_services/backtest_recorded_data/"
+
   # Optional: Override data recording path if backtests write different kinds of data
   # data_recording_path: "zmq_services/backtest_recorded_data/"
+
+  # 关键：指定回测历史数据的来源
+  # 这可能与全局或专用回测数据存储相同
 
   # Crucial: Specify the source for backtest historical data
   # This might be the same as global or a dedicated backtest data store
   backtest_data_source_path: "zmq_services/dev_recorded_data/" # Updated path to include zmq_services
 
+  # 可选：如果回测使用不同的合约规格/费用，则覆盖 product_info.ini
   # Optional: Override product_info.ini if backtest uses different contract specs/fees
   product_info_ini: "config/project_files/backtest_product_info.ini"
 
+  # 新增：专门用于回测的策略配置文件路径
+  # 这允许在回测和实时测试中使用不同的策略或设置。
+
   # NEW: Path to the strategies configuration file specifically for backtesting
   # This allows using different strategies or settings for backtests vs. live.
-  strategies_config_path: "config/backtest_strategies_setting.json" # Relative to project root
+  strategies_config_path: "config/backtest_strategies_setting.json" # 相对于项目根目录 (Relative to project root)
 
-# Optional: Override logging for backtests if needed
+# # 可选：如果需要，覆盖回测日志记录 (Optional: Override logging for backtests if needed)
 logging:
   default_level: "DEBUG" # More verbose logging during backtests
+
+# 可选：如果回测程序使用不同的设置，则覆盖 ZMQ 地址
+# （如果回测程序是独立的或使用直接函数调用，则不太常见）
+# zmq_addresses:
+# backtest_data_pub: "ipc:///tmp/backtest_data_pub.ipc"
+# backtest_order_report_pub: "ipc:///tmp/backtest_order_report_pub.ipc"
+# backtest_order_request_pull: "ipc:///tmp/backtest_order_request_pull.ipc"
 
 # Optional: Override ZMQ addresses if backtester uses a different setup
 # (less common if backtester is self-contained or uses direct function calls)
@@ -27,12 +46,17 @@ logging:
 #   backtest_order_report_pub: "ipc:///tmp/backtest_order_report_pub.ipc"
 #   backtest_order_request_pull: "ipc:///tmp/backtest_order_request_pull.ipc"
 
+# 示例：回测器特定设置（如果您的回测器从这里读取）
 # Example: Backtester specific settings (if your backtester reads from here)
 backtester_settings:
-  start_date: "2023-01-01"
-  end_date: "2023-12-31"
+  start_date: "2025-01-01"
+  end_date: "2025-12-31"
   initial_capital: 1000000
+  # slippage_pct: 0.0001 # 滑点设置示例
+  # transaction_fee_pct: 0.00005 # 手续费设置示例
+
   # slippage_pct: 0.0001 # Example slippage setting
   # transaction_fee_pct: 0.00005 # Example fee setting
 
+# 注意：策略参数本身位于上面定义的“strategies_config_path”中。
 # Note: Strategy parameters themselves are in the 'strategies_config_path' defined above.

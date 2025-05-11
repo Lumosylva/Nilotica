@@ -1,14 +1,15 @@
-# Production specific overrides
+# 生产特定的覆盖 (Production specific overrides)
 logging:
   default_level: "INFO"
 
 zmq_addresses:
   # 生产环境通常绑定所有接口
-  market_data_pub: "tcp://*:5555"    # Market data publisher (行情发布地址)
-  market_data_rep: "tcp://*:2015"    # Market data request/reply (if any service needs it)
-  order_gateway_pub: "tcp://*:5557"  # Order/trade report publisher (订单/成交回报发布地址)
-  order_gateway_rep: "tcp://*:5558"  # Order gateway command REQ/REP (订单网关指令接收地址)
-  risk_alert_pub: "tcp://*:5559"     # Risk alert publisher (风险管理警报发布地址)
+  market_data_pub: "tcp://*:5555"    # 行情发布地址 (Market data publisher)
+  # 市场数据请求/回复（如果有任何服务需要） (Market data request/reply (if any service needs it))
+  market_data_rep: "tcp://*:2015"
+  order_gateway_pub: "tcp://*:5557"  # 订单/成交回报发布地址 (Order/trade report publisher)
+  order_gateway_rep: "tcp://*:5558"  # 订单网关指令接收地址 (Order gateway command REQ/REP)
+  risk_alert_pub: "tcp://*:5559"     # 风险管理警报发布地址 (Risk alert publisher)
 
 paths:
   # 开发时可能使用不同的数据路径

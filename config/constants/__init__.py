@@ -7,5 +7,5 @@
 @Author     : Donny
 @Email      : donnymoving@gmail.com
 @Software   : PyCharm
-@Description: description
+@Description: 常量类，包含一些常用的常量参数和常量路径
 """
