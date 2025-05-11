@@ -1,0 +1,23 @@
+msgid "无法转换列表/元组中的项目，使用字符串表示。"
+msgstr "无法转换列表/元组中的项目，使用字符串表示。"
+
+msgid "警告：convert_order_data_to_dict 中未处理的类型: {}。转换为字符串。"
+msgstr "警告：convert_order_data_to_dict 中未处理的类型: {}。转换为字符串。"
+
+msgid "事件处理器: 过滤掉的事件类型: {} (总事件计数: {})"
+msgstr "事件处理器: 过滤掉的事件类型: {} (总事件计数: {})"
+
+msgid "订单 {} 状态变为非活动 ({}), 已从 active_order_ids 移除。"
+msgstr "订单 {} 状态变为非活动 ({}), 已从 active_order_ids 移除。"
+
+msgid "订单状态更新: [{}] VTOrderID={}, 状态={}, 已成交={}/{}, 价格={}, 代码={}, 方向={}, 开平={}"
+msgstr "订单状态更新: [{}] VTOrderID={}, 状态={}, 已成交={}/{}, 价格={}, 代码={}, 方向={}, 开平={}"
+
+msgid "收到 EVENT_TRADE: VTOrderID={}, Symbol={}"
+msgstr "收到 EVENT_TRADE: VTOrderID={}, Symbol={}"
+
+msgid "账户资金更新 (每5分钟): AccountID={}, Balance={:.2f}, Available={:.2f}, Frozen={:.2f}"
+msgstr "账户资金更新 (每5分钟): AccountID={}, Balance={:.2f}, Available={:.2f}, Frozen={:.2f}"
+
+msgid "持仓更新: 代码={}, 方向={}, 数量={}, 昨仓={}, 冻结={}, 均价={:.3f}"
+msgstr "持仓更新: 代码={}, 方向={}, 数量={}, 昨仓={}, 冻结={}, 均价={:.3f}" 
