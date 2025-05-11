@@ -8,10 +8,10 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# +++ Import ConfigManager +++
 from utils.config_manager import ConfigManager
-
+from utils.i18n import setup_language, get_translator
 from utils.logger import setup_logging, logger
+from config.constants.path import GlobalPath # For project_root fallback
 from zmq_services.market_data_gateway import MarketDataGatewayService
 
 
@@ -23,7 +23,6 @@ def main():
         default="simnow",
         help="The CTP environment name defined in connect_ctp.json (or for general service identification). Defaults to 'simnow'."
     )
-    # +++ Add --config-env argument +++
     parser.add_argument(
         "--config-env",
         default=None,  # Changed from "dev" to None
@@ -36,51 +35,81 @@ def main():
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         help="Set the minimum logging level."
     )
+    # +++ Add --lang argument for overriding config language +++
+    parser.add_argument(
+        "--lang",
+        type=str,
+        default=None, # Default is None, will use config or i18n default
+        help="Language code for i18n (e.g., en, zh_CN). Overrides configuration file setting."
+    )
     args = parser.parse_args()
 
-    # Use ctp-env for logger name, or combine if desired
-    setup_logging(service_name=f"MarketGatewayRunner[{args.ctp_env}]", level=args.log_level.upper(), config_env=args.config_env)
+    # +++ Initialize i18n EARLY +++
+    # The logic below correctly handles i18n initialization after ConfigManager is ready
+    # and command-line arguments are parsed. The initialize_i18n() call was redundant.
 
-    # +++ Initialize ConfigManager with config_env +++
+    # Now initialize ConfigManager for this script's use
+    # This instance is primarily for the MarketDataGatewayService if it needs it.
     config_service = ConfigManager(environment=args.config_env)
 
-    # --- Continue with application logic ---
-    # The original check for default env might still be useful if ctp-env has specific default behavior
-    if args.ctp_env == "simnow" and '--ctp-env' not in sys.argv and '--env' not in sys.argv: # Check both old and new name for default message
-        logger.info(f"No --ctp-env specified, using default CTP environment: {args.ctp_env}")
+    # --- Determine and setup language --- 
+    # Priority: command line -> config file -> default 'en'
+    language_to_use = args.lang
+    if not language_to_use:
+        language_to_use = config_service.get_global_config("system.language", "en")
+    
+    # Get project root for setup_language
+    # Preferring PROJECT_ROOT from config_service if it's consistently available and correct.
+    # Otherwise, use the one defined in this script or from GlobalPath.
+    # For now, assuming the script's `project_root` or GlobalPath is reliable.
+    # If ConfigManager exposes a reliable PROJECT_ROOT, that would be ideal: config_service.PROJECT_ROOT
+    actual_project_root = getattr(config_service, 'PROJECT_ROOT', project_root) # Use local project_root as fallback
+    if not actual_project_root: # Further fallback if needed
+        actual_project_root = GlobalPath.project_root_path
+
+    setup_language(language_to_use, actual_project_root)
+    
+    # --- Define _ for convenience in this main function after language setup ---
+    _ = get_translator()
+
+    # Setup logging AFTER i18n is initialized and potentially overridden by --lang
+    setup_logging(service_name=f"MarketGatewayRunner[{args.ctp_env}]", level=args.log_level.upper(), config_env=args.config_env)
+
+    # --- Log application startup messages (now using _ for marking translatable strings) ---
+    if args.ctp_env == "simnow" and '--ctp-env' not in sys.argv and '--env' not in sys.argv:
+        logger.info(_("未指定 --ctp-env，使用默认 CTP 环境：{}"), args.ctp_env)
     if args.config_env:
-        logger.info(f"Using configuration environment: '{args.config_env}'")
+        logger.info(_("使用配置环境：'{}'"), args.config_env)
     else:
-        logger.info("No --config-env specified, using base global_config.yaml only.")
+        logger.info(_("未指定 --config-env，仅使用基本 global_config.yaml。"))
 
+    if args.lang:
+        logger.info(_("命令行覆盖的语言：{}"), args.lang)
+    else:
+        logger.info(_("使用配置中的语言（或默认）：{}"), language_to_use)
 
-    gateway_service = None # Initialize to None for finally block
-    # MarketDataGatewayService now gets its config (like ZMQ addresses) internally via its own ConfigManager instance
-    # or if it were to take config_service as a parameter. For now, we assume it instantiates its own or is passed one.
-    # The `environment_name` parameter to MarketDataGatewayService was for CTP account details primarily.
-    logger.info(f"正在初始化行情网关服务(RPC模式) for CTP environment: [{args.ctp_env}]...")
+    gateway_service = None
+    logger.info(_("正在为 CTP 环境初始化市场数据网关服务（RPC 模式）：[{}]..."), args.ctp_env)
     try:
-        # +++ Pass config_service to the gateway +++
         gateway_service = MarketDataGatewayService(
-            config_manager=config_service,
+            config_manager=config_service, # Pass the script's ConfigManager instance
             environment_name=args.ctp_env
         )
-        logger.info(f"尝试启动服务(RPC模式) for CTP env: [{args.ctp_env}]...")
-        gateway_service.start() # start() method now handles connection and subscription
-        logger.info(f"行情网关服务 for CTP env: [{args.ctp_env}] 正在运行。按 Ctrl+C 停止。")
+        logger.info(_("尝试为 CTP 环境启动服务（RPC 模式）：[{}]..."), args.ctp_env)
+        gateway_service.start()
+        logger.info(_("CTP 环境 [{}] 的市场数据网关服务正在运行。按 Ctrl+C 停止。"), args.ctp_env)
 
-        # Keep the main thread alive while the service runs
         while gateway_service.is_active():
-            time.sleep(1)
+            time.sleep(0.1)
     except KeyboardInterrupt:
-        logger.info(f"\n检测到 Ctrl+C，正在停止服务 (CTP env: [{args.ctp_env}])...")
+        logger.info(_("检测到 Ctrl+C，正在停止服务 (CTP 环境：[{}])..."), args.ctp_env)
     except Exception as err:
-        logger.exception(f"服务运行时发生意外错误 (CTP env: [{args.ctp_env}]): {err}")
+        logger.exception(_("服务运行时错误（CTP 环境：[{}]）：{}"), args.ctp_env, err)
     finally:
-        logger.info(f"开始停止服务(RPC模式) for CTP env: [{args.ctp_env}]...")
+        logger.info(_("开始停止 CTP 环境的服务（RPC 模式）：[{}]..."), args.ctp_env)
         if gateway_service:
             gateway_service.stop()
-        logger.info(f"行情网关服务(RPC模式) for CTP env: [{args.ctp_env}] 已退出。")
+        logger.info(_("CTP 环境 [{}] 的市场数据网关服务 (RPC 模式) 已退出。"), args.ctp_env)
 
 if __name__ == "__main__":
     main() 

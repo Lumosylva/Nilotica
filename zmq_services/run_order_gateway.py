@@ -12,10 +12,15 @@ if project_root not in sys.path:
 from utils.config_manager import ConfigManager
 
 from utils.logger import setup_logging, logger
+from utils.i18n import get_translator
 from zmq_services.order_execution_gateway import OrderExecutionGatewayService
 
 def main():
-    """Runs the order execution gateway service (RPC Mode)."""
+    """
+    运行订单执行网关服务（RPC模式）。
+
+    Runs the order execution gateway service (RPC Mode).
+    """
     parser = argparse.ArgumentParser(description="Run the Order Execution Gateway Service for a specific CTP environment.")
     parser.add_argument(
         "--ctp-env",
@@ -36,45 +41,47 @@ def main():
     )
     args = parser.parse_args()
 
+    _ = get_translator()
+
     setup_logging(service_name=f"OrderGatewayRunner[{args.ctp_env}]", level=args.log_level.upper(), config_env=args.config_env)
 
     config_service = ConfigManager(environment=args.config_env)
     rep_addr = config_service.get_global_config("zmq_addresses.order_gateway_rep")
     pub_addr = config_service.get_global_config("zmq_addresses.order_gateway_pub")
     if not rep_addr or not pub_addr:
-        logger.critical("错误：未能从配置中获取 zmq_addresses.order_gateway_rep 或 zmq_addresses.order_gateway_pub。请检查配置。")
+        logger.critical(_("错误：未能从配置中获取 zmq_addresses.order_gateway_rep 或 zmq_addresses.order_gateway_pub。请检查配置。"))
         sys.exit(1)
-    logger.info(f"Order Gateway ZMQ addresses loaded: REP='{rep_addr}', PUB='{pub_addr}'")
+    logger.info(_("订单网关 ZMQ 地址已加载: REP='{}', PUB='{}'").format(rep_addr, pub_addr))
     
     if args.ctp_env == "simnow" and '--ctp-env' not in sys.argv and '--env' not in sys.argv:
-        logger.info(f"No --ctp-env specified, using default CTP environment: {args.ctp_env}")
+        logger.info(_("未指定 --ctp-env，使用默认 CTP 环境：{}").format(args.ctp_env))
     if args.config_env:
-        logger.info(f"Using configuration environment: '{args.config_env}'")
+        logger.info(_("使用配置环境：'{}'").format(args.config_env))
     else:
-        logger.info("No --config-env specified, using base global_config.yaml only.")
+        logger.info(_("未指定 --config-env，仅使用基本 global_config.yaml。"))
 
     gateway_service = None
-    logger.info(f"正在初始化订单执行网关服务(RPC模式) for CTP environment: [{args.ctp_env}]...")
+    logger.info(_("正在初始化订单执行网关服务(RPC模式) for CTP environment: [{}]...").format(args.ctp_env))
     try:
         gateway_service = OrderExecutionGatewayService(
             config_manager=config_service, 
             environment_name=args.ctp_env
         )
-        logger.info(f"尝试启动服务(RPC模式) for CTP env: [{args.ctp_env}]...")
+        logger.info(_("尝试启动服务(RPC模式) for CTP env: [{}]...").format(args.ctp_env))
         gateway_service.start()
-        logger.info(f"订单执行网关 for CTP env: [{args.ctp_env}] 正在运行。按 Ctrl+C 停止。")
+        logger.info(_("订单执行网关 for CTP env: [{}] 正在运行。按 Ctrl+C 停止。").format(args.ctp_env))
 
         while gateway_service.is_active():
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info(f"\n检测到 Ctrl+C，正在停止服务 (CTP env: [{args.ctp_env}])...")
+        logger.info(_("检测到 Ctrl+C，正在停止服务 (CTP env: [{}])...").format(args.ctp_env))
     except Exception as err:
-        logger.exception(f"服务运行时发生意外错误 (CTP env: [{args.ctp_env}]): {err}")
+        logger.exception(_("服务运行时发生意外错误 (CTP env: [{}]): {}").format(args.ctp_env, err))
     finally:
-        logger.info(f"开始停止服务(RPC模式) for CTP env: [{args.ctp_env}]...")
+        logger.info(_("开始停止服务(RPC模式) for CTP env: [{}]...").format(args.ctp_env))
         if gateway_service:
             gateway_service.stop()
-        logger.info(f"订单执行网关服务(RPC模式) for CTP env: [{args.ctp_env}] 已退出。")
+        logger.info(_("订单执行网关服务(RPC模式) for CTP env: [{}] 已退出。").format(args.ctp_env))
 
 if __name__ == "__main__":
     main()
