@@ -7,7 +7,8 @@
 @Author     : Donny
 @Email      : donnymoving@gmail.com
 @Software   : PyCharm
-@Description: 日志模块
+@Description: 日志模块，包含日志配置和日志记录器
+Log module, including log configuration and logger
 """
 import sys
 from pathlib import Path
@@ -17,6 +18,8 @@ from loguru import logger
 
 from vnpy.trader.setting import SETTINGS
 from vnpy.trader.utility import get_folder_path
+
+from utils.i18n import get_translator
 
 
 # --- Default Configuration ---
@@ -88,6 +91,17 @@ def setup_logging(
     **kwargs  # Pass additional arguments to loguru.add() if needed
 ):
     """
+    为应用程序配置 loguru 记录器。
+
+    参数：
+        level（字符串 | int）：输出的最低日志级别（例如，“DEBUG”、“INFO”或 logging.INFO）。
+        format_ft（字符串）：日志格式字符串（应包含 {extra[service]}）。
+        service_name（字符串）：用于日志文件命名模式的名称。
+        config_env（可选[字符串]）：配置环境的名称（例如，“dev”、“prod”）。
+        rotation（字符串）：日志文件轮换条件（例如，“100 MB”、“1 天”）。
+        retention（字符串）：保留旧日志文件的时间（例如，“7 天”、“1 个月”）。
+        **kwargs：直接传递给 logger.add() 的附加关键字参数。
+
     Configures the loguru logger for the application.
 
     Args:
@@ -103,6 +117,26 @@ def setup_logging(
         logger.remove()
     except ValueError:
         pass
+
+    # +++ Add i18n patcher function +++
+    def i18n_patcher(record):
+        """
+        将翻译功能添加到loguru记录中
+
+        Patches the translation function into the loguru record
+
+        Args:
+        record (dict): The loguru record
+        """
+        translator = get_translator() # Get thread-specific translator
+        # Loguru stores the original message (format string or literal) in record["message"]
+        # If args were passed, they are in record["parameters"]
+        # We want to translate the format string record["message"]
+        if isinstance(record["message"], str):
+            record["message"] = translator(record["message"])
+    
+    logger.configure(patcher=i18n_patcher) # Apply the patcher
+    # +++ End Add i18n patcher +++
 
     level_name = get_level_name(level)
     
@@ -129,7 +163,7 @@ def setup_logging(
                 **kwargs_cleaned
             )
         except Exception as e:
-            print(f"Error adding console logger: {e}", file=sys.stderr)
+            logger.error(f"Error adding console logger: {e}", file=sys.stderr)
 
     if SETTINGS.get("log.file", False):
         log_path: Path = get_folder_path("log")
@@ -150,4 +184,4 @@ def setup_logging(
              try:
                  logger.error(f"Error adding file logger for path '{file_sink}': {e}")
              except Exception as e_log:
-                 print(f"Error adding file logger for path '{file_sink}': {e_log}", file=sys.stderr)
+                 logger.error(f"Error adding file logger for path '{file_sink}': {e_log}", file=sys.stderr)

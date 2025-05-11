@@ -64,6 +64,21 @@ class LoggingConfig(BaseModel):
             raise ValueError(f"Invalid log level: {value}. Must be one of {valid_levels}")
         return value.upper()
 
+# +++ New SystemConfig model +++
+class SystemConfig(BaseModel):
+    language: Optional[str] = "en" # Default to English if not specified
+
+    @field_validator('language', mode='before')
+    def validate_language_code(cls, v):
+        if v is not None: # Only validate if a language is provided
+            if not isinstance(v, str):
+                raise TypeError("Language code must be a string.")
+            # Example validation for specific codes - adjust as needed
+            # if v.lower() not in ["en", "zh_cn"]: # Case-insensitive check
+            #     raise ValueError(f"Unsupported language code: '{v}'. Supported: en, zh_CN")
+        return v
+# +++ End New SystemConfig model +++
+
 # +++ New Models for other top-level keys +++
 class ServiceSettingsConfig(BaseModel):
     publish_batch_size: int = 1000
@@ -135,6 +150,7 @@ class GlobalConfigStructure(BaseModel):
     default_subscribe_symbols: List[str]
     risk_management: RiskManagementConfig
     backtester_settings: Optional[BacktesterSettingsConfig] = None # NEW
+    system: Optional[SystemConfig] = None # MODIFIED: Added system configuration
 
     # To allow other keys from global_config.yaml to pass through without validation during gradual adoption:
     class Config:

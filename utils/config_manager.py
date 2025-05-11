@@ -1,31 +1,36 @@
+import configparser
+
 import yaml
 import os
 import json
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, Tuple
 import copy
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
+from config.constants.params import Params
+from config.constants.path import GlobalPath
 from utils.logger import logger
+from utils.i18n import get_translator
 
-# +++ Import Pydantic models +++
-from utils.config_models import GlobalConfigStructure, AllStrategiesConfigModel # +++ Add AllStrategiesConfigModel
+from utils.config_models import GlobalConfigStructure, AllStrategiesConfigModel
 from vnpy.trader.utility import load_json
 
-# --- Constants ---
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-GLOBAL_CONFIG_FILENAME = "global_config.yaml"
-DEFAULT_STRATEGIES_CONFIG_FILENAME = "strategies_setting.json" # Default filename
 
+GLOBAL_CONFIG_FILENAME = Params.global_config_filename
+DEFAULT_STRATEGIES_CONFIG_FILENAME: str = Params.strategy_setting_filename
+# 加载默认策略配置文件(Load the default policy configuration file)
 STRATEGIES_CONFIG = {  }
-STRATEGIES_CONFIG_FILENAME: str = "strategies_setting.json"
-STRATEGIES_CONFIG.update(load_json(STRATEGIES_CONFIG_FILENAME))
+STRATEGIES_CONFIG.update(load_json(DEFAULT_STRATEGIES_CONFIG_FILENAME))
 
-DEFAULT_GLOBAL_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", GLOBAL_CONFIG_FILENAME)
+DEFAULT_GLOBAL_CONFIG_PATH = GlobalPath.global_config_filepath
 ENV_CONFIG_FILENAME_TEMPLATE = "{env}_config.yaml"
 
 
 class ConfigManager:
     """
+    管理从 YAML 和 JSON 文件加载和访问系统配置，支持特定于环境的覆盖和 Pydantic 验证。
+
     Manages loading and accessing system configurations from YAML and JSON files,
     supporting environment-specific overrides and Pydantic validation.
     """
@@ -35,24 +40,34 @@ class ConfigManager:
         environment: Optional[str] = None
     ):
         """
-        Initializes the ConfigManager.
+        初始化 ConfigManager。
 
+        Initializes the ConfigManager.
         Args:
+            global_config_path：基本全局配置文件的路径。
+            环境：环境的名称（例如，"dev"、"prod"、"backtest"）。
+            如果提供，则加载并合并{environment}_config.yaml。
+
             global_config_path: Path to the base global configuration file.
-            environment: The name of the environment (e.g., 'dev', 'prod', 'backtest').
-                         If provided, loads and merges {environment}_config.yaml.
+            environment: The name of the environment(e.g., 'dev', 'prod', 'backtest').
+            If provided, loads and merges {environment}_config.yaml.
         """
+        self._ = get_translator()
         self._global_config_path = global_config_path
         self._environment = environment
         self._env_config_path: Optional[str] = None
         self._config_data: GlobalConfigStructure | Dict[str, Any] = {} # Can be model or dict if validation fails
         self._strategies_data: Dict[str, Any] = {} # Will store validated strategy data (or raw if validation fails)
         
+        self._ = get_translator()
         self._load_configs()
 
     @staticmethod
     def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """
+        递归地将覆盖字典合并到基础字典的副本中。
+        覆盖值优先。
+
         Recursively merges override dict into a **copy** of the base dict.
         Override values take precedence.
         """
@@ -66,72 +81,79 @@ class ConfigManager:
                 merged[key] = value
         return merged
 
-    @staticmethod
-    def _load_yaml(file_path: str) -> Dict[str, Any]:
+    def _load_yaml(self, file_path: str) -> Dict[str, Any]:
         """
+        加载 YAML 文件。
+
         Loads a YAML file.
         """
         if not os.path.exists(file_path):
             # Consider raising a custom ConfigError or FileNotFoundError
-            logger.error(f"Configuration file not found: {file_path}")
+            logger.error(self._("未找到配置文件：{}").format(file_path))
             return {}
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f)
-            logger.info(f"Successfully loaded YAML configuration from: {file_path}")
+            logger.info(self._("已成功从 {} 加载 YAML 配置").format(file_path))
             return data if data else {}
         except yaml.YAMLError as e:
-            logger.error(f"Failed to parse YAML file {file_path}: {e}")
+            logger.error(self._("无法解析 YAML 文件 {}: {}").format(file_path, e))
             return {}
         except IOError as e:
-            logger.error(f"Failed to read file {file_path}: {e}")
+            logger.error(self._("无法读取文件 {}: {}").format(file_path, e))
             return {}
 
-    @staticmethod
-    def _load_json(file_path: str) -> Dict[str, Any]:
+    def _load_json(self, file_path: str) -> Dict[str, Any]:
         """
+        加载 JSON 文件。
+
         Loads a JSON file.
         """
         if not os.path.exists(file_path):
-            logger.info(f"Optional JSON configuration file not found: {file_path}")
+            logger.info(self._("未找到可选的 JSON 配置文件：{}").format(file_path))
             return {}
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            logger.info(f"Successfully loaded JSON configuration from: {file_path}")
+            logger.info(self._("已成功从 {} 加载 JSON 配置").format(file_path))
             return data if data else {}
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON file {file_path}: {e}")
+            logger.error(self._("无法解析 JSON 文件 {}: {}").format(file_path, e))
             return {}
         except IOError as e:
-            logger.error(f"Failed to read file {file_path}: {e}")
+            logger.error(self._("无法读取文件 {}: {}").format(file_path, e))
             return {}
 
+
     def _load_configs(self):
-        """Loads base config and environment-specific config, validates, then merges."""
-        logger.info(f"Project root determined as: {PROJECT_ROOT}")
+        """
+        加载基本配置和特定于环境的配置，验证，然后合并。
+
+        Loads base config and environment-specific config, validates, then merges.
+        """
+        logger.info(self._("项目根目录确定为: {}").format(PROJECT_ROOT))
         
         # 1. Load Base Global Config
         base_config = self._load_yaml(self._global_config_path)
         if not base_config:
-             logger.warning(f"Base global config ({self._global_config_path}) failed to load or is empty.")
+             logger.warning(self._("基本全局配置 ({}) 加载失败或为空。").format(self._global_config_path))
 
         # 2. Load Environment-Specific Config (if environment is set)
         env_specific_config = {}
         if self._environment:
             env_filename = ENV_CONFIG_FILENAME_TEMPLATE.format(env=self._environment)
             self._env_config_path = os.path.join(PROJECT_ROOT, "config", env_filename)
-            logger.info(f"Attempting to load environment config for '{self._environment}' from: {self._env_config_path}")
+            logger.info(self._("尝试从以下位置加载环境 '{}' 的配置: {}").format(self._environment, self._env_config_path))
             env_specific_config = self._load_yaml(self._env_config_path)
             if not env_specific_config:
-                 logger.info(f"Environment config file ({self._env_config_path}) not found or empty. Will use base config values for overridden keys if any.")
+                 logger.info(self._("环境配置文件 ({}) 未找到或为空。如果有任何被覆盖的键，将使用基本配置值。").format(self._env_config_path))
         else:
-             logger.info("No environment specified, using base config only.")
+             logger.info(self._("未指定环境，仅使用基本配置。"))
 
         # 3. Merge Configurations
         merged_config_data: Dict[str, Any] = base_config
         if env_specific_config: # Only merge if env_specific_config has content
-            logger.info(f"Merging environment config ('{self._environment}') into base config.")
+            logger.info(self._("将环境配置 ('{}') 合并到基本配置中。").format(self._environment))
             merged_config_data = self._deep_merge(base_config, env_specific_config)
         
         # +++ 4. Validate merged configuration using Pydantic model +++
@@ -143,21 +165,21 @@ class ConfigManager:
                 validated_model_instance = GlobalConfigStructure(**merged_config_data)
                 # If validation is successful, store the Pydantic model instance
                 self._config_data = validated_model_instance 
-                logger.info("Global configuration successfully validated and loaded into Pydantic model.")
+                logger.info(self._("全局配置已成功验证并加载到 Pydantic 模型中。"))
             except ValidationError as e:
-                logger.error(f"Global configuration validation failed! Errors:\n{e}")
+                logger.error(self._("全局配置验证失败！错误: {}").format(e))
                 # Option A: Exit the program on validation failure
-                logger.critical("Critical configuration errors. Aborting program startup.")
-                raise SystemExit("Configuration validation failed. Check logs for details.")
+                logger.critical(self._("关键配置错误。中止程序启动。"))
+                raise SystemExit(self._("配置验证失败。查看日志了解详情。"))
                 # Option B: Fallback to unvalidated data (less safe)
                 # logger.warning("Using unvalidated configuration data due to validation errors.")
                 # self._config_data = merged_config_data # Store the raw dict if falling back
             except Exception as e_generic:
-                logger.error(f"An unexpected error occurred during Pydantic model instantiation for global config: {e_generic}")
-                logger.critical("Critical error during global configuration processing. Aborting program startup.")
-                raise SystemExit("Unexpected error during global configuration processing.")
+                logger.error(self._("在全局配置的 Pydantic 模型实例化过程中发生意外错误: {}").format(e_generic))
+                logger.critical(self._("全局配置处理过程中发生关键错误。中止程序启动。"))
+                raise SystemExit(self._("全局配置处理过程中发生意外错误。"))
         else:
-            logger.warning("Merged global configuration data is empty. No Pydantic validation performed.")
+            logger.warning(self._("合并的全局配置数据为空。未执行 Pydantic 验证。"))
             self._config_data = {} # Ensure _config_data is an empty dict
         # --- End Pydantic Validation ---
 
@@ -171,9 +193,9 @@ class ConfigManager:
             try:
                 # Update the model instance with the dictionary that now includes resolved paths
                 self._config_data = GlobalConfigStructure(**temp_dict_for_path_resolution)
-                logger.info("Global Pydantic model re-validated and updated with resolved absolute paths.")
+                logger.info(self._("全局 Pydantic 模型已重新验证并更新了已解析的绝对路径。"))
             except ValidationError as e:
-                logger.error(f"Error re-validating global config model after path resolution: {e}. Resolved paths might not be accessible via Pydantic model.")
+                logger.error(self._("路径解析后重新验证全局配置模型时出错: {}。可能无法通过 Pydantic 模型访问已解析的路径。").format(e))
                 # If re-validation fails, self._config_data remains the model instance *before* path resolution tried to update it.
                 # Access to resolved paths would then rely on the dictionary-based fallback in get_global_config or separate storage.
                 # For now, we log the error and proceed. The original Pydantic object (pre-path-resolution) is still in self._config_data.
@@ -193,42 +215,44 @@ class ConfigManager:
             configured_strategies_path_abs = self._config_data['paths'].get('strategies_config_path_abs')
 
         if configured_strategies_path_abs:
-            logger.info(f"Attempting to load strategies configuration from configured path: {configured_strategies_path_abs}")
+            logger.info(self._("尝试从配置的路径加载策略配置: {}").format(configured_strategies_path_abs))
             raw_strategies_data = self._load_json(configured_strategies_path_abs) # Use internal _load_json for consistency
             if not raw_strategies_data:
-                logger.warning(f"Strategies config file specified at '{configured_strategies_path_abs}' was not found or is empty.")
+                logger.warning(self._("在 '{}' 指定的策略配置文件未找到或为空。").format(configured_strategies_path_abs))
 
         # If not loaded from configured path (or path not set), try default user location
         if not raw_strategies_data:
-            logger.info(f"No strategies loaded from specific config path, or path not set. Trying default user location for '{DEFAULT_STRATEGIES_CONFIG_FILENAME}'...")
+            logger.info(self._("未从特定配置路径加载策略，或路径未设置。尝试默认用户位置 '{}'...").format(DEFAULT_STRATEGIES_CONFIG_FILENAME))
             raw_strategies_data = load_json(DEFAULT_STRATEGIES_CONFIG_FILENAME)
         
         if raw_strategies_data: # load_json returns {} if file not found or empty, _load_json also does
             try:
                 validated_strategies = parse_obj_as(AllStrategiesConfigModel, raw_strategies_data)
                 self._strategies_data = {name: model.model_dump() for name, model in validated_strategies.items()}
-                logger.info(f"Strategies configuration successfully validated and loaded.")
+                logger.info(self._("策略配置已成功验证并加载。"))
             except ValidationError as e_strat:
-                logger.error(f"Strategies configuration validation failed! Errors:\n{e_strat}")
-                logger.warning("Using unvalidated raw strategies data due to validation errors. Behavior might be unpredictable.")
+                logger.error(self._("策略配置验证失败！错误: {}").format(e_strat))
+                logger.warning(self._("由于验证错误，使用未验证的原始策略数据。行为可能不可预测。"))
                 self._strategies_data = raw_strategies_data # Fallback to raw
             except Exception as e_strat_generic:
-                logger.error(f"An unexpected error occurred during Pydantic model instantiation for strategies config: {e_strat_generic}")
+                logger.error(self._("在策略配置的 Pydantic 模型实例化过程中发生意外错误: {}").format(e_strat_generic))
                 self._strategies_data = raw_strategies_data # Fallback to raw
         else:
-            logger.warning(f"No strategies config file found or is empty (checked specific path and default). No strategies loaded.")
+            logger.warning(self._("未找到策略配置文件或为空（已检查特定路径和默认路径）。未加载任何策略。"))
             self._strategies_data = {} # Ensure it's an empty dict
         # --- End Load and Validate Strategies Config ---
 
-    @staticmethod
-    # Renamed original _resolve_paths to avoid confusion
-    def _resolve_paths_on_dict(config_dict_to_modify: Dict[str, Any]):
-        """Resolves relative paths in the configuration dictionary to absolute paths."""
+    def _resolve_paths_on_dict(self, config_dict_to_modify: Dict[str, Any]):
+        """
+        将配置字典中的相对路径解析为绝对路径。
+
+        Resolves relative paths in the configuration dictionary to absolute paths.
+        """
         paths_section = config_dict_to_modify.get('paths')
         if not isinstance(paths_section, dict):
             # If paths config is entirely missing, Pydantic would have caught it if PathsConfig was not Optional itself.
             # Assuming GlobalConfigStructure.paths is not Optional for now.
-            logger.warning("'paths' section is missing or not a dictionary in the configuration. Cannot resolve paths.")
+            logger.warning(self._("配置中缺少 'paths' 部分或不是字典。无法解析路径。"))
             return
 
         def _resolve_single_path(key_rel: str, key_abs: str, section: dict):
@@ -236,7 +260,7 @@ class ConfigManager:
             if rel_path:
                 abs_p = os.path.join(PROJECT_ROOT, rel_path) if not os.path.isabs(rel_path) else rel_path
                 section[key_abs] = os.path.normpath(abs_p)
-                logger.info(f"Resolved '{key_rel}': {rel_path} -> {section.get(key_abs)}")
+                logger.info(self._("已解析 '{}': {} -> {}").format(key_rel, rel_path, section.get(key_abs)))
             return section.get(key_abs)
 
         _resolve_single_path('data_recording_path', 'data_recording_path_abs', paths_section)
@@ -245,7 +269,7 @@ class ConfigManager:
         resolved_backtest_path = _resolve_single_path('backtest_data_source_path', 'backtest_data_source_path_abs', paths_section)
         if not resolved_backtest_path and paths_section.get('data_recording_path_abs'):
             paths_section['backtest_data_source_path_abs'] = paths_section['data_recording_path_abs']
-            logger.info(f"'backtest_data_source_path' defaults to 'data_recording_path_abs': {paths_section.get('backtest_data_source_path_abs')}")
+            logger.info(self._("'backtest_data_source_path' 默认为 'data_recording_path_abs': {}").format(paths_section.get('backtest_data_source_path_abs')))
 
         _resolve_single_path('product_info_ini', 'product_info_ini_abs', paths_section)
         _resolve_single_path('strategies_config_path', 'strategies_config_path_abs', paths_section) # NEW
@@ -275,13 +299,13 @@ class ConfigManager:
             elif isinstance(value, dict):
                 # Original dictionary access
                 for k in keys:
-                        value = value[k]
+                    value = value[k]
                 return value
             else:
-                logger.warning(f"Config data (type: {type(value)}) is neither a Pydantic model nor a dict. Cannot get key '{key}'.")
+                logger.warning(self._("配置数据（类型: {}）既不是 Pydantic 模型也不是字典。无法获取键 '{}'。").format(type(value), key))
             return default
         except (KeyError, AttributeError, TypeError):
-            # logger.warning(f"Error accessing key '{key}'. Returning default: {default}")
+            logger.warning(self._("访问键 '{}' 时出错。返回默认值：{}").format(key, default))
             return default
 
     def get_all_global_configs(self) -> Dict[str, Any]:
@@ -292,78 +316,79 @@ class ConfigManager:
                 return self._config_data.dict(exclude_unset=False, by_alias=False) # Pydantic V1, include all fields
         elif isinstance(self._config_data, dict):
             return self._config_data.copy()
-        logger.warning("Cannot get all global configs: _config_data is not a Pydantic model or dict.")
+        logger.warning(self._("无法获取所有全局配置：_config_data 不是 Pydantic 模型或字典。"))
         return {}
 
     def get_strategies_config(self) -> Dict[str, Any]:
-        """Returns the loaded strategies configuration."""
+        """
+        返回已加载的策略配置。
+
+        Returns the loaded strategies configuration.
+        """
         return self._strategies_data.copy() # Return a copy
 
     def get_data_recording_path(self) -> Optional[str]:
-        """Convenience method to get the absolute data recording path."""
+        """
+        获取绝对数据记录路径的便捷方法。
+
+        Convenience method to get the absolute data recording path.
+        """
         return self.get_global_config("paths.data_recording_path_abs")
 
     def get_backtest_data_source_path(self) -> Optional[str]:
-        """Convenience method to get the absolute backtest data source path."""
+        """
+        获取绝对回测数据源路径的便捷方法。
+
+        Convenience method to get the absolute backtest data source path.
+        """
         return self.get_global_config("paths.backtest_data_source_path_abs")
 
-    # +++ Add convenience method for product info path +++
     def get_product_info_path(self) -> Optional[str]:
-        """Convenience method to get the absolute product info INI path."""
+        """
+        获取绝对产品信息 INI 路径的便捷方法。
+
+        Convenience method to get the absolute product info INI path.
+        """
         return self.get_global_config("paths.product_info_ini_abs")
 
-# Example Usage (for testing this module directly)
-if __name__ == '__main__':
-    print(f"Project Root from ConfigManager module: {PROJECT_ROOT}")
-    # Test with default paths and no environment
-    manager_no_env = ConfigManager()
-    print("\n--- No Environment (Base Global Config) ---")
-    print(f"Market Data Pub: {manager_no_env.get_global_config('zmq_addresses.market_data_pub')}")
-    print(f"Strategy SA509_Trend_1 profit_target_ticks: {manager_no_env.get_strategies_config().get('SA509_Trend_1', {}).get('setting', {}).get('profit_target_ticks')}")
-    
-    print("\n--- Development Environment ('dev') ---")
-    # Ensure config/dev_config.yaml exists and potentially overrides some values
-    # Also ensure config/strategies_setting.json exists (or a path is specified in dev_config.yaml)
-    manager_dev = ConfigManager(environment="dev")
-    print(f"Market Data Pub (dev): {manager_dev.get_global_config('zmq_addresses.market_data_pub')}")
-    print(f"Default Log Level (dev): {manager_dev.get_global_config('logging.default_level')}")
-    dev_strategies = manager_dev.get_strategies_config()
-    print(f"Strategy SA509_Trend_1 order_volume (dev): {dev_strategies.get('SA509_Trend_1', {}).get('setting', {}).get('order_volume')}")
+    def load_product_info(self, filepath: str) -> Tuple[Dict, Dict]:
+        """
+        从 INI 文件加载佣金规则和乘数，订单执行网关调用。
 
-    # Test accessing a Pydantic model field directly (if validation passed)
-    if isinstance(manager_dev._config_data, GlobalConfigStructure):
-        print(f"Accessing via Pydantic model: dev logging level = {manager_dev._config_data.logging.default_level}")
-    else:
-        print("Config data is not a Pydantic model instance for dev.")
-
-    # Test with a missing global config
-    # print("\n--- Test Missing Global Config ---")
-    # manager_missing = ConfigManager(global_config_path="config/non_existent_global.yaml")
-    # print(f"Market Data Pub (missing global): {manager_missing.get_global_config('zmq_addresses.market_data_pub')}") # Should be None or default
-    # print(f"Strategies (missing global): {manager_missing.get_strategies_config()}") # Should be empty
-
-    print("\n--- Backtest Environment ('backtest') ---")
-    # Ensure config/backtest_config.yaml exists and is populated
-    manager_backtest = ConfigManager(environment="backtest")
-    if manager_backtest._config_data: # Check if config data was loaded
-        print(f"Product Info Path (backtest): {manager_backtest.get_global_config('paths.product_info_ini_abs')}")
-        print(f"Strategies Config Path (backtest): {manager_backtest.get_global_config('paths.strategies_config_path_abs')}")
-        print(f"Default Log Level (backtest): {manager_backtest.get_global_config('logging.default_level')}")
-        print(f"Backtester Start Date (backtest): {manager_backtest.get_global_config('backtester_settings.start_date')}")
-        backtest_strategies = manager_backtest.get_strategies_config()
-        print(f"Loaded Backtest Strategies: {backtest_strategies}")
-        if backtest_strategies:
-            print(f"Example Backtest Strategy 'BACKTEST_EXAMPLE_Strategy_1' setting 'param1': {backtest_strategies.get('BACKTEST_EXAMPLE_Strategy_1', {}).get('setting', {}).get('param1')}")
-    else:
-        print("Failed to load or validate configuration for backtest environment.")
-
-    # How to use in other modules:
-    # from utils.config_manager import ConfigManager
-    #
-    # # Initialize once, perhaps in your main service script
-    # config_service = ConfigManager()
-    #
-    # # Access values
-    # md_pub_url = config_service.get_global_config("zmq_addresses.market_data_pub", "tcp://localhost:5555")
-    # recording_path = config_service.get_data_recording_path()
-    # strategy_configs = config_service.get_strategies_config() 
+        Loads commission rules and multipliers from an INI file.
+        """
+        parser = configparser.ConfigParser()
+        if not os.path.exists(filepath):
+            logger.error(self._("错误：产品信息文件未找到 {}").format(filepath))
+            return {}, {}
+        try:
+            parser.read(filepath, encoding='utf-8')
+        except Exception as err:
+            logger.exception(self._("错误：读取产品信息文件 {} 时出错：{}").format(filepath, err))
+            return {}, {}
+        commission_rules = {}
+        contract_multipliers = {}
+        for symbol in parser.sections():
+            if not parser.has_option(symbol, 'multiplier'):
+                logger.warning(self._("警告：文件 {} 中的 [{}] 缺少 'multiplier'，跳过此合约。").format(filepath, symbol))
+                continue
+            try:
+                multiplier = parser.getfloat(symbol, 'multiplier')
+                contract_multipliers[symbol] = multiplier
+                rule = {
+                    "open_rate": parser.getfloat(symbol, 'open_rate', fallback=0.0),
+                    "close_rate": parser.getfloat(symbol, 'close_rate', fallback=0.0),
+                    "open_fixed": parser.getfloat(symbol, 'open_fixed', fallback=0.0),
+                    "close_fixed": parser.getfloat(symbol, 'close_fixed', fallback=0.0),
+                    "min_commission": parser.getfloat(symbol, 'min_commission', fallback=0.0)
+                }
+                commission_rules[symbol] = rule
+            except ValueError as err:
+                logger.warning(self._("警告：解析文件 {} 中 [{}] 的数值时出错: {}，跳过此合约。").format(filepath, symbol, err))
+            except Exception as err:
+                logger.warning(
+                    self._("警告：处理文件 {} 中 [{}] 时发生未知错误: {}，跳过此合约。").format(filepath, symbol, err))
+        logger.info(
+            self._("从 {} 加载了 {} 个合约的乘数和 {} 个合约的手续费规则。").format(filepath, len(contract_multipliers),
+                                                                              len(commission_rules)))
+        return commission_rules, contract_multipliers
