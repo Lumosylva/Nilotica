@@ -1,0 +1,1252 @@
+# Translations template for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-05-11 22:44+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: utils/config_manager.py:92
+#, python-brace-format
+msgid "未找到配置文件：{}"
+msgstr ""
+
+#: utils/config_manager.py:97
+#, python-brace-format
+msgid "已成功从 {} 加载 YAML 配置"
+msgstr ""
+
+#: utils/config_manager.py:100
+#, python-brace-format
+msgid "无法解析 YAML 文件 {}: {}"
+msgstr ""
+
+#: utils/config_manager.py:103 utils/config_manager.py:124
+#, python-brace-format
+msgid "无法读取文件 {}: {}"
+msgstr ""
+
+#: utils/config_manager.py:113
+#, python-brace-format
+msgid "未找到可选的 JSON 配置文件：{}"
+msgstr ""
+
+#: utils/config_manager.py:118
+#, python-brace-format
+msgid "已成功从 {} 加载 JSON 配置"
+msgstr ""
+
+#: utils/config_manager.py:121
+#, python-brace-format
+msgid "无法解析 JSON 文件 {}: {}"
+msgstr ""
+
+#: utils/config_manager.py:134
+#, python-brace-format
+msgid "项目根目录确定为: {}"
+msgstr ""
+
+#: utils/config_manager.py:139
+#, python-brace-format
+msgid "基本全局配置 ({}) 加载失败或为空。"
+msgstr ""
+
+#: utils/config_manager.py:146
+#, python-brace-format
+msgid "尝试从以下位置加载环境 '{}' 的配置: {}"
+msgstr ""
+
+#: utils/config_manager.py:149
+#, python-brace-format
+msgid "环境配置文件 ({}) 未找到或为空。如果有任何被覆盖的键，将使用基本配置值。"
+msgstr ""
+
+#: utils/config_manager.py:151
+msgid "未指定环境，仅使用基本配置。"
+msgstr ""
+
+#: utils/config_manager.py:156
+#, python-brace-format
+msgid "将环境配置 ('{}') 合并到基本配置中。"
+msgstr ""
+
+#: utils/config_manager.py:168
+msgid "全局配置已成功验证并加载到 Pydantic 模型中。"
+msgstr ""
+
+#: utils/config_manager.py:170
+#, python-brace-format
+msgid "全局配置验证失败！错误: {}"
+msgstr ""
+
+#: utils/config_manager.py:172
+msgid "关键配置错误。中止程序启动。"
+msgstr ""
+
+#: utils/config_manager.py:173
+msgid "配置验证失败。查看日志了解详情。"
+msgstr ""
+
+#: utils/config_manager.py:178
+#, python-brace-format
+msgid "在全局配置的 Pydantic 模型实例化过程中发生意外错误: {}"
+msgstr ""
+
+#: utils/config_manager.py:179
+msgid "全局配置处理过程中发生关键错误。中止程序启动。"
+msgstr ""
+
+#: utils/config_manager.py:180
+msgid "全局配置处理过程中发生意外错误。"
+msgstr ""
+
+#: utils/config_manager.py:182
+msgid "合并的全局配置数据为空。未执行 Pydantic 验证。"
+msgstr ""
+
+#: utils/config_manager.py:196
+msgid "全局 Pydantic 模型已重新验证并更新了已解析的绝对路径。"
+msgstr ""
+
+#: utils/config_manager.py:198
+#, python-brace-format
+msgid "路径解析后重新验证全局配置模型时出错: {}。可能无法通过 Pydantic 模型访问已解析的路径。"
+msgstr ""
+
+#: utils/config_manager.py:218
+#, python-brace-format
+msgid "尝试从配置的路径加载策略配置: {}"
+msgstr ""
+
+#: utils/config_manager.py:221
+#, python-brace-format
+msgid "在 '{}' 指定的策略配置文件未找到或为空。"
+msgstr ""
+
+#: utils/config_manager.py:225
+#, python-brace-format
+msgid "未从特定配置路径加载策略，或路径未设置。尝试默认用户位置 '{}'..."
+msgstr ""
+
+#: utils/config_manager.py:232
+msgid "策略配置已成功验证并加载。"
+msgstr ""
+
+#: utils/config_manager.py:234
+#, python-brace-format
+msgid "策略配置验证失败！错误: {}"
+msgstr ""
+
+#: utils/config_manager.py:235
+msgid "由于验证错误，使用未验证的原始策略数据。行为可能不可预测。"
+msgstr ""
+
+#: utils/config_manager.py:238
+#, python-brace-format
+msgid "在策略配置的 Pydantic 模型实例化过程中发生意外错误: {}"
+msgstr ""
+
+#: utils/config_manager.py:241
+msgid "未找到策略配置文件或为空（已检查特定路径和默认路径）。未加载任何策略。"
+msgstr ""
+
+#: utils/config_manager.py:255
+msgid "配置中缺少 'paths' 部分或不是字典。无法解析路径。"
+msgstr ""
+
+#: utils/config_manager.py:263
+#, python-brace-format
+msgid "已解析 '{}': {} -> {}"
+msgstr ""
+
+#: utils/config_manager.py:272
+#, python-brace-format
+msgid "'backtest_data_source_path' 默认为 'data_recording_path_abs': {}"
+msgstr ""
+
+#: utils/config_manager.py:305
+#, python-brace-format
+msgid "配置数据（类型: {}）既不是 Pydantic 模型也不是字典。无法获取键 '{}'。"
+msgstr ""
+
+#: utils/config_manager.py:308
+#, python-brace-format
+msgid "访问键 '{}' 时出错。返回默认值：{}"
+msgstr ""
+
+#: utils/config_manager.py:319
+msgid "无法获取所有全局配置：_config_data 不是 Pydantic 模型或字典。"
+msgstr ""
+
+#: utils/config_manager.py:362
+#, python-brace-format
+msgid "错误：产品信息文件未找到 {}"
+msgstr ""
+
+#: utils/config_manager.py:367
+#, python-brace-format
+msgid "错误：读取产品信息文件 {} 时出错：{}"
+msgstr ""
+
+#: utils/config_manager.py:373
+#, python-brace-format
+msgid "警告：文件 {} 中的 [{}] 缺少 'multiplier'，跳过此合约。"
+msgstr ""
+
+#: utils/config_manager.py:387
+#, python-brace-format
+msgid "警告：解析文件 {} 中 [{}] 的数值时出错: {}，跳过此合约。"
+msgstr ""
+
+#: utils/config_manager.py:390
+#, python-brace-format
+msgid "警告：处理文件 {} 中 [{}] 时发生未知错误: {}，跳过此合约。"
+msgstr ""
+
+#: utils/config_manager.py:392
+#, python-brace-format
+msgid "从 {} 加载了 {} 个合约的乘数和 {} 个合约的手续费规则。"
+msgstr ""
+
+#: utils/converter.py:64 utils/converter.py:78
+msgid "无法转换列表/元组中的项目，使用字符串表示。"
+msgstr ""
+
+#: utils/converter.py:148
+#, python-brace-format
+msgid "警告：convert_order_data_to_dict 中未处理的类型: {}。转换为字符串。"
+msgstr ""
+
+#: utils/converter.py:175
+#, python-brace-format
+msgid "创建 OrderRequest 失败：缺少关键字段：{} from data {}"
+msgstr ""
+
+#: utils/converter.py:178
+#, python-brace-format
+msgid "创建 OrderRequest 失败：无效的枚举值：{} from data {}"
+msgstr ""
+
+#: utils/converter.py:181
+#, python-brace-format
+msgid "创建 OrderRequest 时发生未知错误：{} from data {}"
+msgstr ""
+
+#: vnpy/trader/constant.py:17
+msgid "多"
+msgstr ""
+
+#: vnpy/trader/constant.py:18
+msgid "空"
+msgstr ""
+
+#: vnpy/trader/constant.py:19
+msgid "净"
+msgstr ""
+
+#: vnpy/trader/constant.py:28
+msgid "开"
+msgstr ""
+
+#: vnpy/trader/constant.py:29
+msgid "平"
+msgstr ""
+
+#: vnpy/trader/constant.py:30
+msgid "平今"
+msgstr ""
+
+#: vnpy/trader/constant.py:31
+msgid "平昨"
+msgstr ""
+
+#: vnpy/trader/constant.py:39
+msgid "提交中"
+msgstr ""
+
+#: vnpy/trader/constant.py:40
+msgid "未成交"
+msgstr ""
+
+#: vnpy/trader/constant.py:41
+msgid "部分成交"
+msgstr ""
+
+#: vnpy/trader/constant.py:42
+msgid "全部成交"
+msgstr ""
+
+#: vnpy/trader/constant.py:43
+msgid "已撤销"
+msgstr ""
+
+#: vnpy/trader/constant.py:44
+msgid "拒单"
+msgstr ""
+
+#: vnpy/trader/constant.py:52
+msgid "股票"
+msgstr ""
+
+#: vnpy/trader/constant.py:53
+msgid "期货"
+msgstr ""
+
+#: vnpy/trader/constant.py:54
+msgid "期权"
+msgstr ""
+
+#: vnpy/trader/constant.py:55
+msgid "指数"
+msgstr ""
+
+#: vnpy/trader/constant.py:56
+msgid "外汇"
+msgstr ""
+
+#: vnpy/trader/constant.py:57
+msgid "现货"
+msgstr ""
+
+#: vnpy/trader/constant.py:59
+msgid "债券"
+msgstr ""
+
+#: vnpy/trader/constant.py:60
+msgid "权证"
+msgstr ""
+
+#: vnpy/trader/constant.py:61
+msgid "价差"
+msgstr ""
+
+#: vnpy/trader/constant.py:62
+msgid "基金"
+msgstr ""
+
+#: vnpy/trader/constant.py:64
+msgid "互换"
+msgstr ""
+
+#: vnpy/trader/constant.py:72
+msgid "限价"
+msgstr ""
+
+#: vnpy/trader/constant.py:73
+msgid "市价"
+msgstr ""
+
+#: vnpy/trader/constant.py:77
+msgid "询价"
+msgstr ""
+
+#: vnpy/trader/constant.py:85
+msgid "看涨期权"
+msgstr ""
+
+#: vnpy/trader/constant.py:86
+msgid "看跌期权"
+msgstr ""
+
+#: vnpy/trader/database.py:154
+#, python-brace-format
+msgid "找不到数据库驱动{}，使用默认的SQLite数据库"
+msgstr ""
+
+#: vnpy/trader/datafeed.py:25
+msgid "查询K线数据失败：没有正确配置数据服务"
+msgstr ""
+
+#: vnpy/trader/datafeed.py:32
+msgid "查询Tick数据失败：没有正确配置数据服务"
+msgstr ""
+
+#: vnpy/trader/datafeed.py:52
+msgid "没有配置要使用的数据服务，请修改全局配置中的datafeed相关内容"
+msgstr ""
+
+#: vnpy/trader/datafeed.py:66
+#, python-brace-format
+msgid "无法加载数据服务模块，请运行 pip install {} 尝试安装"
+msgstr ""
+
+#: vnpy/trader/engine.py:174
+#, python-brace-format
+msgid "找不到底层接口：{}"
+msgstr ""
+
+#: vnpy/trader/engine.py:183
+#, python-brace-format
+msgid "找不到引擎：{}"
+msgstr ""
+
+#: vnpy/trader/engine.py:602
+#, python-brace-format
+msgid "邮件发送失败: {}"
+msgstr ""
+
+#: vnpy/trader/optimize.py:46
+msgid "固定参数添加成功"
+msgstr ""
+
+#: vnpy/trader/optimize.py:49
+msgid "参数优化起始点必须小于终止点"
+msgstr ""
+
+#: vnpy/trader/optimize.py:52
+msgid "参数优化步进必须大于0"
+msgstr ""
+
+#: vnpy/trader/optimize.py:63
+#, python-brace-format
+msgid "范围参数添加成功，数量{}"
+msgstr ""
+
+#: vnpy/trader/optimize.py:89
+msgid "优化参数组合为空，请检查"
+msgstr ""
+
+#: vnpy/trader/optimize.py:93
+msgid "优化目标未设置，请检查"
+msgstr ""
+
+#: vnpy/trader/optimize.py:109
+msgid "开始执行穷举算法优化"
+msgstr ""
+
+#: vnpy/trader/optimize.py:110 vnpy/trader/optimize.py:194
+#, python-brace-format
+msgid "参数优化空间：{}"
+msgstr ""
+
+#: vnpy/trader/optimize.py:127
+#, python-brace-format
+msgid "穷举算法优化完成，耗时{}秒"
+msgstr ""
+
+#: vnpy/trader/optimize.py:193
+msgid "开始执行遗传算法优化"
+msgstr ""
+
+#: vnpy/trader/optimize.py:195
+#, python-brace-format
+msgid "每代族群总数：{}"
+msgstr ""
+
+#: vnpy/trader/optimize.py:196
+#, python-brace-format
+msgid "优良筛选个数：{}"
+msgstr ""
+
+#: vnpy/trader/optimize.py:197
+#, python-brace-format
+msgid "迭代次数：{}"
+msgstr ""
+
+#: vnpy/trader/optimize.py:198
+#, python-brace-format
+msgid "交叉概率：{:.0%}"
+msgstr ""
+
+#: vnpy/trader/optimize.py:199
+#, python-brace-format
+msgid "突变概率：{:.0%}"
+msgstr ""
+
+#: vnpy/trader/optimize.py:217
+#, python-brace-format
+msgid "遗传算法优化完成，耗时{}秒"
+msgstr ""
+
+#: vnpy/trader/utility.py:201
+msgid "合成日K线必须传入每日收盘时间"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:36
+#, python-brace-format
+msgid "使用提供的 ConfigManager 为环境 [{}] 初始化 MarketDataGatewayService。"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:49
+#, python-brace-format
+msgid "已为环境加载 CTP 设置：[{}]"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:51
+#: zmq_services/order_execution_gateway.py:86
+#, python-brace-format
+msgid "在 connect_ctp.json 中未找到环境 '{}'！无法连接 CTP。"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:53
+#: zmq_services/order_execution_gateway.py:89
+msgid "未找到 connect_ctp.json！无法连接 CTP。"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:55
+#, python-brace-format
+msgid "加载或解析 connect_ctp.json 时出错：{}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:58
+#, python-brace-format
+msgid "行情网关服务 for [{}] 初始化完成."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:64
+#, python-brace-format
+msgid "发布Tick: {} - Price: {}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:68
+#, python-brace-format
+msgid "发布 Tick 失败 (主题: {})"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:73
+msgid "检测到 CTP 行情登录成功信号！"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:92
+#, python-brace-format
+msgid "[VNPY 日志 - MDGW 已处理] {} - {}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:97
+#, python-brace-format
+msgid "发布 Log 失败 (主题: {})"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:104
+#, python-brace-format
+msgid "发布 Contract 失败 (主题: {})"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:109
+msgid "行情发布地址 'zmq_addresses.market_data_pub' 未在配置中找到，无法启动."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:113
+#, python-brace-format
+msgid "无法启动 ZmqPublisherBase (绑定到 {})，行情网关启动中止."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:116
+#, python-brace-format
+msgid "行情网关服务 for [{}] 正在启动..."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:122
+msgid "事件引擎已启动."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:124
+#, python-brace-format
+msgid "连接 CTP 网关 for [{}]..."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:126
+#: zmq_services/order_execution_gateway.py:670
+msgid "CTP 设置未加载或环境无效，无法连接 CTP 网关。"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:130
+#, python-brace-format
+msgid "CTP 连接配置 (Env: {}): UserID={}, BrokerID={}, MD={}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:140
+#, python-brace-format
+msgid "CTP 网关连接请求已发送。等待连接成功信号 (超时: {}s)..."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:145
+#, python-brace-format
+msgid "CTP 行情连接超时 ({}s)！未收到登录成功信号."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:149
+msgid "CTP 行情网关连接成功."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:151
+msgid "订阅行情..."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:157
+msgid "'default_subscribe_symbols' 未在配置中找到或为空，不订阅任何合约."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:167
+#, python-brace-format
+msgid "发送订阅请求: {}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:170
+#, python-brace-format
+msgid "错误的合约格式，跳过订阅: {} (应为 SYMBOL.EXCHANGE)"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:173
+#, python-brace-format
+msgid "订阅 {} 时出错: {}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:175
+#, python-brace-format
+msgid "共发送 {} 个合约的订阅请求."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:177
+#, python-brace-format
+msgid "以下合约订阅失败或跳过: {}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:180
+#, python-brace-format
+msgid "连接或订阅 CTP 网关时发生严重错误 (Env: {}): {}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:183
+#, python-brace-format
+msgid "行情网关服务 for [{}] 启动流程完成."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:189
+#, python-brace-format
+msgid "停止行情网关服务 for [{}]..."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:196
+msgid "事件引擎已停止."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:198
+#: zmq_services/order_execution_gateway.py:738
+#, python-brace-format
+msgid "停止事件引擎时出错: {}"
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:203
+msgid "CTP 网关已关闭."
+msgstr ""
+
+#: zmq_services/market_data_gateway.py:205
+#: zmq_services/order_execution_gateway.py:746
+#, python-brace-format
+msgid "关闭 CTP 网关时出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:54
+#, python-brace-format
+msgid ""
+"正在初始化 OrderExecutionGatewayService for environment: [{}] using provided "
+"ConfigManager."
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:84
+#, python-brace-format
+msgid "已加载环境 [{}] 的 CTP 设置"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:92
+#, python-brace-format
+msgid "加载或解析 connect_ctp.json 时出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:102
+#, python-brace-format
+msgid "尝试从 {} 加载产品信息..."
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:105
+msgid "警告：未能成功加载手续费规则或合约乘数，手续费计算可能不准确！"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:127
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for [{}] 初始化完成。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:138
+#, python-brace-format
+msgid "RPC: 收到 send_order 请求: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:142
+msgid "RPC: send_order - 无法将请求转换为 OrderRequest。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:148
+#, python-brace-format
+msgid "RPC: send_order - 订单已发送至 CTP: {}, VT_OrderID: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:153
+#, python-brace-format
+msgid "RPC: send_order - CTP 网关未能发送订单 (gateway.send_order 返回 None): {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:155
+#, python-brace-format
+msgid "对于 {}，gateway.send_order 返回 None"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:159
+#, python-brace-format
+msgid "RPC: send_order - 发送订单时 CTP 网关出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:160
+#, python-brace-format
+msgid "send_order 异常：{}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:174
+#, python-brace-format
+msgid "RPC: 收到 cancel_order 请求 for {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:176
+msgid "RPC: cancel_order - 收到无效的撤单指令：缺少 'vt_orderid' 字段。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:187
+#, python-brace-format
+msgid "RPC: cancel_order - 尝试撤销失败：在内部缓存中未找到活动订单 {} (可能已完成或不存在)"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:196
+#, python-brace-format
+msgid "RPC: cancel_order - 撤单请求已发送 for {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:200
+#, python-brace-format
+msgid "RPC: cancel_order - 处理撤单指令时出错 (vt_orderid: {}): {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:209
+msgid "RPC: 收到 query_contracts 请求"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:218
+msgid "RPC: 收到 query_account 请求"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:242
+msgid "无法尝试 CTP 重连：未存储 CTP 配置。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:246
+#, python-brace-format
+msgid "CTP 重连请求过于频繁，已跳过。上次尝试在 {} 秒内。原因: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:249
+#, python-brace-format
+msgid "检测到 CTP 连接问题 (原因: {})，尝试重新连接 CTP..."
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:254
+msgid "无法重连 CTP：网关对象不存在。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:262
+msgid "调用 self.gateway.connect 使用已存储的配置进行 CTP 重连..."
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:264
+msgid "CTP 重新连接请求已发送。请监控后续日志确认连接状态。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:269
+#, python-brace-format
+msgid "尝试 CTP 重新连接时发生错误: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:300
+#, python-brace-format
+msgid "事件处理器: 过滤掉的事件类型: {} (总事件计数: {})"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:329
+#, python-brace-format
+msgid "订单 {} 状态变为非活动 ({}), 已从 active_order_ids 移除。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:337
+#, python-brace-format
+msgid "订单状态更新: [{}] VTOrderID={}, 状态={}, 已成交={}/{}, 价格={}, 代码={}, 方向={}, 开平={}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:358
+#, python-brace-format
+msgid "收到 EVENT_TRADE: VTOrderID={}, Symbol={}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:379
+#, python-brace-format
+msgid ""
+"账户资金更新 (每5分钟): AccountID={}, Balance={:.2f}, Available={:.2f}, "
+"Frozen={:.2f}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:397
+#, python-brace-format
+msgid "持仓更新: 代码={}, 方向={}, 数量={}, 昨仓={}, 冻结={}, 均价={:.3f}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:424
+#, python-brace-format
+msgid "事件处理器: 将事件放入发布队列: Topic={}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:428
+#, python-brace-format
+msgid "处理 VNPY 事件 {} (类型: {}) 并准备放入队列时出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:441
+msgid "发布线程启动 (批处理模式)。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:461
+#, python-brace-format
+msgid "发布线程: 当前发布队列大小 (self._publish_queue): {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:464
+#, python-brace-format
+msgid "发布线程: 处理的 VNPY 事件总数 (计数器): {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:496
+msgid "发布线程：MAIN PUB socket 不可用或已关闭。本批次消息将被丢弃。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:504
+msgid "发布线程：检测到 MAIN PUB socket 可用。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:505
+msgid "订单执行网关服务(RPC模式)准备就绪。按 Ctrl+C 停止主程序。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:522
+#, python-brace-format
+msgid "发布线程: [SEND HWM/Again] ZMQ发送缓冲区满或无订阅者，消息被丢弃. Topic: {}. 当前队列大小: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:529
+#, python-brace-format
+msgid "发布线程: [SEND ZMQERR] ZMQ 发送错误: {}. Topic: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:532
+#, python-brace-format
+msgid "发布线程: [SEND GENERR] 未知发送错误: {}. Topic: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:541
+#, python-brace-format
+msgid "发布线程: CRITICAL! 调用 task_done 时出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:545
+msgid "发布线程停止。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:555
+#, python-brace-format
+msgid "心跳线程启动 (间隔: {}s, 主题: {})。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:569
+#, python-brace-format
+msgid "发送心跳: Timestamp={}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:572
+msgid "发送心跳时遇到 ZMQ EAGAIN (缓冲区可能已满？)"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:574
+#, python-brace-format
+msgid "发送心跳时出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:578
+msgid "心跳线程：MAIN PUB socket 不可用或已关闭，无法发送心跳。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:588
+msgid "心跳线程停止。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:599
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for [{}] 已在运行中。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:602
+#, python-brace-format
+msgid "启动订单执行网关服务(RPC模式) for [{}]..."
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:609
+msgid "错误：未能从配置中获取订单网关 REP 或 PUB 地址。服务无法启动。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:618
+#, python-brace-format
+msgid "RPC 服务器已启动。 REP: {}, PUB: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:624
+#, python-brace-format
+msgid "为 MAIN PUB socket (_socket_pub) 设置了 ZMQ.SNDHWM 选项: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:626
+#, python-brace-format
+msgid "为 MAIN PUB socket (_socket_pub) 设置 ZMQ 选项时出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:628
+msgid "无法设置 ZMQ 选项：RpcServer 未能成功创建 _socket_pub。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:630
+#, python-brace-format
+msgid "启动 RPC 服务器时失败: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:638
+msgid "发布线程已启动。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:640
+msgid "发布线程似乎已在运行。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:647
+msgid "心跳线程已启动。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:649
+msgid "心跳线程似乎已在运行。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:662
+msgid "事件引擎已启动，并注册了事件处理器。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:664
+#, python-brace-format
+msgid "启动或注册事件引擎时出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:678
+#, python-brace-format
+msgid "CTP 连接配置 (Env: {}): UserID={}, BrokerID={}, TD={}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:685
+msgid "CTP 连接请求已发送。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:687
+#, python-brace-format
+msgid "连接 CTP 交易网关时发生严重错误 (Env: {}): {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:691
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for [{}] 启动完成。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:702
+msgid "停止订单执行网关服务(RPC模式)..."
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:706
+msgid "正在停止心跳线程..."
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:710
+msgid "无法正常停止心跳线程。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:712
+msgid "心跳线程已停止。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:718
+msgid "正在停止发布线程..."
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:722
+msgid "无法正常停止发布线程。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:724
+msgid "发布线程已停止。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:734
+msgid "事件引擎已停止。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:744
+msgid "CTP 交易网关已关闭。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:752
+msgid "RPC 服务器已停止。"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:754
+#, python-brace-format
+msgid "停止 RPC 服务器时出错: {}"
+msgstr ""
+
+#: zmq_services/order_execution_gateway.py:756
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for [{}] 已停止。"
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:80 zmq_services/run_order_gateway.py:57
+#, python-brace-format
+msgid "未指定 --ctp-env，使用默认 CTP 环境：{}"
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:82 zmq_services/run_order_gateway.py:59
+#, python-brace-format
+msgid "使用配置环境：'{}'"
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:84 zmq_services/run_order_gateway.py:61
+msgid "未指定 --config-env，仅使用基本 global_config.yaml。"
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:87
+#, python-brace-format
+msgid "命令行覆盖的语言：{}"
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:89
+#, python-brace-format
+msgid "使用配置中的语言（或默认）：{}"
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:92
+#, python-brace-format
+msgid "正在为 CTP 环境初始化市场数据网关服务（RPC 模式）：[{}]..."
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:98
+#, python-brace-format
+msgid "尝试为 CTP 环境启动服务（RPC 模式）：[{}]..."
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:100
+#, python-brace-format
+msgid "CTP 环境 [{}] 的市场数据网关服务正在运行。按 Ctrl+C 停止。"
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:105
+#, python-brace-format
+msgid "检测到 Ctrl+C，正在停止服务 (CTP 环境：[{}])..."
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:107
+#, python-brace-format
+msgid "服务运行时错误（CTP 环境：[{}]）：{}"
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:109
+#, python-brace-format
+msgid "开始停止 CTP 环境的服务（RPC 模式）：[{}]..."
+msgstr ""
+
+#: zmq_services/run_market_gateway.py:112
+#, python-brace-format
+msgid "CTP 环境 [{}] 的市场数据网关服务 (RPC 模式) 已退出。"
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:52
+msgid ""
+"错误：未能从配置中获取 zmq_addresses.order_gateway_rep 或 "
+"zmq_addresses.order_gateway_pub。请检查配置。"
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:54
+#, python-brace-format
+msgid "订单网关 ZMQ 地址已加载: REP='{}', PUB='{}'"
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:64
+#, python-brace-format
+msgid "正在初始化订单执行网关服务(RPC模式) for CTP environment: [{}]..."
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:70
+#, python-brace-format
+msgid "尝试启动服务(RPC模式) for CTP env: [{}]..."
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:72
+#, python-brace-format
+msgid "订单执行网关 for CTP env: [{}] 正在运行。按 Ctrl+C 停止。"
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:77
+#, python-brace-format
+msgid "检测到 Ctrl+C，正在停止服务 (CTP env: [{}])..."
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:79
+#, python-brace-format
+msgid "服务运行时发生意外错误 (CTP env: [{}]): {}"
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:81
+#, python-brace-format
+msgid "开始停止服务(RPC模式) for CTP env: [{}]..."
+msgstr ""
+
+#: zmq_services/run_order_gateway.py:84
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for CTP env: [{}] 已退出。"
+msgstr ""
+
+#: zmq_services/zmq_base.py:46
+#, python-brace-format
+msgid "{} 已在运行中。"
+msgstr ""
+
+#: zmq_services/zmq_base.py:49
+#, python-brace-format
+msgid "正在启动 {}..."
+msgstr ""
+
+#: zmq_services/zmq_base.py:62
+#, python-brace-format
+msgid "{} 已启动，PUB socket 绑定到 {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:65
+#, python-brace-format
+msgid "{} 启动失败 (绑定 PUB socket 到 {} 时出错): {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:73 zmq_services/zmq_base.py:84
+#, python-brace-format
+msgid "关闭 ZMQ PUB socket 时: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:78
+#, python-brace-format
+msgid "{} 启动时发生未知错误: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:93
+#, python-brace-format
+msgid "{} 未运行。"
+msgstr ""
+
+#: zmq_services/zmq_base.py:96
+#, python-brace-format
+msgid "正在停止 {}..."
+msgstr ""
+
+#: zmq_services/zmq_base.py:109
+msgid "ZMQ PUB socket 已关闭。"
+msgstr ""
+
+#: zmq_services/zmq_base.py:111
+#, python-brace-format
+msgid "关闭 ZMQ PUB socket 时出错: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:120
+msgid "ZMQ Context 已终止。"
+msgstr ""
+
+#: zmq_services/zmq_base.py:122
+#, python-brace-format
+msgid "终止 ZMQ Context 时出错: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:124
+#, python-brace-format
+msgid "{} 已停止。"
+msgstr ""
+
+#: zmq_services/zmq_base.py:131
+#, python-brace-format
+msgid "发布失败：{} 未激活或 PUB socket 不可用。 Topic: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:148
+#, python-brace-format
+msgid "发布取消：在获取锁后发现服务已停止。Topic: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:154
+#, python-brace-format
+msgid "[PUB Tick Send] Attempting send_multipart for Topic: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:160
+#, python-brace-format
+msgid "[PUB Tick Send] send_multipart call completed for Topic: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:168
+#, python-brace-format
+msgid "Msgpack 序列化错误 (发布数据, 主题: {}): {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:171
+#, python-brace-format
+msgid "原始对象类型: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:172
+#, python-brace-format
+msgid "转换后对象类型: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:174
+#, python-brace-format
+msgid "记录对象细节时出错: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:179
+#, python-brace-format
+msgid "发布事件时 ZMQ 缓冲区可能已满 (EAGAIN). Topic: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:181
+#, python-brace-format
+msgid "发布事件时 ZMQ 错误: {}. Topic: {}"
+msgstr ""
+
+#: zmq_services/zmq_base.py:184
+#, python-brace-format
+msgid "发布事件时发生未知错误 (主题: {}): {}"
+msgstr ""
+

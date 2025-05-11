@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 @ProjectName: Nilotica
-@FileName   : translate_text_fill.py
+@FileName   : translate_text_fill_util.py
 @Date       : 2025/5/9 12:07
 @Author     : Donny
 @Email      : donnymoving@gmail.com
@@ -15,6 +15,8 @@ import re
 import sys
 from pathlib import Path
 
+from utils.logger import logger
+
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -25,15 +27,21 @@ def load_json_file(file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             return json.load(file)
     except FileNotFoundError:
-        print(f"错误：文件 '{file_path}' 未找到。")
+        logger.error(f"错误：文件 '{file_path}' 未找到。")
         return None
     except json.JSONDecodeError as e:
-        print(f"错误：无法解析JSON文件 '{file_path}'。错误信息：{e}")
+        logger.error(f"错误：无法解析JSON文件 '{file_path}'。错误信息：{e}")
         return None
 
 
 def process_po_file(po_file_path, json_data):
-    """处理PO文件，填充msgstr字段，保留原有结构和msgid"""
+    """
+    处理PO文件，填充msgstr字段，保留原有结构和msgid
+
+    Process PO files, fill in msgstr fields, retain original structure and msgid
+    :param po_file_path: PO文件路径
+    :param json_data: JSON数据
+    """
     try:
         with open(po_file_path, 'r', encoding='utf-8') as file:
             lines = file.readlines()
@@ -91,23 +99,22 @@ def process_po_file(po_file_path, json_data):
                         escaped_translation = clean_translation.replace('\\', '\\\\').replace('"', '\\"')
                         
                         new_lines.append(f'msgstr "{escaped_translation}"\n')
-                        print(f"已填充 msgid '{current_msgid_content}' 的 msgstr: {clean_translation}")
+                        logger.info(f"已填充 msgid '{current_msgid_content}' 的 msgstr: {clean_translation}")
                     else:
                         new_lines.append(original_msgstr_first_line)
                         new_lines.extend(original_msgstr_continuation_lines)
-                        print(f"未找到 '{current_msgid_content}' 的翻译，保留原msgstr块")
+                        logger.warning(f"未找到 '{current_msgid_content}' 的翻译，保留原msgstr块")
                 
                 else:
                     new_lines.append(original_msgstr_first_line)
                     new_lines.extend(original_msgstr_continuation_lines)
                     if is_header_msgid:
-                        print("保留文件头部 msgstr 块")
+                        logger.info("保留文件头部 msgstr 块")
                         header_block_has_been_fully_processed = True
                     else:
-                        print("保留孤立的 msgstr 块 (无前序msgid)")
+                        logger.info("保留孤立的 msgstr 块 (无前序msgid)")
 
                 current_msgid_content = None
-                current_msgid_lines = []
                 is_header_msgid = False
                 i = temp_i
                 continue
@@ -119,10 +126,10 @@ def process_po_file(po_file_path, json_data):
         with open(po_file_path, 'w', encoding='utf-8') as file:
             file.writelines(new_lines)
 
-        print("PO文件处理完成！")
+        logger.info("PO文件处理完成！")
 
     except Exception as e:
-        print(f"处理PO文件时出错：{e}")
+        logger.error(f"处理PO文件时出错：{e}")
         raise
 
 
@@ -131,8 +138,8 @@ def main():
     json_file_path = locales_dir / "language.json"
     po_file_path = locales_dir / "en" / "LC_MESSAGES" / "messages.po"
 
-    print(f"JSON文件路径：{json_file_path}")
-    print(f"PO文件路径：{po_file_path}")
+    logger.info(f"JSON文件路径：{json_file_path}")
+    logger.info(f"PO文件路径：{po_file_path}")
 
     json_data = load_json_file(json_file_path)
     if json_data is None:
