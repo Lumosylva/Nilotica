@@ -335,17 +335,29 @@ hatch build
 
 - [x] 策略回测
 
-  1. 对今天的数据运行回测
+  1. 对今天的数据运行回测，以最大速度
 
-  ```bash
-  python zmq_services/backtester/run_backtest.py
-  ```
+     ```
+     python -m zmq_services.backtester.run_backtest
+     ```
 
   2. 对指定日期 20250409 运行回测
 
-  ```bash
-  python zmq_services/backtester/run_backtest.py --date 20250409
-  ```
+     ```
+     python -m zmq_services.backtester.run_backtest --date 20250409
+     ```
+
+  3. 对指定日期 20250409 运行回测，在开发模式下
+
+     ```bash
+     python -m zmq_services.backtester.run_backtest --date 20250506 --config-env dev
+     ```
+
+  4. 对指定日期 20250409 运行回测，指定日志输出级别
+
+     ```
+     python -m zmq_services.backtester.run_backtest --date 20250508 --log-level DEBUG
+     ```
 
 - [x] 行情回放
 
@@ -375,6 +387,8 @@ hatch build
 
 - [ ] 更精确的成本计算：如果需要，可以实现更复杂的成本计算方法，如 FIFO 或 LIFO。
 
+- [ ] 国际化
+
 - [ ] 可视化：将权益曲线、回撤等用web绘制出来。
 
 - [ ] 参数化配置：将初始资金、无风险利率、年化天数等参数移到配置文件或命令行参数中。
@@ -400,6 +414,8 @@ hatch build
 QQ交流群：`446042777`(澄明期货研究)
 
 gitcode地址：https://gitcode.com/Nilotica/Nilotica
+
+gitee地址：https://gitee.com/nilotica/Nilotica
 
 github地址：https://github.com/Lumosylva/Nilotica
 

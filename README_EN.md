@@ -330,30 +330,42 @@ Connect the market information publisher (market information gateway) and the or
 
 - [x] Strategy Backtesting
 
-1. Run a backtest on today’s data
+1. Run backtest on today's data, at maximum speed
 
-     ```bash
-     python zmq_services/backtester/run_backtest.py
+     ```
+     python -m zmq_services.backtester.run_backtest
      ```
 
-2. Run the backtest on the specified date 20250409
+2. Run backtest on a specific date 20250409
 
-     ```bash
-     python zmq_services/backtester/run_backtest.py --date 20250409
+     ```
+     python -m zmq_services.backtester.run_backtest --date 20250409
      ```
 
-- [x] Market Replay
+3. Run backtest on a specific date 20250409, in development mode
+
+     ```
+     python -m zmq_services.backtester.run_backtest --date 20250506 --config-env dev
+     ```
+
+4. Run backtest on a specific date 20250409, specifying the log output level
+
+     ```
+     python -m zmq_services.backtester.run_backtest --date 20250508 --log-level DEBUG
+     ```
+
+- [x] Market playback
 
 1. Replay today's data at maximum speed.
 
      ```bash
-     python -m zmq_services.backtester.run_data_player
+     python -m zmq_services.backtester.run_backtest
      ```
 
 3. Play back data from a specified date (e.g. 20250409) at near real-time speed (1x)
 
      ```bash
-     python -m zmq_services.backtester.run_data_player --date 20250506 --speed 1
+     python -m zmq_services.backtester.run_backtest --date 20250506 --speed 1
      ```
 
   4. Play back the data of the specified date at 10 times the speed
@@ -369,19 +381,13 @@ Connect the market information publisher (market information gateway) and the or
      ```
 
 - [ ] More precise costing: If needed, more complex costing methods such as FIFO or LIFO can be implemented.
-
+- [ ] Internationalization
 - [ ] Visualization: Draw equity curves, drawdowns, etc. using the web.
-
 - [ ] Parameterized configuration: Move parameters such as initial capital, risk-free rate, annualized days, etc. to configuration files or command line parameters.
-
 - [ ] Statistical tests: Perform more rigorous statistical tests on strategy returns.
-
 - [ ] Integration with other modules: Combine performance reporting with modules such as strategy optimization, risk management, etc.
-
 - [ ] Optimize the calculation or display of performance reports
-
 - [ ] More mature risk control management
-
 - [ ] Strategy Optimizer
 
 Under development...
@@ -395,6 +401,8 @@ Under development...
 QQ exchange group: `446042777` (Chengming Futures Research)
 
 Gitcode address: https://gitcode.com/Nilotica/Nilotica
+
+Gitee address: https://gitee.com/nilotica/Nilotica
 
 GitHub address: https://github.com/Lumosylva/Nilotica
 
