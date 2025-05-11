@@ -202,12 +202,21 @@ hatch build
 │   │   ├── backtest_strategies_setting.json - 回测策略参数配置
 │   │   ├── dev_config.yaml - 开发模式配置
 │   │   ├── global_config.yaml - 全局配置
-│   │   └──prod_config.yaml - 生产模式配置
+│   │   └── prod_config.yaml - 生产模式配置
+├── locales - 国际化相关文件
+│   ├── en/LC_MESSAGES - 英文翻译文件
+│   ├── compile_translations_util.py - 国际化编译脚本
+│   ├── language.json - 中英映射文件
+│   ├── messages.pot - 国际化相关文件
+│   └── translate_text_fill_util.py - 帮助填充翻译文本的脚本
 ├── ta-lib - ta-lib库源文件
 ├── utils - 工具类包，包含日志、路径等
 │   ├── logger - 日志记录工具
 │   ├── path - 路径工具
+│   ├── config_manager.py - 配置管理
 │   ├── config_models.py - 含PathsConfig、ZmqAddressesConfig、LoggingConfig、GlobalConfigStructure Pydantic 模型。
+│   ├── converter.py - 对象转换为 msgpack 可序列化的工具。
+│   └── i18n.py - 国际化相关工具
 ├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎。
 ├── vnpy_ctp - vnpy官方的ctp库，主要功能是提供底层与simnow和实盘行情和交易服务器交互的接口。
 ├── vnpy_tts - vnpy官方的tts库，主要功能是提供底层与tts和实盘行情和交易服务器交互的接口。
@@ -240,13 +249,16 @@ hatch build
 ├── README.md - 项目中文说明
 ├── README_EN.md - 项目英文说明
 ├── __init__.py - 项目的版本号
+├── babel.cfg - babel翻译的配置文件
 ├── banner.png - 项目banner图片
 ├── build.bat - Windows项目自动构建脚本
 ├── build.sh - Linux项目自动构建脚本
 ├── hatch_build.py - vnpy_ctp构建脚本负责编译 C++ 扩展
 ├── hatch_build_tts.py - vnpy_tts构建脚本负责编译 C++ 扩展
-├── install.bat - Windows安装ta-lib 0.6.3的脚本
-├── install.sh - Linux安装ta-lib 0.6.3的脚本
+├── install_ta_lib.bat - Windows安装ta-lib 0.6.3的脚本
+├── install_ta_lib.sh - Linux安装ta-lib 0.6.3的脚本
+├── locales.bat - 辅助国际化的脚本
+├── locales.sh - 辅助国际化的脚本
 ├── main.py - 项目主文件，暂时无定义
 ├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
 ├── run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
