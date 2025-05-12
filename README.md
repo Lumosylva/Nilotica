@@ -67,18 +67,18 @@ Language: [ENGLISH](README_EN.md)
 
 本项目使用`uv`管理Python虚拟环境及依赖的软件包，`hatch`作为构建工具
 
-- uv安装
-
-   On Linux
-
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+- 安装uv
 
    On Windows
 
    ```bash
    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
+
+   On Linux
+
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
 - 安装指定版本 Python
@@ -107,11 +107,13 @@ Language: [ENGLISH](README_EN.md)
 
 - 安装ta_lib库
 
+   On Windows
+
    ```bash
    .\build.bat
    ```
 
-   或
+   On Linux
 
    ```bash
    .\build.sh
