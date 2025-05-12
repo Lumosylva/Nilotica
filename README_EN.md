@@ -193,7 +193,7 @@ The build effect is as follows:
 ├── bat - Windows BAT service startup script
 │ ├── 1_run_market_gateway.bat - market gateway startup script
 │ ├── 2_run_order_gateway.bat - order execution gateway startup script
-│ ├── 3_run_strategy_engine.bat - strategy subscriber startup script
+│ ├── 3_run_strategy_engine.bat - strategy engine startup script
 │ ├── 4_run_risk_manager.bat - risk control management startup script
 │ ├── 5_run_data_recorder.bat - data recording startup script
 │ └── 6_run_backtest.bat - strategy backtesting demo script
@@ -323,19 +323,19 @@ Connect to the CTP gateway in vnpy and send the market information in a subscrip
 
 - [x] Order Execution Gateway
 
-Process order requests from strategy subscribers and send the requests to the CTP gateway in vnpy.
+Process order requests from the strategy engine and send the requests to the CTP gateway in vnpy.
 
 - [x] Strategy Engine
 
-  Connect to the market gateway, import strategies and execute strategies, send orders to the order execution gateway, and print order reports and transaction reports.
+  Connect to the market gateway, import strategies and execution strategies, send order requests to the order execution gateway, and print order reports and transaction reports.
 
 - [x] Risk Control Management
 
-Connect the market information publisher (market information gateway) and the order/transaction report publisher (order execution gateway) to maintain position updates and position limit related alerts.
+Subscribe to the publishing addresses of the market gateway and order execution gateway, maintain position updates, and position limit related alerts.
 
 - [x] Data Record
 
-Connect the market information publisher (market information gateway) and the order/transaction report publisher (order execution gateway) to record tick, order, and trade data locally.
+Connect to the publishing address of the market gateway and order execution gateway, and record tick, order, trade, accounts, and gateway_logs data locally.
 
 - [x] Strategy Backtesting
 

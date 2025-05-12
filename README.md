@@ -197,7 +197,7 @@ hatch build
 ├── bat - Windows BAT服务启动脚本
 │   ├── 1_run_market_gateway.bat - 行情网关启动脚本
 │   ├── 2_run_order_gateway.bat - 订单执行网关启动脚本
-│   ├── 3_run_strategy_engine.bat - 策略订阅器启动脚本
+│   ├── 3_run_strategy_engine.bat - 策略引擎启动脚本
 │   ├── 4_run_risk_manager.bat - 风控管理启动脚本
 │   ├── 5_run_data_recorder.bat - 数据记录启动脚本
 │   └── 6_run_backtest.bat - 策略回测demo脚本
@@ -323,23 +323,23 @@ hatch build
 
 - [x] 行情网关
 
-  连接vnpy中CTP网关，将行情以订阅方式发送出去。
+  连接vnpy中 CTP 网关，将行情以订阅方式发送出去。
 
 - [x] 订单执行网关
 
-  处理来自策略订阅器的订单请求，将请求发送到vnpy中CTP网关。
+  处理来自策略引擎的订单请求，将请求发送到 vnpy 中 CTP 网关。
 
 - [x] 策略引擎
 
-  连接到行情网关，导入策略和执行策略，将订单发送到订单执行网关，打印订单回报和成交回报。
+  连接到行情网关，导入策略和执行策略，将订单请求发送到订单执行网关，打印订单回报和成交回报。
 
 - [x] 风控管理
 
-  连接行情发布器(行情网关)和订单/成交回报发布器(订单执行网关)，维护持仓更新，持仓限制相关警报。
+  订阅行情网关和订单执行网关的发布地址，维护持仓更新，持仓限制相关警报。
 
 - [x] 数据记录
 
-  连接行情发布器(行情网关)和订单/成交回报发布器(订单执行网关)，记录tick、order、trade数据到本地。
+  连接行情网关和订单执行网关的发布地址，记录tick、order、trade、accounts、gateway_logs数据到本地。
 
 - [x] 策略回测
 
