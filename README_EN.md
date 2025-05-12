@@ -107,13 +107,13 @@ Activate the virtual environment
   On Windows
 
 ```bash
-.\build.bat
+install_ta_lib.bat
 ```
 
 ​        On Linux
 
 ```bash
-./build.sh
+install_ta_lib.bat
 ```
 
 ### **5. Compile VNPY_CTP**

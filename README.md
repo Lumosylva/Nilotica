@@ -110,13 +110,13 @@ Language: [ENGLISH](README_EN.md)
    On Windows
 
    ```bash
-   build.bat
+   install_ta_lib.bat
    ```
 
    On Linux
 
    ```bash
-   build.sh
+   install_ta_lib.sh
    ```
 
 
