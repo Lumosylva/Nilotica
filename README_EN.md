@@ -113,7 +113,7 @@ Activate the virtual environment
 ​        On Linux
 
 ```bash
-.\build.sh
+./build.sh
 ```
 
 ### **5. Compile VNPY_CTP**

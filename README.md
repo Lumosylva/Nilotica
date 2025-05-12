@@ -116,7 +116,7 @@ Language: [ENGLISH](README_EN.md)
    On Linux
 
    ```bash
-   .\build.sh
+   ./build.sh
    ```
 
 
