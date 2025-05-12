@@ -110,13 +110,13 @@ Language: [ENGLISH](README_EN.md)
    On Windows
 
    ```bash
-   .\build.bat
+   build.bat
    ```
 
    On Linux
 
    ```bash
-   ./build.sh
+   build.sh
    ```
 
 
