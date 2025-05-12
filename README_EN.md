@@ -319,13 +319,13 @@ The build effect is as follows:
 
 | Support | Function                                                     |
 | :-----: | ------------------------------------------------------------ |
-|    ✅    | Market Gateway: Connect to the CTP Gateway in vnpy and send the market information as a subscription. |
-|    ✅    | Order Execution Gateway: Process order requests from the strategy engine and send the request to the CTP Gateway in vnpy. |
-|    ✅    | Strategy Engine: Import strategies and execute strategies, send order requests to the order execution gateway, print order reports and transaction reports. |
-|    ✅    | Risk Control Management: Maintain position updates and position limit related alarms. |
-|    ✅    | Data Recording: Record tick, order, trade, accounts, gateway_logs data locally. |
-|    ✅    | Strategy Backtesting: Backtest strategies using historical data recorded by the data recorder. |
-|    ✅    | Market Replay: Replay historical data recorded by the data recorder. |
+|    ✅    | **Market Gateway**: Connect to the CTP Gateway in vnpy and send the market information as a subscription. |
+|    ✅    | **Order Execution Gateway**: Process order requests from the strategy engine and send the request to the CTP Gateway in vnpy. |
+|    ✅    | **Strategy Engine**: Import strategies and execute strategies, send order requests to the order execution gateway, print order reports and transaction reports. |
+|    ✅    | **Risk Control Management**: Maintain position updates and position limit related alarms. |
+|    ✅    | **Data Recording**: Record tick, order, trade, accounts, gateway_logs data locally. |
+|    ✅    | **Strategy Backtesting**: Backtest strategies using historical data recorded by the data recorder. |
+|    ✅    | **Market Replay**: Replay historical data recorded by the data recorder. |
 |    ❎    | Internationalization: Supports Chinese and English.          |
 |    ❎    | Visualization: Strategies, equity curves, drawdowns, etc. are drawn using the web. |
 |    ❎    | Parameterized configuration: Move parameters such as initial funds, risk-free interest rates, and annualized days to configuration files or command line parameters. |
