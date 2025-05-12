@@ -335,7 +335,7 @@ The build effect is as follows:
 
 Under development......
 
-- [x] Strategy Backtesting
+Strategy Backtesting
 
 1. Run backtest on today's data, at maximum speed
 
@@ -361,7 +361,7 @@ Under development......
      python -m zmq_services.backtester.run_backtest --date 20250508 --log-level DEBUG
      ```
 
-- [x] Market playback
+Market playback
 
 1. Replay today's data at maximum speed.
 

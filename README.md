@@ -339,57 +339,57 @@ hatch build
 
 开发中......
 
-- [x] 策略回测示例
+策略回测示例
 
-  1. 对今天的数据运行回测，以最大速度
+1. 对今天的数据运行回测，以最大速度
 
-     ```
-     python -m zmq_services.backtester.run_backtest
-     ```
+   ```
+   python -m zmq_services.backtester.run_backtest
+   ```
 
-  2. 对指定日期 20250409 运行回测
+2. 对指定日期 20250409 运行回测
 
-     ```
-     python -m zmq_services.backtester.run_backtest --date 20250409
-     ```
+   ```
+   python -m zmq_services.backtester.run_backtest --date 20250409
+   ```
 
-  3. 对指定日期 20250409 运行回测，在开发模式下
+3. 对指定日期 20250409 运行回测，在开发模式下
 
-     ```bash
-     python -m zmq_services.backtester.run_backtest --date 20250506 --config-env dev
-     ```
+   ```bash
+   python -m zmq_services.backtester.run_backtest --date 20250506 --config-env dev
+   ```
 
-  4. 对指定日期 20250409 运行回测，指定日志输出级别
+4. 对指定日期 20250409 运行回测，指定日志输出级别
 
-     ```
-     python -m zmq_services.backtester.run_backtest --date 20250508 --log-level DEBUG
-     ```
+   ```
+   python -m zmq_services.backtester.run_backtest --date 20250508 --log-level DEBUG
+   ```
 
-- [x] 行情回放示例
+行情回放示例
 
-  1. 回放今天的数据，以最大速度。
+1. 回放今天的数据，以最大速度。
 
-     ```bash
-     python -m zmq_services.backtester.run_data_player
-     ```
+   ```bash
+   python -m zmq_services.backtester.run_data_player
+   ```
 
-  3. 回放指定日期 (例如 20250409) 的数据，以接近实时的速度 (1x)
+3. 回放指定日期 (例如 20250409) 的数据，以接近实时的速度 (1x)
 
-     ```bash
-     python -m zmq_services.backtester.run_data_player --date 20250506 --speed 1
-     ```
+   ```bash
+   python -m zmq_services.backtester.run_data_player --date 20250506 --speed 1
+   ```
 
-  4. 回放指定日期的数据，以 10 倍速度
+4. 回放指定日期的数据，以 10 倍速度
 
-     ```bash
-     python -m zmq_services.backtester.run_data_player --date 20250506 --speed 10
-     ```
+   ```bash
+   python -m zmq_services.backtester.run_data_player --date 20250506 --speed 10
+   ```
 
-  5. 从不同路径加载数据回放
+5. 从不同路径加载数据回放
 
-     ```bash
-     python -m zmq_services.backtester.run_data_player --date 20250506 --path /path/to/other/data
-     ```
+   ```bash
+   python -m zmq_services.backtester.run_data_player --date 20250506 --path /path/to/other/data
+   ```
 
 ### **9. 更新日志**
 
