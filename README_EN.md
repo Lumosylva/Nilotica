@@ -64,21 +64,27 @@ This project modifies the files in the `vnpy` library
 
 This project uses `uv` to manage Python virtual environments and dependent packages, and `hatch` as a build tool
 
-1. UV installation
+- uv installation
 
-   On Linux
+On Linux
 
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-   On Windows
+On Windows
 
-   ```bash
-   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
+```bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
 
-2. Use the `uv sync` command to let `uv` automatically create a Python virtual environment and download dependent packages according to the configuration in `pyproject.toml`
+- Install the specified version of Python
+
+```bash
+uv python install 3.12.9
+```
+
+- Use the `uv sync` command to let `uv` automatically create a Python virtual environment and download dependent packages according to the configuration in `pyproject.toml`
 
 ```bash
 uv sync
@@ -96,7 +102,7 @@ Activate the virtual environment
 .venv\Scripts\activate
 ```
 
-2. Install the ta_lib library
+- Install ta_lib library
 
 ```bash
 .\build.bat

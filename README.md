@@ -67,7 +67,7 @@ Language: [ENGLISH](README_EN.md)
 
 本项目使用`uv`管理Python虚拟环境及依赖的软件包，`hatch`作为构建工具
 
-1. uv安装
+- uv安装
 
    On Linux
 
@@ -81,7 +81,13 @@ Language: [ENGLISH](README_EN.md)
    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
 
-2. 使用 `uv sync`命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载
+- 安装指定版本 Python
+
+   ```bash
+   uv python install 3.12.9
+   ```
+
+- 使用 `uv sync`命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载
 
    ```bash
    uv sync
@@ -92,14 +98,14 @@ Language: [ENGLISH](README_EN.md)
    ```bash
    uv venv --python 3.12.9 .venv
    ```
-   
+
    激活虚拟环境
-   
+
    ```bash
    .venv\Scripts\activate
    ```
-   
-3. 安装ta_lib库
+
+- 安装ta_lib库
 
    ```bash
    .\build.bat
