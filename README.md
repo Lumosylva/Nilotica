@@ -38,7 +38,7 @@ Language: [ENGLISH](README_EN.md)
 
 - 若需要其他版本CTP `C++` 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
 
-- 若直接使用本系统的CTP版本，则不需要进行下方第4步的构建流程，直接下载releases包中 `whl` uv pip install 安装即可
+- 若直接使用本系统的CTP版本，则不需要进行下方第4步的构建流程，直接下载releases包中 `whl`，然后 `uv pip install` 安装即可
 
   https://github.com/Lumosylva/Nilotica/releases
 
@@ -87,10 +87,15 @@ Language: [ENGLISH](README_EN.md)
    uv sync
    ```
 
-   或不使用`uv sync`命令，手动创建虚拟环境，激活虚拟环境
+   或不使用`uv sync`命令，手动创建虚拟环境
 
    ```bash
    uv venv --python 3.12.9 .venv
+   ```
+   
+   激活虚拟环境
+   
+   ```bash
    .venv\Scripts\activate
    ```
    

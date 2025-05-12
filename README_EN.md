@@ -34,7 +34,7 @@ The functions currently implemented by the system are:
 - **vnpy_ctp**: `6.7.7.1` version (developed based on the `6.7.7` interface package of CTP futures version, the interface comes with the dll file of [penetrating real disk environment])
 - If you need to compile other versions of CTP `C++`, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
 
-- If you use the CTP version of this system directly, you do not need to follow the build process in step 4 below. You can directly download the `whl` uv pip install in the release package and install it.
+- If you use the CTP version of this system directly, you do not need to follow the build process in step 4 below. You can directly download the `whl` in the release package and then install it with `uv pip install`.
 
   https://github.com/Lumosylva/Nilotica/releases
 
@@ -80,28 +80,33 @@ This project uses `uv` to manage Python virtual environments and dependent packa
 
 2. Use the `uv sync` command to let `uv` automatically create a Python virtual environment and download dependent packages according to the configuration in `pyproject.toml`
 
-   ```bash
-   uv sync
-   ```
+```bash
+uv sync
+```
 
-   Or do not use the `uv sync` command, manually create a virtual environment, activate the virtual environment
+Or manually create a virtual environment without using the `uv sync` command
 
-   ```bash
-   uv venv --python 3.12.9 .venv
-   .venv\Scripts\activate
-   ```
-   
-3. Install ta_lib library
+```bash
+uv venv --python 3.12.9 .venv
+```
 
-   ```bash
-   .\build.bat
-   ```
+Activate the virtual environment
 
-   or
+```bash
+.venv\Scripts\activate
+```
 
-   ```bash
-   .\build.sh
-   ```
+2. Install the ta_lib library
+
+```bash
+.\build.bat
+```
+
+or
+
+```bash
+.\build.sh
+```
 
 ### **5. Compile VNPY_CTP**
 
