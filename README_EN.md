@@ -317,25 +317,23 @@ The build effect is as follows:
 
 ### **8. Project Progress**
 
-- [x] Market Gateway
+| Support | Function                                                     |
+| :-----: | ------------------------------------------------------------ |
+|    ✅    | Market Gateway: Connect to the CTP Gateway in vnpy and send the market information as a subscription. |
+|    ✅    | Order Execution Gateway: Process order requests from the strategy engine and send the request to the CTP Gateway in vnpy. |
+|    ✅    | Strategy Engine: Import strategies and execute strategies, send order requests to the order execution gateway, print order reports and transaction reports. |
+|    ✅    | Risk Control Management: Maintain position updates and position limit related alarms. |
+|    ✅    | Data Recording: Record tick, order, trade, accounts, gateway_logs data locally. |
+|    ✅    | Strategy Backtesting: Backtest strategies using historical data recorded by the data recorder. |
+|    ✅    | Market Replay: Replay historical data recorded by the data recorder. |
+|    ❎    | Internationalization: Supports Chinese and English.          |
+|    ❎    | Visualization: Strategies, equity curves, drawdowns, etc. are drawn using the web. |
+|    ❎    | Parameterized configuration: Move parameters such as initial funds, risk-free interest rates, and annualized days to configuration files or command line parameters. |
+|    ❎    | Performance report: Optimize the calculation or display of performance reports |
+|    ❎    | More mature risk control management                          |
+|    ❎    | Strategy optimizer                                           |
 
-Connect to the CTP gateway in vnpy and send the market information in a subscription manner.
-
-- [x] Order Execution Gateway
-
-Process order requests from the strategy engine and send the requests to the CTP gateway in vnpy.
-
-- [x] Strategy Engine
-
-  Connect to the market gateway, import strategies and execution strategies, send order requests to the order execution gateway, and print order reports and transaction reports.
-
-- [x] Risk Control Management
-
-Subscribe to the publishing addresses of the market gateway and order execution gateway, maintain position updates, and position limit related alerts.
-
-- [x] Data Record
-
-Connect to the publishing address of the market gateway and order execution gateway, and record tick, order, trade, accounts, and gateway_logs data locally.
+Under development......
 
 - [x] Strategy Backtesting
 
@@ -359,7 +357,7 @@ Connect to the publishing address of the market gateway and order execution gate
 
 4. Run backtest on a specific date 20250409, specifying the log output level
 
-     ```
+     ```bash
      python -m zmq_services.backtester.run_backtest --date 20250508 --log-level DEBUG
      ```
 
@@ -388,18 +386,6 @@ Connect to the publishing address of the market gateway and order execution gate
      ```bash
      python -m zmq_services.backtester.run_data_player --date 20250506 --path /path/to/other/data
      ```
-
-- [ ] More precise costing: If needed, more complex costing methods such as FIFO or LIFO can be implemented.
-- [ ] Internationalization
-- [ ] Visualization: Draw equity curves, drawdowns, etc. using the web.
-- [ ] Parameterized configuration: Move parameters such as initial capital, risk-free rate, annualized days, etc. to configuration files or command line parameters.
-- [ ] Statistical tests: Perform more rigorous statistical tests on strategy returns.
-- [ ] Integration with other modules: Combine performance reporting with modules such as strategy optimization, risk management, etc.
-- [ ] Optimize the calculation or display of performance reports
-- [ ] More mature risk control management
-- [ ] Strategy Optimizer
-
-Under development...
 
 ### **9. Update log**
 
