@@ -6,7 +6,10 @@ import sys
 import os
 import logging
 import msgpack
-from utils.logger import logger, setup_logging, DEBUG, INFO
+
+from utils.converter import create_tick_from_dict, create_order_from_dict, create_trade_from_dict, \
+    create_account_from_dict, create_log_from_dict
+from utils.logger import logger, setup_logging
 from utils.i18n import get_translator
 import importlib
 
@@ -17,12 +20,10 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status
+from vnpy.trader.constant import Direction, OrderType, Exchange, Offset
 from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, LogData
 
-from vnpy.trader.utility import extract_vt_symbol
-
-from datetime import datetime, time as dt_time # For trading hours check
+from datetime import datetime
 
 class StrategyEngine: # Renamed class
     def __init__(self,
@@ -104,7 +105,7 @@ class StrategyEngine: # Renamed class
         self.module_path = None
         self.class_name = None
 
-        logger.info("开始加载策略...")
+        logger.info(self._("开始加载策略..."))
         for strategy_name, config_data in strategies_config.items():
             if strategy_name in self.strategies:
                  logger.error(self._("策略名称 '{}' 重复，跳过加载。").format(strategy_name))
@@ -145,19 +146,19 @@ class StrategyEngine: # Renamed class
                 self.symbol_strategy_map[self.vt_symbol].append(strategy_instance)
                 self.subscribed_symbols.add(self.vt_symbol)
 
-                logger.info(f"策略 '{strategy_name}' (类: {self.class_name}, 合约: {self.vt_symbol}) 加载成功。")
+                logger.info(self._("策略 '{}' (类: {}, 合约: {}) 加载成功。").format(strategy_name, self.class_name, self.vt_symbol))
 
             except ImportError:
-                logger.exception(f"导入策略类 '{self.class_path}' 失败。跳过加载策略 '{strategy_name}'。")
+                logger.exception(self._("导入策略类 '{}' 失败。跳过加载策略 '{}'。").format(self.class_path, strategy_name))
             except AttributeError:
-                 logger.exception(f"在模块 '{self.module_path}' 中未找到策略类 '{self.class_name}'。跳过加载策略 '{strategy_name}'。")
+                 logger.exception(self._("在模块 '{}' 中未找到策略类 '{}'。跳过加载策略 '{}'。").format(self.module_path, self.class_name, strategy_name))
             except KeyError as e:
-                logger.error(f"策略 '{strategy_name}' 的配置缺少必要键: {e}。跳过加载。")
+                logger.error(self._("策略 '{}' 的配置缺少必要键: {}。跳过加载。").format(strategy_name, e))
             except Exception as e:
-                logger.exception(f"加载策略 '{strategy_name}' 时发生未知错误: {e}")
-        logger.info(f"策略加载完成。共加载 {len(self.strategies)} 个策略实例，映射到 {len(self.symbol_strategy_map)} 个合约。")
+                logger.exception(self._("加载策略 '{}' 时发生未知错误: {}").format(strategy_name, e))
+        logger.info(self._("策略加载完成。共加载 {} 个策略实例，映射到 {} 个合约。").format(len(self.strategies), len(self.symbol_strategy_map)))
         if not self.strategies:
-             logger.error("错误：未成功加载任何策略。引擎无法运行。")
+             logger.error(self._("错误：未成功加载任何策略。引擎无法运行。"))
              # Consider exiting or handling this state appropriately
              # For now, allow continuing but log error.
         # --- End Strategy Loading ---
@@ -173,7 +174,7 @@ class StrategyEngine: # Renamed class
         # --- End FIX ---
 
         if not self.subscribed_symbols:
-            logger.warning("没有加载任何策略或策略未指定合约，将不订阅任何特定合约数据！")
+            logger.warning(self._("没有加载任何策略或策略未指定合约，将不订阅任何特定合约数据！"))
         else:
             for vt_symbol in self.subscribed_symbols:
                 tick_topic = f"{self.topic_map['tick']}{vt_symbol}"
@@ -181,7 +182,7 @@ class StrategyEngine: # Renamed class
                 self.subscriber.subscribe(tick_topic.encode('utf-8'))
                 self.subscriber.subscribe(contract_topic.encode('utf-8'))
                 self.subscribe_topics.extend([tick_topic, contract_topic])
-                logger.info(f"  订阅特定合约主题: {tick_topic}, {contract_topic}")
+                logger.info(self._("订阅特定合约主题: {}, {}").format(tick_topic, contract_topic))
 
         # Subscribe to generic topics
         self.subscriber.subscribe(f"{self.topic_map['order']}".encode('utf-8'))
@@ -193,12 +194,14 @@ class StrategyEngine: # Renamed class
             f"{self.topic_map['order']}", f"{self.topic_map['trade']}", f"{self.topic_map['account']}",
             self.topic_map['log'], self.topic_map['heartbeat_ordergw']
         ])
-        logger.info(f"  订阅通用主题前缀: {self.topic_map['order']}*, {self.topic_map['trade']}*, {self.topic_map['account']}*, {self.topic_map['log']}, {self.topic_map['heartbeat_ordergw']}")
+        logger.info(self._("订阅通用主题前缀: {}*, {}*, {}*, {}, {}").format(
+            self.topic_map['order'], self.topic_map['trade'], self.topic_map['account'], self.topic_map['log'],
+            self.topic_map['heartbeat_ordergw']))
 
-        logger.info(f"最终订阅 {len(self.subscribe_topics)} 个主题/前缀。")
+        logger.info(self._("最终订阅 {} 个主题/前缀。").format(len(self.subscribe_topics)))
         # +++ Log exact subscriptions +++
         # Logging the list is more reliable than getsockopt across versions
-        logger.debug(f"Final SUB socket subscriptions list: {self.subscribe_topics}")
+        logger.debug(self._("最终 SUB 套接字订阅列表：{}").format(self.subscribe_topics))
         # +++ End Log +++
         # --- End Original Subscription Logic ---
 
@@ -222,10 +225,10 @@ class StrategyEngine: # Renamed class
         # --- End Add ---
 
         # Initialize loaded strategies
-        logger.info("正在初始化所有已加载的策略...")
+        logger.info(self._("正在初始化所有已加载的策略..."))
         for strategy in self.strategies.values():
              strategy._init_strategy() # Call internal init method
-        logger.info("所有策略初始化完成。")
+        logger.info(self._("所有策略初始化完成。"))
 
         # Set a smaller high water mark for the subscriber socket
         # self.subscriber.set(zmq.RCVHWM, 5) # <-- REMOVED OLD VALUE
@@ -233,9 +236,9 @@ class StrategyEngine: # Renamed class
         new_rcvhwm = 5000 # Or 1000, or higher if needed
         try:
             self.subscriber.set(zmq.RCVHWM, new_rcvhwm)
-            logger.info(f"为 SUB socket 设置了 ZMQ.RCVHWM: {new_rcvhwm}")
+            logger.info(self._("为 SUB socket 设置了 ZMQ.RCVHWM: {}").format(new_rcvhwm))
         except Exception as e:
-             logger.error(f"为 SUB socket 设置 ZMQ.RCVHWM 时出错: {e}")
+             logger.error(self._("为 SUB socket 设置 ZMQ.RCVHWM 时出错: {}").format(e))
         # +++ End Increase +++
 
     # --- RPC Helper (Should only be called in Live mode) --- 
@@ -252,15 +255,15 @@ class StrategyEngine: # Renamed class
 
         # +++ Add check for backtest mode +++
         if self.is_backtest_mode:
-            logger.error("_send_rpc_request 不应在回测模式下调用！")
+            logger.error(self._("_send_rpc_request 不应在回测模式下调用！"))
             return None
         # +++ End Add +++
         if not self.running:
-             logger.warning("Engine not running, cannot send RPC request.")
+             logger.warning(self._("引擎未运行，无法发送 RPC 请求。"))
              return None
         # Check if self.order_requester even exists or is correct type
         if not hasattr(self, 'order_requester') or not isinstance(self.order_requester, zmq.Socket) or self.order_requester.closed:
-             logger.error("Order requester (REQ) socket is not available or closed for RPC.")
+             logger.error(self._("订单请求者 (REQ) 套接字对于 RPC 不可用或已关闭。"))
              self.gateway_connected = False # Mark as disconnected if socket issue
              return None
 
@@ -278,7 +281,7 @@ class StrategyEngine: # Renamed class
 
                 # Serialize and send request
                 packed_request = msgpack.packb(request_tuple, use_bin_type=True)
-                logger.debug(f"{log_prefix} Sending request...")
+                logger.debug(self._("{} 正在发送请求...").format(log_prefix))
                 self.order_requester.send(packed_request)
 
                 # Wait for reply with timeout
@@ -290,45 +293,45 @@ class StrategyEngine: # Renamed class
                     # Check RpcServer reply format [True/False, result/traceback]
                     if isinstance(reply, (list, tuple)) and len(reply) == 2:
                         if reply[0] is True: # Success
-                            logger.debug(f"{log_prefix} Received successful reply.")
+                            logger.debug(self._("{} 收到成功回复。").format(log_prefix))
                             # Mark gateway as connected on successful PING reply
                             if not self.gateway_connected and method_name == "ping":
-                                 logger.info("与订单执行网关的连接已恢复 (RPC Ping). 设置初始连接时间。")
+                                 logger.info(self._("与订单执行网关的连接已恢复 (RPC Ping). 设置初始连接时间。"))
                                  self.gateway_connected = True
                                  if self.initial_connection_time is None:
                                      self.initial_connection_time = time.time()
                             return reply[1] # Return the actual result
                         else: # Application-level error reported by server
                             error_msg = reply[1]
-                            logger.error(f"{log_prefix} RPC 调用失败 (网关回复): {error_msg}")
+                            logger.error(self._("{} RPC 调用失败 (网关回复): {}").format(log_prefix, error_msg))
                             return None # Indicate failure
                     else:
-                        logger.error(f"{log_prefix} 收到来自订单网关的意外回复格式: {reply}")
+                        logger.error(self._("{} 收到来自订单网关的意外回复格式: {}").format(log_prefix, reply))
                         return None # Indicate failure (format error)
                 else:
                     # Timeout waiting for reply
-                    logger.warning(f"{log_prefix} 请求超时 ({timeout_ms}ms).")
+                    logger.warning(self._("{} 请求超时 ({}ms).").format(log_prefix, timeout_ms))
                     if attempt >= max_attempts:
-                         logger.error(f"与订单执行网关的连接丢失 (RPC Timeout after {max_attempts} attempts)!")
+                         logger.error(self._("与订单执行网关的连接丢失 (RPC Timeout after {} attempts)!").format(max_attempts))
                          self.gateway_connected = False
                          return None # Indicate failure after all retries
                     # Continue to next retry attempt
 
             except zmq.ZMQError as e:
-                logger.error(f"{log_prefix} 发送或接收 RPC 时 ZMQ 错误: {e}")
+                logger.error(self._("{} 发送或接收 RPC 时 ZMQ 错误: {e}").format(log_prefix, e))
                 # Assume connection is lost on ZMQ errors
                 if self.gateway_connected:
-                     logger.error(f"与订单执行网关的连接丢失 (ZMQ Error {e.errno})!")
+                     logger.error(self._("与订单执行网关的连接丢失 (ZMQ Error {})!").format(e.errno))
                 self.gateway_connected = False
                 return None # Indicate failure
             except (msgpack.UnpackException, TypeError, ValueError) as e_unpack:
-                 logger.exception(f"{log_prefix} Msgpack反序列化 RPC 回复时出错: {e_unpack}")
+                 logger.exception(self._("{} Msgpack反序列化 RPC 回复时出错: {}").format(log_prefix, e_unpack))
                  return None # Indicate failure
             except Exception as e:
-                logger.exception(f"{log_prefix} 处理 RPC 时发生未知错误：{e}")
+                logger.exception(self._("{} 处理 RPC 时发生未知错误：{}").format(log_prefix, e))
                 # Assume connection might be compromised
                 if self.gateway_connected:
-                    logger.error("与订单执行网关的连接可能丢失 (未知 RPC 错误)!")
+                    logger.error(self._("与订单执行网关的连接可能丢失 (未知 RPC 错误)!"))
                 self.gateway_connected = False
                 return None # Indicate failure
 
@@ -349,7 +352,12 @@ class StrategyEngine: # Renamed class
 
     # --- Add missing _is_trading_hours method ---
     def _is_trading_hours(self) -> bool:
-        """Checks if the current time is within any defined trading session."""
+        """
+        检查当前时间是否在任何定义的交易时段内。
+
+        Checks if the current time is within any defined trading session.
+        :return:
+        """
         from datetime import datetime, time as dt_time # Import here
         now_dt = datetime.now()
         current_time = now_dt.time()
@@ -373,7 +381,11 @@ class StrategyEngine: # Renamed class
 
     # --- Update _send_ping to use order_requester and pickle/RPC format ---
     def _send_ping(self):
-        """Sends a PING request to the Order Gateway via RPC to check/restore connectivity."""
+        """
+        通过 RPC 向订单网关发送 PING 请求以检查/恢复连接
+
+        Sends a PING request to the Order Gateway via RPC to check/restore connectivity.
+        """
         log_prefix = "[Ping OrderGW]"
         # logger.debug(f"{log_prefix} Sending...") # Reduce noise, debug log inside helper
 
@@ -387,7 +399,7 @@ class StrategyEngine: # Renamed class
 
         if result == "pong":
             # Success is handled inside _send_rpc_request by setting gateway_connected=True
-            # logger.debug("Received PONG successfully from OrderGW.")
+             logger.debug(self._("已成功从 OrderGW 接收 PONG。"))
              pass # No further action needed here
         elif result is None:
              # Failure (timeout or error) is handled inside _send_rpc_request
@@ -395,20 +407,35 @@ class StrategyEngine: # Renamed class
              pass # No further action needed here
         else:
             # Unexpected result content (should be caught by _send_rpc_request format check ideally)
-             logger.warning(f"{log_prefix} Received unexpected result for PING: {result}")
+             logger.warning(self._("{} 收到 PING 的意外结果：{}").format(log_prefix, result))
              if self.gateway_connected:
-                 logger.error("与订单执行网关的连接可能存在问题 (Unexpected PING result)! ")
+                 logger.error(self._("与订单执行网关的连接可能存在问题 (Unexpected PING result)! "))
                  self.gateway_connected = False
 
     # --- End update _send_ping ---
+
+    # --- 交易接口方法（send_limit_order/cancel_limit_order 仅适用于实时模式）---
+    # StrategyEngine 中的这些方法现在主要用于实时交易 RPC 调用。
+    # 回测订单发送直接在 BaseLiveStrategy 中处理，并发送到 self.order_pusher。
 
     # --- Trading Interface Methods (send_limit_order/cancel_limit_order for LIVE MODE ONLY) --- 
     # These methods in StrategyEngine are now PRIMARILY for LIVE trading RPC calls.
     # Backtesting order sending is handled directly in BaseLiveStrategy sending to self.order_pusher.
     def send_limit_order(self, symbol: str, exchange: Exchange, direction: Direction, price: float, volume: float, offset: Offset = Offset.NONE) -> Optional[str]:
-        """(LIVE MODE ONLY) Sends a limit order request via RPC."""
+        """
+        （仅限实时模式）通过 RPC 发送限价订单请求。
+
+        (LIVE MODE ONLY) Sends a limit order request via RPC.
+        :param symbol:
+        :param exchange:
+        :param direction:
+        :param price:
+        :param volume:
+        :param offset:
+        :return:
+        """
         if self.is_backtest_mode:
-            logger.error("StrategyEngine.send_limit_order should not be called directly in backtest mode.")
+            logger.error(self._("在回测模式下不应直接调用 StrategyEngine.send_limit_order。"))
             return None
         # --- Connection Check ---
         if not self.gateway_connected:
@@ -419,10 +446,11 @@ class StrategyEngine: # Renamed class
         # +++ Use instance variable for cool_down_period +++
         last_sent = self.last_order_time.get(symbol, 0)
         if time.time() - last_sent < self.order_cool_down_seconds: # Use instance variable
-            logger.warning(f"订单发送冷却中 ({symbol}): 距离上次发送不足 {self.order_cool_down_seconds} 秒。")
+            logger.warning(self._("订单发送冷却中 ({}): 距离上次发送不足 {} 秒。").format(symbol, self.order_cool_down_seconds))
             return None
 
-        logger.info(f"准备发送限价单: {symbol}.{exchange.value} {direction.value} {volume} @ {price} Offset: {offset.value}")
+        logger.info(self._("准备发送限价单: {}.{} {} {} @ {} Offset: {}").format(symbol, exchange.value, direction.value,
+                                                                                 volume, price, offset.value))
 
         # Construct the request dictionary expected by OrderExecutionGatewayService.send_order
         order_req_dict = {
@@ -440,7 +468,7 @@ class StrategyEngine: # Renamed class
         req_tuple = ("send_order", (order_req_dict,), {})
 
         # +++ Add DEBUG log before sending RPC +++
-        logger.debug(f"send_limit_order: Calling _send_rpc_request with tuple: {req_tuple}")
+        logger.debug(self._("send_limit_order: Calling _send_rpc_request with tuple: {}").format(req_tuple))
         # +++ End Add +++
 
         # --- Use RPC Helper ---
@@ -450,33 +478,39 @@ class StrategyEngine: # Renamed class
         if vt_orderid:
             # Ensure vt_orderid is a string before logging/returning
             if not isinstance(vt_orderid, str):
-                 logger.error(f"从订单网关收到的 vt_orderid 不是字符串: {vt_orderid} (类型: {type(vt_orderid)})。订单可能已发送但ID无效。")
+                 logger.error(self._("从订单网关收到的 vt_orderid 不是字符串: {} (类型: {})。订单可能已发送但ID无效。").format(vt_orderid, type(vt_orderid)))
                  # Decide how to handle - maybe return None or a special value?
                  return None
-            logger.info(f"订单发送成功 (RPC确认): {symbol}, VT_OrderID: {vt_orderid}")
+            logger.info(self._("订单发送成功 (RPC确认): {}, VT_OrderID: {}").format(symbol, vt_orderid))
             self.last_order_time[symbol] = time.time() # Update cool down timer
             return vt_orderid # Return the order ID
         else:
             # Failure logged within _send_rpc_request
-            logger.error(f"订单发送失败 (RPC调用未成功或网关返回错误): {symbol}")
+            logger.error(self._("订单发送失败 (RPC调用未成功或网关返回错误): {}").format(symbol))
             return None
         # --- End Use RPC Helper ---
 
     def cancel_limit_order(self, vt_orderid: str) -> bool:
-        """(LIVE MODE ONLY) Sends a cancel order request via RPC."""
+        """
+        （仅限实时模式）通过 RPC 发送取消订单请求。
+
+        (LIVE MODE ONLY) Sends a cancel order request via RPC.
+        :param vt_orderid:
+        :return:
+        """
         if self.is_backtest_mode:
-            logger.error("StrategyEngine.cancel_limit_order should not be called directly in backtest mode.")
+            logger.error(self._("StrategyEngine.cancel_limit_order should not be called directly in backtest mode."))
             return False
         # --- Connection Check ---
         if not self.gateway_connected:
-            logger.error(f"无法发送撤单指令 ({vt_orderid}): 与订单执行网关失去连接。")
+            logger.error(self._("无法发送撤单指令 ({}): 与订单执行网关失去连接。").format(vt_orderid))
             return False # Indicate failure
 
         if not vt_orderid or not isinstance(vt_orderid, str):
-            logger.error(f"尝试发送无效 vt_orderid ({vt_orderid}) 的撤单请求。")
+            logger.error(self._("尝试发送无效 vt_orderid ({}) 的撤单请求。").format(vt_orderid))
             return False
 
-        logger.info(f"准备发送撤单指令: {vt_orderid}")
+        logger.info(self._("准备发送撤单指令: {}").format(vt_orderid))
 
         # Construct the request dictionary expected by OrderExecutionGatewayService.cancel_order
         cancel_req_dict = {"vt_orderid": vt_orderid}
@@ -490,47 +524,55 @@ class StrategyEngine: # Renamed class
 
         # Check the result structure carefully
         if isinstance(result_dict, dict) and result_dict.get("status") == "ok":
-            logger.info(f"撤单指令发送成功 (RPC确认): {vt_orderid}. 回复: {result_dict}")
+            logger.info(self._("撤单指令发送成功 (RPC确认): {}. 回复: {}").format(vt_orderid, result_dict))
             return True
         else:
             # Failure (or unexpected result) logged within _send_rpc_request or here
             if result_dict is None: # RPC call failed
-                 logger.error(f"撤单指令发送失败 (RPC调用未成功): {vt_orderid}")
+                 logger.error(self._("撤单指令发送失败 (RPC调用未成功): {}").format(vt_orderid))
             else: # Gateway returned an error status or unexpected format
-                 logger.error(f"撤单指令发送失败 (网关回复错误或格式无效): {vt_orderid}. 回复: {result_dict}")
+                 logger.error(self._("撤单指令发送失败 (网关回复错误或格式无效): {}. 回复: {}").format(vt_orderid, result_dict))
             return False
         # --- End Use RPC Helper ---
 
     def start(self):
-        """Starts listening for messages and running the strategy logic."""
+        """
+        开始监听消息并运行策略逻辑。
+
+        Starts listening for messages and running the strategy logic.
+        :return:
+        """
         if self.running:
-            logger.warning("策略引擎已在运行中。")
+            logger.warning(self._("策略引擎已在运行中。"))
             return
         if not self.strategies:
-             logger.error("没有加载任何策略，引擎无法启动。")
+             logger.error(self._("没有加载任何策略，引擎无法启动。"))
              return
 
-        logger.info("启动策略引擎服务...")
+        logger.info(self._("启动策略引擎服务..."))
         self.running = True
 
         # Start all loaded strategies
-        logger.info("正在启动所有已加载的策略...")
+        logger.info(self._("正在启动所有已加载的策略..."))
         for strategy in self.strategies.values():
             strategy._start_strategy() # Call internal start method
-        logger.info("所有策略已启动。")
+        logger.info(self._("所有策略已启动。"))
+
+        # 启动时设置初始心跳时间，以避免立即检测到超时
+        # 让 initial_connection_time 处理宽限期
 
         # Set initial heartbeat time on start to avoid immediate timeout detection
         # Let initial_connection_time handle the grace period
         # self.last_ordergw_heartbeat_time = time.time() 
 
-        logger.info("策略引擎服务已启动，开始监听消息...")
+        logger.info(self._("策略引擎服务已启动，开始监听消息..."))
 
         # +++ Define poll_timeout_ms here +++
         poll_timeout_ms = 1000 # Check every second
 
         # +++ Force initial ping on start +++
         if not self.is_backtest_mode:
-            logger.info("启动后立即尝试 Ping 订单网关以建立初始连接状态...")
+            logger.info(self._("启动后立即尝试 Ping 订单网关以建立初始连接状态..."))
             self._send_ping() 
             # Optional: Add a small sleep to allow ping reply processing if needed
             # time.sleep(0.1) 
@@ -551,13 +593,13 @@ class StrategyEngine: # Renamed class
                             # Log only the topic and data length for brevity
                             logger.debug(f"StrategyEngine Recv Loop: Received parts. Topic Bytes: {topic_bytes!r} (len={len(topic_bytes)}), Data Bytes Len: {len(data_bytes)}")
                         else:
-                            logger.warning(f"StrategyEngine Recv Loop: Received unexpected multipart count: {len(parts)}. Parts: {parts}")
+                            logger.warning(self._("StrategyEngine Recv Loop: Received unexpected multipart count: {}. Parts: {}").format(len(parts), parts))
                             continue # Skip processing this message
                     except zmq.Again:
-                         logger.debug("StrategyEngine Recv Loop: zmq.Again caught on recv_multipart (should be rare after poll)")
+                         logger.debug(self._("StrategyEngine Recv Loop: zmq.Again caught on recv_multipart (should be rare after poll)"))
                          continue # No message available despite poll?
                     except Exception as recv_err:
-                         logger.error(f"StrategyEngine Recv Loop: Error during recv_multipart: {recv_err}")
+                         logger.error(self._("StrategyEngine Recv Loop: Error during recv_multipart: {}").format(recv_err))
                          continue # Skip processing on receive error
                     # +++ End Add DEBUG log +++
 
@@ -566,7 +608,7 @@ class StrategyEngine: # Renamed class
                     try:
                         topic_str = topic_bytes.decode('utf-8', errors='ignore')
                         # +++ Log decoded topic +++
-                        logger.debug(f"Decoded topic: '{topic_str}'")
+                        logger.debug(self._("Decoded topic: '{}'").format(topic_str))
                         # +++ End Log topic +++
 
                         # Replace pickle with msgpack
@@ -574,7 +616,7 @@ class StrategyEngine: # Renamed class
                         # +++ Log object type and module UNCONDITIONALLY +++
                         obj_type = type(data_obj)
                         obj_module = getattr(data_obj.__class__, '__module__', 'N/A') # Get module name
-                        logger.debug(f"Msgpack decoded: Object Type='{obj_type.__name__}', Module='{obj_module}'")
+                        logger.debug(self._("Msgpack decoded: Object Type='{}', Module='{}'").format(obj_type.__name__, obj_module))
                         # +++ End Log type/module +++
 
                         # --- Event Dispatching (using data_obj and topic_map) ---
@@ -585,24 +627,24 @@ class StrategyEngine: # Renamed class
                                 if vt_symbol:
                                     self.process_tick(vt_symbol, data_obj)
                                 else:
-                                    logger.warning(f"TickData object on topic {topic_str} is missing 'vt_symbol' attribute.")
+                                    logger.warning(self._("TickData object on topic {} is missing 'vt_symbol' attribute.").format(topic_str))
                             # +++ FIX: Pass dict to reconstruction helper +++
                             elif isinstance(data_obj, dict): # Check if it's a dict
                                  # --- Try to reconstruct TickData from dict ---
                                  tick_object_from_dict = create_tick_from_dict(data_obj)
                                  if tick_object_from_dict:
-                                     logger.debug(f"Successfully reconstructed TickData from dict for topic {topic_str}")
+                                     logger.debug(self._("Successfully reconstructed TickData from dict for topic {}").format(topic_str))
                                      vt_symbol = getattr(tick_object_from_dict, 'vt_symbol', None)
                                      if vt_symbol:
                                          self.process_tick(vt_symbol, tick_object_from_dict)
                                      else:
-                                         logger.warning(f"Reconstructed TickData object from dict is missing 'vt_symbol'. Topic: {topic_str}")
+                                         logger.warning(self._("Reconstructed TickData object from dict is missing 'vt_symbol'. Topic: {}").format(topic_str))
                                  else:
-                                     logger.warning(f"Failed to reconstruct TickData from dict received on tick topic {topic_str}. Dict: {data_obj}")
+                                     logger.warning(self._("Failed to reconstruct TickData from dict received on tick topic {}. Dict: {}").format(topic_str, data_obj))
                                  # --- End Reconstruction ---
                             # +++ End FIX +++
                             else:
-                                logger.warning(f"Received non-TickData/non-dict object on tick topic {topic_str}: Type='{obj_type.__name__}', Module='{obj_module}'")
+                                logger.warning(self._("Received non-TickData/non-dict object on tick topic {}: Type='{}', Module='{}'").format(topic_str, obj_type.__name__, obj_module))
                         elif topic_str.startswith(self.topic_map["order"]):
                             # +++ FIX: Handle dict or object +++
                             if isinstance(data_obj, OrderData):
@@ -610,13 +652,13 @@ class StrategyEngine: # Renamed class
                             elif isinstance(data_obj, dict):
                                  order_object_from_dict = create_order_from_dict(data_obj)
                                  if order_object_from_dict:
-                                     logger.debug(f"Successfully reconstructed OrderData from dict for topic {topic_str}")
+                                     logger.debug(self._("Successfully reconstructed OrderData from dict for topic {}").format(topic_str))
                                      self.process_order_update(order_object_from_dict)
                                  else:
-                                     logger.warning(f"Failed to reconstruct OrderData from dict received on order topic {topic_str}. Dict: {data_obj}")
+                                     logger.warning(self._("Failed to reconstruct OrderData from dict received on order topic {}. Dict: {}").format(topic_str, data_obj))
                             # +++ End FIX +++
                             else:
-                                logger.warning(f"Received non-OrderData/non-dict object on order topic {topic_str}: {type(data_obj)}")
+                                logger.warning(self._("Received non-OrderData/non-dict object on order topic {}: {type()}").format(topic_str, data_obj))
                         elif topic_str.startswith(self.topic_map["trade"]):
                             # +++ FIX: Handle dict or object +++
                             if isinstance(data_obj, TradeData):
@@ -624,13 +666,13 @@ class StrategyEngine: # Renamed class
                             elif isinstance(data_obj, dict):
                                 trade_object_from_dict = create_trade_from_dict(data_obj)
                                 if trade_object_from_dict:
-                                     logger.debug(f"Successfully reconstructed TradeData from dict for topic {topic_str}")
+                                     logger.debug(self._("Successfully reconstructed TradeData from dict for topic {}").format(topic_str))
                                      self.process_trade_update(trade_object_from_dict)
                                 else:
-                                     logger.warning(f"Failed to reconstruct TradeData from dict received on trade topic {topic_str}. Dict: {data_obj}")
+                                     logger.warning(self._("Failed to reconstruct TradeData from dict received on trade topic {}. Dict: {}").format(topic_str, data_obj))
                             # +++ End FIX +++
                             else:
-                                logger.warning(f"Received non-TradeData/non-dict object on trade topic {topic_str}: {type(data_obj)}")
+                                logger.warning(self._("Received non-TradeData/non-dict object on trade topic {}: {}").format(topic_str, type(data_obj)))
                         elif topic_str.startswith(self.topic_map["account"]):
                             # +++ FIX: Handle dict or object +++
                             account_object = None
@@ -642,7 +684,7 @@ class StrategyEngine: # Renamed class
                             if account_object:
                                 self.process_account_update(account_object) # Pass object
                             else:
-                                logger.warning(f"Received non-AccountData/non-dict or failed reconstruction on account topic {topic_str}. Original Type: {type(data_obj)}")
+                                logger.warning(self._("Received non-AccountData/non-dict or failed reconstruction on account topic {}. Original Type: {}").format(topic_str, type(data_obj)))
                         elif topic_str == self.topic_map["log"]: # Exact match for log
                             # +++ FIX: Handle dict or object +++
                             log_object = None
@@ -654,7 +696,7 @@ class StrategyEngine: # Renamed class
                             if log_object:
                                 self.process_log(log_object) # Pass object
                             else:
-                                logger.warning(f"Received non-LogData/non-dict or failed reconstruction on log topic {topic_str}. Original Type: {type(data_obj)}")
+                                logger.warning(self._("Received non-LogData/non-dict or failed reconstruction on log topic {}. Original Type: {}").format(topic_str, type(data_obj)))
                         elif topic_str.startswith(self.topic_map["contract"]):
                              # +++ FIX: Handle dict or object (if needed) +++
                              # If strategies need contract info, reconstruct here
@@ -670,17 +712,17 @@ class StrategyEngine: # Renamed class
                              if isinstance(data_obj, dict):
                                  self.process_ordergw_heartbeat(data_obj) # Pass the dict
                              else:
-                                 logger.warning(f"Received non-dict object on heartbeat topic: {type(data_obj)}")
+                                 logger.warning(self._("Received non-dict object on heartbeat topic: {}").format(type(data_obj)))
                         # +++ End Use topic_map +++
                         else:
-                            logger.warning(f"未知的消息主题: {topic_str}")
+                            logger.warning(self._("未知的消息主题: {}").format(topic_str))
 
                     except (msgpack.UnpackException, TypeError, ValueError) as e_unpack:
                         # +++ Add more details to unpack error log +++
                         logger.error(f"Msgpack 解码错误: {e_unpack}. Topic: '{topic_bytes.decode('utf-8', errors='ignore')}', Data (first 100 bytes): {data_bytes[:100]!r}")
                         # +++ End Add details +++
                     except Exception as msg_proc_e:
-                        logger.exception(f"处理订阅消息时出错 (Topic: {topic_bytes.decode('utf-8', errors='ignore')}): {msg_proc_e}")
+                        logger.exception(self._("处理订阅消息时出错 (Topic: {}): {}").format(topic_bytes.decode('utf-8', errors='ignore'), msg_proc_e))
 
                 # --- Periodic Health Checks (Add heartbeat check) ---
                 current_time = time.time()
@@ -690,7 +732,7 @@ class StrategyEngine: # Renamed class
                 if not self.is_backtest_mode and self.last_ordergw_heartbeat_time > 0 and \
                    (current_time - self.last_ordergw_heartbeat_time > self.heartbeat_timeout_s): # Use instance variable
                     if self.gateway_connected:
-                        logger.error(f"订单网关心跳超时 ...")
+                        logger.error(self._("订单网关心跳超时 ..."))
                         self.gateway_connected = False
                         self.initial_connection_time = None
 
@@ -726,10 +768,10 @@ class StrategyEngine: # Renamed class
                     # --- Log status changes --- 
                     if found_stale_symbol:
                         if self.market_data_ok:
-                            logger.warning(f"[交易时段内] 行情数据可能中断或延迟! 超时合约: {', '.join(stale_symbols)}")
+                            logger.warning(self._("[交易时段内] 行情数据可能中断或延迟! 超时合约: {}").format(', '.join(stale_symbols)))
                             self.market_data_ok = False
                     elif not self.market_data_ok:
-                        logger.info("所有监控合约的行情数据流已恢复。")
+                        logger.info(self._("所有监控合约的行情数据流已恢复。"))
                         self.market_data_ok = True
 
             except zmq.ZMQError as err:
@@ -737,65 +779,52 @@ class StrategyEngine: # Renamed class
                  # or if it's a context termination (ETERM)
                  # or if a socket was closed underneath (ENOTSOCK)
                  if not self.running or err.errno in (zmq.ETERM, zmq.ENOTSOCK):
-                     logger.info(f"ZMQ 错误 ({err.errno}: {err}) 发生在服务停止期间，正常退出。")
+                     logger.info(self._("ZMQ 错误 ({}: {}) 发生在服务停止期间，正常退出。").format(err.errno, err))
                      break
                  else:
-                     logger.error(f"主循环中意外的 ZMQ 错误: {err}")
+                     logger.error(self._("主循环中意外的 ZMQ 错误: {}").format(err))
                      self.running = False # Stop on other ZMQ errors
             except KeyboardInterrupt:
-                logger.info("策略引擎检测到中断信号，开始停止...")
+                logger.info(self._("策略引擎检测到中断信号，开始停止..."))
                 self.running = False
             except Exception as err:
-                logger.exception(f"策略引擎主循环发生未知错误：{err}")
+                logger.exception(self._("策略引擎主循环发生未知错误：{}").format(err))
                 time.sleep(1) # Avoid rapid looping
 
-        logger.info("策略引擎主循环结束。")
-        # --- Remove redundant self.stop() call --- 
-        # self.stop() # Ensure cleanup is called <<< REMOVED
-
-        # Context termination is handled by the caller (run_backtest.py) or by stop() method
-        # if self.context and not self.context.closed: # Check if context exists and not already closed
-        #     try:
-        #         logger.info("正在终止策略引擎的 ZMQ Context...")
-        #         self.context.term()
-        #         logger.info("策略引擎的 ZMQ Context 已成功终止。")
-        #     except zmq.ZMQError as e:
-        #         logger.error(f"终止策略引擎的 ZMQ Context 时发生 ZMQ 错误: {e}")
-        #     except Exception as e:
-        #         logger.error(f"终止策略引擎的 ZMQ Context 时发生未知错误: {e}")
-        # else:
-        #     logger.warning("策略引擎的 ZMQ Context 未找到或已关闭，跳过终止。")
+        logger.info(self._("策略引擎主循环结束。"))
 
     # --- FIX: Update methods to handle dictionaries --- 
     # --- FIX: Update methods to handle OBJECTS (after reconstruction) --- 
 
     def process_tick(self, vt_symbol: str, tick_object: TickData):
-        """Dispatch tick data (TickData object) to relevant strategies."""
+        """
+        将报价数据（TickData 对象）发送给相关策略。
+
+        Dispatch tick data (TickData object) to relevant strategies.
+        :param vt_symbol:
+        :param tick_object:
+        :return:
+        """
         self.last_tick_time[vt_symbol] = time.time() # Update timeout tracker
         
         strategies_for_symbol = self.symbol_strategy_map.get(vt_symbol, [])
         if strategies_for_symbol:
-            # --- REMOVED Object creation here, it's done in start loop --- 
-            # try:
-            #      tick_object = create_tick_from_dict(tick_dict)
-            #      if not tick_object: return
-            # except Exception as e:
-            #      logger.error(f"Error creating TickData object from dict in process_tick: {e}")
-            #      return
-
             for strategy in strategies_for_symbol:
                 if strategy.trading: 
                     try:
-                        # --- Log before calling strategy.on_tick --- 
-                        logger.debug(f"process_tick: Calling strategy '{strategy.strategy_name}' on_tick for vt_symbol '{vt_symbol}'.")
-                        # --- End Log ---
-                        # Pass the object to the strategy
-                        strategy.on_tick(tick_object) # PASS OBJECT
+                        logger.debug(self._("process_tick: Calling strategy '{}' on_tick for vt_symbol '{}'.").format(strategy.strategy_name, vt_symbol))
+                        strategy.on_tick(tick_object)
                     except Exception as e:
-                         logger.exception(f"策略 {strategy.strategy_name} 在 on_tick 处理 {vt_symbol} 时出错: {e}")
+                         logger.exception(self._("策略 {} 在 on_tick 处理 {} 时出错: {}").format(strategy.strategy_name, vt_symbol, e))
 
     def process_order_update(self, order_object: OrderData):
-        """Dispatch order update (OrderData object) to relevant strategies."""
+        """
+        将订单更新（OrderData对象）调度到相关策略。
+
+        Dispatch order update (OrderData object) to relevant strategies.
+        :param order_object:
+        :return:
+        """
         # Use object attributes
         vt_symbol = order_object.vt_symbol
         vt_orderid = order_object.vt_orderid
@@ -804,11 +833,7 @@ class StrategyEngine: # Renamed class
         #     return
         
         status_str = order_object.status.value # Get status value
-        logger.debug(f"process_order_update: Received OrderID={vt_orderid} Status={status_str}")
-
-        # --- REMOVED Object creation here --- 
-        # order_object = create_order_from_dict(order_dict)
-        # if not order_object: return
+        logger.debug(self._("process_order_update: Received OrderID={} Status={}").format(vt_orderid, status_str))
 
         strategies_for_symbol = self.symbol_strategy_map.get(vt_symbol, [])
         if strategies_for_symbol:
@@ -816,10 +841,16 @@ class StrategyEngine: # Renamed class
                  try:
                      strategy.on_order(order_object) # PASS OBJECT
                  except Exception as e:
-                     logger.exception(f"策略 {strategy.strategy_name} 在 on_order 处理 {vt_orderid} 时出错: {e}")
+                     logger.exception(self._("策略 {} 在 on_order 处理 {} 时出错: {}").format(strategy.strategy_name, vt_orderid, e))
 
     def process_trade_update(self, trade_object: TradeData):
-        """Dispatch trade update (TradeData object) to relevant strategies, handling duplicates."""
+        """
+        将交易更新（TradeData 对象）发送给相关策略，处理重复项。
+
+        Dispatch trade update (TradeData object) to relevant strategies, handling duplicates.
+        :param trade_object:
+        :return:
+        """
         # Use object attributes
         vt_symbol = trade_object.vt_symbol
         vt_tradeid = trade_object.vt_tradeid
@@ -828,12 +859,12 @@ class StrategyEngine: # Renamed class
         # --- Duplicate Check --- 
         if vt_tradeid:
             if vt_tradeid in self.processed_trade_ids:
-                logger.debug(f"Ignoring duplicate trade event: {vt_tradeid}")
+                logger.debug(self._("Ignoring duplicate trade event: {}").format(vt_tradeid))
                 return
             else:
                 self.processed_trade_ids.append(vt_tradeid)
         else:
-            logger.warning("Trade update received without vt_tradeid, cannot check for duplicates.")
+            logger.warning(self._("Trade update received without vt_tradeid, cannot check for duplicates."))
         # --- End Duplicate Check ---
 
         # if not vt_symbol: # Redundant check
@@ -844,12 +875,9 @@ class StrategyEngine: # Renamed class
         offset_str = trade_object.offset.value
         price = trade_object.price
         volume = trade_object.volume
-        logger.info(f"收到成交回报: {vt_symbol} OrderID: {vt_orderid} TradeID: {vt_tradeid} Offset: {offset_str} Price: {price} Vol: {volume}")
+        logger.info(self._("收到成交回报: {} OrderID: {} TradeID: {} Offset: {} Price: {} Vol: {}")
+                    .format(vt_symbol, vt_orderid, vt_tradeid, offset_str, price, volume))
         # self.trades.append(trade_object) # Store object if needed
-
-        # --- REMOVED Object creation here --- 
-        # trade_object = create_trade_from_dict(trade_dict)
-        # if not trade_object: return
 
         strategies_for_symbol = self.symbol_strategy_map.get(vt_symbol, [])
         if strategies_for_symbol:
@@ -857,31 +885,35 @@ class StrategyEngine: # Renamed class
                  try:
                      strategy.on_trade(trade_object) # PASS OBJECT
                  except Exception as e:
-                     logger.exception(f"策略 {strategy.strategy_name} 在 on_trade 处理 {vt_tradeid} 时出错: {e}")
+                     logger.exception(self._("策略 {} 在 on_trade 处理 {} 时出错: {}").format(strategy.strategy_name, vt_tradeid, e))
 
     def process_account_update(self, account_object: AccountData):
-        """Dispatch account data update (AccountData object) to relevant strategies."""
+        """
+        将账户数据更新（AccountData 对象）调度到相关策略。
+
+        Dispatch account data update (AccountData object) to relevant strategies.
+        :param account_object:
+        :return:
+        """
         # Use object attributes
         accountid = account_object.accountid
-        logger.debug(f"process_account_update: Received update for AccountID: '{accountid}'")
-
-        # --- REMOVED Object creation here --- 
-        # account_object = create_account_from_dict(account_dict)
-        # if not account_object: return
+        logger.debug(self._("process_account_update: Received update for AccountID: '{}'").format(accountid))
 
         for strategy in self.strategies.values():
              if hasattr(strategy, 'on_account'):
                  try:
                      strategy.on_account(account_object) # PASS OBJECT
                  except Exception as e:
-                     logger.exception(f"策略 {strategy.strategy_name} 在 on_account 处理时出错: {e}")
+                     logger.exception(self._("策略 {} 在 on_account 处理时出错: {}").format(strategy.strategy_name, e))
 
     def process_log(self, log_object: LogData):
-        """Processes log messages (LogData object) from gateways (log globally)."""
-        # --- REMOVED Object creation here --- 
-        # log_object = create_log_from_dict(log_dict)
-        # if not log_object: return
+        """
+        处理来自网关（全局日志）的日志消息（LogData 对象）。
 
+        Processes log messages (LogData object) from gateways (log globally).
+        :param log_object:
+        :return:
+        """
         gateway_name = log_object.gateway_name
         msg = log_object.msg
         level_int = log_object.level # Already int
@@ -893,10 +925,16 @@ class StrategyEngine: # Renamed class
         elif level_int == logging.ERROR: log_func = logger.error
         elif level_int == logging.CRITICAL: log_func = logger.critical
 
-        log_func(f"[GW LOG - {gateway_name}] {msg}")
+        log_func(self._("[GW LOG - {}] {}").format(gateway_name, msg))
 
     def process_ordergw_heartbeat(self, heartbeat_dict: dict):
-        """Processes heartbeat message (dictionary) from OrderExecutionGateway."""
+        """
+        处理来自 OrderExecutionGateway 的心跳消息（字典）。
+
+        Processes heartbeat message (dictionary) from OrderExecutionGateway.
+        :param heartbeat_dict:
+        :return:
+        """
         # Assuming heartbeat message is now a dict like {'timestamp': float}
         heartbeat_ts = heartbeat_dict.get('timestamp')
         if heartbeat_ts is None or not isinstance(heartbeat_ts, (float, int)):
@@ -908,12 +946,12 @@ class StrategyEngine: # Renamed class
             # Log using ISO format for consistency
             heartbeat_dt_str = datetime.fromtimestamp(heartbeat_ts).isoformat()
             now_dt_str = datetime.fromtimestamp(now_ts).isoformat()
-            logger.debug(f"(DEBUG HB Recv) TS={heartbeat_dt_str}, NOW={now_dt_str}")
+            logger.debug(self._("(DEBUG HB Recv) TS={}, NOW={}").format(heartbeat_dt_str, now_dt_str))
             self.last_ordergw_heartbeat_time = now_ts # Record reception time
 
             # +++ Set initial connection time only once +++
             if not self.gateway_connected:
-                logger.info("接收到订单网关心跳，标记为已连接。设置初始连接时间。")
+                logger.info(self._("接收到订单网关心跳，标记为已连接。设置初始连接时间。"))
                 self.gateway_connected = True
                 if self.initial_connection_time is None:
                      self.initial_connection_time = now_ts
@@ -928,29 +966,33 @@ class StrategyEngine: # Renamed class
                      f"Now: {datetime.fromtimestamp(now_ts).isoformat()}) - 可能存在时钟不同步或延迟。"
                  )
         except Exception as e:
-            logger.exception(f"处理 OrderGW 心跳消息时出错: {e}")
+            logger.exception(self._("处理 OrderGW 心跳消息时出错: {}").format(e))
 
     def stop(self):
-        """Stops the strategy engine and all strategies."""
+        """
+        停止策略引擎和所有策略。
+
+        Stops the strategy engine and all strategies.
+        :return:
+        """
         if not self.running:
-            # +++ Add a log if stop is called when not running +++
-            logger.info("StrategyEngine.stop() 被调用，但引擎未在运行或已被停止。")
+            logger.info(self._("StrategyEngine.stop() 被调用，但引擎未在运行或已被停止。"))
             return
 
-        logger.info("开始停止策略引擎服务...")
+        logger.info(self._("开始停止策略引擎服务..."))
         self.running = False # Signal loops to stop
 
         # Stop all strategies
-        logger.info("正在停止所有策略...")
+        logger.info(self._("正在停止所有策略..."))
         for strategy in self.strategies.values():
              try:
                  strategy._stop_strategy() # Call internal stop
              except Exception as e:
-                 logger.exception(f"停止策略 {strategy.strategy_name} 时出错: {e}")
-        logger.info("所有策略已停止。")
+                 logger.exception(self._("停止策略 {} 时出错: {}").format(strategy.strategy_name, e))
+        logger.info(self._("所有策略已停止。"))
 
         # --- Add Socket Closing Logic ---
-        logger.info("正在关闭策略引擎 ZMQ Sockets...")
+        logger.info(self._("正在关闭策略引擎 ZMQ Sockets..."))
         sockets_to_close = [
             self.subscriber, 
             self.order_requester
@@ -962,148 +1004,24 @@ class StrategyEngine: # Renamed class
         for sock in sockets_to_close:
             if sock and not sock.closed:
                 try:
-                    logger.debug(f"正在关闭 Socket: {sock}...")
+                    logger.debug(self._("正在关闭 Socket: {}...").format(sock))
                     sock.close(linger=0) # Set linger to 0 to close immediately
-                    logger.debug(f"Socket {sock} 已关闭。")
+                    logger.debug(self._("Socket {} 已关闭。").format(sock))
                 except Exception as e:
-                    logger.error(f"关闭策略引擎 Socket {sock} 时出错: {e}")
-        logger.info("策略引擎 ZMQ Sockets 已关闭。")
+                    logger.error(self._("关闭策略引擎 Socket {} 时出错: {}").format(sock, e))
+        logger.info(self._("策略引擎 ZMQ Sockets 已关闭。"))
         # --- End Add Socket Closing Logic ---
 
         # +++ Terminate context here in stop() method +++
         if self.context and not self.context.closed:
             try:
-                logger.info("正在终止策略引擎的 ZMQ Context (from stop method)...")
+                logger.info(self._("正在终止策略引擎的 ZMQ Context (from stop method)..."))
                 self.context.term()
-                logger.info("策略引擎的 ZMQ Context 已成功终止 (from stop method)。")
+                logger.info(self._("策略引擎的 ZMQ Context 已成功终止 (from stop method)。"))
             except zmq.ZMQError as e_term:
-                logger.error(f"终止策略引擎的 ZMQ Context 时发生 ZMQ 错误: {e_term}")
+                logger.error(self._("终止策略引擎的 ZMQ Context 时发生 ZMQ 错误: {}").format(e_term))
             except Exception as e_term_general:
-                logger.exception(f"终止策略引擎的 ZMQ Context 时发生未知错误: {e_term_general}")
+                logger.exception(self._("终止策略引擎的 ZMQ Context 时发生未知错误: {}").format(e_term_general))
         else:
-            logger.info("策略引擎的 ZMQ Context 未找到或已关闭 (from stop method)，跳过终止。")
+            logger.info(self._("策略引擎的 ZMQ Context 未找到或已关闭 (from stop method)，跳过终止。"))
         # +++ End Terminate context +++
-
-# Helper function to create OrderData from dict (handle potential errors)
-def create_order_from_dict(d: dict) -> Optional[OrderData]:
-    try:
-        symbol, exchange = extract_vt_symbol(d['vt_symbol'])
-        order = OrderData(
-            gateway_name=d.get('gateway_name', 'GATEWAY'), # Use default if missing
-            symbol=symbol,
-            exchange=exchange,
-            orderid=d['orderid'],
-            direction=Direction(d['direction']), # Enum from value
-            offset=Offset(d.get('offset', Offset.NONE.value)), # Enum from value
-            type=OrderType(d['type']), # Enum from value
-            price=float(d.get('price', 0.0)),
-            volume=float(d['volume']),
-            traded=float(d.get('traded', 0.0)),
-            status=Status(d['status']), # Enum from value
-            datetime=datetime.fromisoformat(d['datetime']) if d.get('datetime') else datetime.now()
-        )
-        order.vt_symbol = d['vt_symbol'] # Ensure vt_symbol is set
-        order.vt_orderid = d['vt_orderid']
-        return order
-    except (KeyError, ValueError, TypeError) as e:
-        logger.error(f"Error creating OrderData from dict: {e}. Dict: {d}")
-        return None
-
-# Helper function to create TradeData from dict
-def create_trade_from_dict(d: dict) -> Optional[TradeData]:
-    try:
-        symbol, exchange = extract_vt_symbol(d['vt_symbol'])
-        trade = TradeData(
-            gateway_name=d.get('gateway_name', 'GATEWAY'),
-            symbol=symbol,
-            exchange=exchange,
-            orderid=d['orderid'],
-            tradeid=d['tradeid'],
-            direction=Direction(d['direction']), # Enum from value
-            offset=Offset(d.get('offset', Offset.NONE.value)), # Enum from value
-            price=float(d['price']),
-            volume=float(d['volume']),
-            datetime=datetime.fromisoformat(d['datetime']) if d.get('datetime') else datetime.now()
-        )
-        trade.vt_symbol = d['vt_symbol']
-        trade.vt_orderid = d['vt_orderid']
-        trade.vt_tradeid = d['vt_tradeid']
-        # Add commission if present in dict
-        trade.commission = float(d.get('commission', 0.0))
-        return trade
-    except (KeyError, ValueError, TypeError) as e:
-        logger.error(f"Error creating TradeData from dict: {e}. Dict: {d}")
-        return None
-
-# Helper function to create TickData from dict (simplified)
-def create_tick_from_dict(d: dict) -> Optional[TickData]:
-    try:
-        symbol, exchange = extract_vt_symbol(d['vt_symbol'])
-        # Create TickData with necessary fields, add more if strategies need them
-        tick = TickData(
-            gateway_name=d.get('gateway_name', 'GATEWAY'),
-            symbol=symbol,
-            exchange=exchange,
-            datetime=datetime.fromisoformat(d['datetime']) if d.get('datetime') else datetime.now(),
-            last_price=float(d.get('last_price', 0.0)),
-            volume=float(d.get('volume', 0.0)), # Cumulative volume
-            ask_price_1=float(d.get('ask_price_1', 0.0)),
-            bid_price_1=float(d.get('bid_price_1', 0.0)),
-            ask_volume_1=float(d.get('ask_volume_1', 0.0)),
-            bid_volume_1=float(d.get('bid_volume_1', 0.0))
-            # Add other fields like open, high, low, pre_close, open_interest etc. if needed
-        )
-        tick.vt_symbol = d['vt_symbol']
-        return tick
-    except (KeyError, ValueError, TypeError) as e:
-        logger.error(f"Error creating TickData from dict: {e}. Dict: {d}")
-        return None
-
-# Helper function to create AccountData from dict
-def create_account_from_dict(d: dict) -> Optional[AccountData]:
-    try:
-        account = AccountData(
-            gateway_name=d.get('gateway_name', 'GATEWAY'),
-            accountid=d['accountid'],
-            balance=float(d.get('balance', 0.0)),
-            frozen=float(d.get('frozen', 0.0))
-            # Add other fields like available, commission, margin etc. if present
-        )
-        account.available = float(d.get('available', account.balance - account.frozen)) # Calculate if missing
-        return account
-    except (KeyError, ValueError, TypeError) as e:
-        logger.error(f"Error creating AccountData from dict: {e}. Dict: {d}")
-        return None
-
-# Helper function to create LogData from dict
-def create_log_from_dict(d: dict) -> Optional[LogData]:
-    try:
-        # --- FIX: Handle integer log level --- 
-        level_input = d.get('level', logging.INFO) # Default to INFO if missing
-        log_level = logging.INFO # Default
-        if isinstance(level_input, int):
-            # Map common logging level integers back to constants
-            level_map_int = {
-                logging.CRITICAL: logging.CRITICAL,
-                logging.ERROR: logging.ERROR,
-                logging.WARNING: logging.WARNING,
-                logging.INFO: logging.INFO,
-                logging.DEBUG: logging.DEBUG,
-                logging.NOTSET: logging.NOTSET
-            }
-            log_level = level_map_int.get(level_input, logging.INFO) # Use map, default INFO
-        elif isinstance(level_input, str):
-            # If it's a string, try getting attribute after converting to upper
-            log_level = getattr(logging, level_input.upper(), logging.INFO)
-        # Else: Keep default INFO if type is unexpected
-        # --- End FIX ---
-
-        log = LogData(
-            gateway_name=d.get('gateway_name', 'GATEWAY'),
-            msg=d.get('msg', ''),
-            level=log_level # Use the determined log_level
-        )
-        return log
-    except (KeyError, ValueError, TypeError) as e:
-        logger.error(f"Error creating LogData from dict: {e}. Dict: {d}")
-        return None
