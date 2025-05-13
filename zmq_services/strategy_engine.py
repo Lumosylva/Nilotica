@@ -1,6 +1,5 @@
 from typing import Dict, Any, Set, Optional, List
 from collections import deque
-
 import zmq
 import time
 import sys
@@ -8,29 +7,23 @@ import os
 import logging
 import msgpack
 from utils.logger import logger, setup_logging, DEBUG, INFO
+from utils.i18n import get_translator
 import importlib
 
-# +++ Import ConfigManager +++
 from utils.config_manager import ConfigManager
-
 from zmq_services.strategy_base import BaseLiveStrategy
 
-# Add project root to Python path if needed (e.g., for vnpy types if reconstructing objects)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import vnpy constants if needed for constructing order requests
 from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status
-from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, LogData # Added AccountData, LogData, TickData
+from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, LogData
 
-# +++ Import helper functions for recreating objects +++
 from vnpy.trader.utility import extract_vt_symbol
 
-# Constants for Health Checks
 from datetime import datetime, time as dt_time # For trading hours check
 
-# --- Strategy Engine (Renamed from StrategySubscriber) ---
 class StrategyEngine: # Renamed class
     def __init__(self,
                  config_manager: ConfigManager,
@@ -38,12 +31,21 @@ class StrategyEngine: # Renamed class
                  order_gw_rep_url: str,
                  order_report_url: str,
                  strategies_config: Dict[str, Dict[str, Any]],
-                 # +++ Add new parameters for logging context +++
                  strategy_context_name: Optional[str] = None,
-                 log_level_for_strat_engine: str = "INFO" # Default to INFO
-                 # +++ End new parameters +++
+                 log_level_for_strat_engine: str = "INFO"
                  ):
         """
+        初始化策略引擎，加载策略并建立通信。
+
+        参数：
+            config_manager：用于加载配置的 ConfigManager 实例。
+            gateway_pub_url：用于市场数据的 ZMQ PUB URL。
+            order_gw_rep_url：用于发送订单请求/RPC（至订单网关 REP）的 ZMQ REQ URL。
+            order_report_url：用于接收订单/交易报告的 ZMQ PUB URL。
+            strategies_config：用于加载策略的配置。
+            strategy_context_name：用于记录上下文的主要策略名称（可选）。
+            log_level_for_strat_engine：此 StrategyEngine 实例的日志级别。
+
         Initializes the strategy engine, loads strategies, and sets up communication.
 
         Args:
@@ -55,19 +57,15 @@ class StrategyEngine: # Renamed class
             strategy_context_name: Optional name of the primary strategy for logging context.
             log_level_for_strat_engine: Log level for this StrategyEngine instance.
         """
-        # +++ Setup logging with context +++
+        self._ = get_translator()
         self.config_service = config_manager # Assign early for config_env access
         service_name_base = self.__class__.__name__
         final_service_name = f"{service_name_base}[{strategy_context_name}]" if strategy_context_name else service_name_base
         # Use the passed log_level and config_env from its own config_manager
-        setup_logging(service_name=final_service_name, level=log_level_for_strat_engine, config_env=self.config_service._environment)
-        # +++ End setup logging +++
+        setup_logging(service_name=final_service_name, level=log_level_for_strat_engine,
+                      config_env=self.config_service._environment)
 
-        # logger.info(f"StrategyEngine Logging Initialized: Name='{final_service_name}', Level='{log_level_for_strat_engine}', ConfigEnv='{self.config_service.environment}'")
-        
-        # +++ Initialize is_backtest_mode +++
         self.is_backtest_mode: bool = False # Default to False for live/normal mode
-        # +++ End Initialize +++
 
         self.context = zmq.Context()
         # self.config_service = config_manager # Moved up
@@ -88,26 +86,14 @@ class StrategyEngine: # Renamed class
         self.subscriber.setsockopt(zmq.LINGER, 0)
         self.subscriber.connect(gateway_pub_url)
         self.subscriber.connect(order_report_url)
-        logger.info(f"策略引擎连接行情发布器: {gateway_pub_url}")
-        logger.info(f"策略引擎连接回报发布器: {order_report_url}")
+        logger.info(self._("策略引擎连接行情发布器: {}").format(gateway_pub_url))
+        logger.info(self._("策略引擎连接回报发布器: {}").format(order_report_url))
 
-        # --- Change REQ to PUSH for order sending ---
-        # self.order_requester = self.context.socket(zmq.REQ)
-        # self.order_requester.setsockopt(zmq.LINGER, 0)
-        # self.order_requester.connect(order_req_url)
-        # self.order_pusher = self.context.socket(zmq.PUSH)
-        # self.order_pusher.setsockopt(zmq.LINGER, 0)
-        # self.order_pusher.connect(order_req_url)
-        # logger.info(f"策略引擎连接订单推送器 (PUSH): {order_req_url}")
-        # --- Setup REQ socket for RPC communication (Live Mode) ---
         self.order_requester = self.context.socket(zmq.REQ)
         self.order_requester.setsockopt(zmq.LINGER, 0)
         self.order_requester.connect(order_gw_rep_url)
-        logger.info(f"策略引擎连接订单网关 REQ Socket (RPC): {order_gw_rep_url}")
-        # PUSH socket is only needed for backtesting, not created here.
+        logger.info(self._("策略引擎连接订单网关 REQ Socket (RPC): {}").format(order_gw_rep_url))
         self.order_pusher = None
-        # --- End Change ---
-        # --- End ZMQ Setup ---
 
         # --- Strategy Loading and Management ---
         self.strategies: Dict[str, BaseLiveStrategy] = {}
@@ -121,7 +107,7 @@ class StrategyEngine: # Renamed class
         logger.info("开始加载策略...")
         for strategy_name, config_data in strategies_config.items():
             if strategy_name in self.strategies:
-                 logger.error(f"策略名称 '{strategy_name}' 重复，跳过加载。")
+                 logger.error(self._("策略名称 '{}' 重复，跳过加载。").format(strategy_name))
                  continue
             try:
                 self.class_path = config_data["strategy_class"]
@@ -130,7 +116,8 @@ class StrategyEngine: # Renamed class
 
                 # Validate vt_symbol format (simple check)
                 if '.' not in self.vt_symbol:
-                     logger.error(f"策略 '{strategy_name}' 的 vt_symbol '{self.vt_symbol}' 格式无效，应为 'symbol.exchange'。跳过加载。")
+                     logger.error(self._("策略 '{}' 的 vt_symbol '{}' 格式无效，应为 'symbol.exchange'。跳过加载。")
+                                  .format(strategy_name, self.vt_symbol))
                      continue
 
                 # Dynamically import the strategy class
@@ -140,7 +127,7 @@ class StrategyEngine: # Renamed class
 
                 # Check inheritance
                 if not issubclass(strategy_class, BaseLiveStrategy):
-                     logger.error(f"类 '{self.class_path}' 不是 BaseLiveStrategy 的子类。跳过加载策略 '{strategy_name}'。")
+                     logger.error(self._("类 '{}' 不是 BaseLiveStrategy 的子类。跳过加载策略 '{}'。").format(self.class_path, strategy_name))
                      continue
 
                 # Create strategy instance
@@ -175,18 +162,8 @@ class StrategyEngine: # Renamed class
              # For now, allow continuing but log error.
         # --- End Strategy Loading ---
 
-        # --- Update Subscription Logic --- 
-        # --- Restore original subscription logic ---
-        # logger.info("DEBUG: Subscribing to ALL topics (\"\") on SUB socket.")
-        # try:
-        #     self.subscriber.subscribe(b"") # Subscribe to everything
-        # except Exception as sub_err:
-        #      logger.error(f"DEBUG: Failed to subscribe to all topics: {sub_err}")
-        # --- End Subscribe ALL ---
-
         # --- Original subscription logic (Restored) ---
         self.subscribe_topics = []
-        # --- FIX: Change TICK. to tick. --- 
         self.topic_map = {
             "tick": "tick.", # <-- LOWERCASE
             "trade": "trade.", "order": "order.",
