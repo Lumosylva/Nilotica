@@ -78,12 +78,12 @@ class RpcServer:
         # Close sockets immediately to prevent issues during thread termination
         try:
             self._socket_rep.close()
-        except Exception:
+        except Exception as e:
             pass # Ignore exceptions during close
 
         try:
             self._socket_pub.close()
-        except Exception:
+        except Exception as e:
             pass # Ignore exceptions during close
 
         # Terminate the ZMQ context to release resources

@@ -1,4 +1,6 @@
 """
+交易平台中使用的通用常量枚举。
+
 General constant enums used in the trading platform.
 """
 
@@ -9,6 +11,7 @@ from .locale import _
 
 class Direction(Enum):
     """
+    订单/交易/仓位的方向。
     Direction of order/trade/position.
     """
     LONG = _("多")
@@ -18,6 +21,7 @@ class Direction(Enum):
 
 class Offset(Enum):
     """
+    订单的开平仓方向。
     Offset of order/trade.
     """
     NONE = ""
@@ -29,6 +33,7 @@ class Offset(Enum):
 
 class Status(Enum):
     """
+    订单状态。
     Order status.
     """
     SUBMITTING = _("提交中")
@@ -41,6 +46,7 @@ class Status(Enum):
 
 class Product(Enum):
     """
+    产品类别。
     Product class.
     """
     EQUITY = _("股票")
@@ -60,6 +66,7 @@ class Product(Enum):
 
 class OrderType(Enum):
     """
+    订单类型。
     Order type.
     """
     LIMIT = _("限价")
@@ -72,6 +79,7 @@ class OrderType(Enum):
 
 class OptionType(Enum):
     """
+    期权类型。
     Option type.
     """
     CALL = _("看涨期权")
@@ -80,6 +88,7 @@ class OptionType(Enum):
 
 class Exchange(Enum):
     """
+    交易所。
     Exchange.
     """
     # Chinese
@@ -139,6 +148,7 @@ class Exchange(Enum):
 
 class Currency(Enum):
     """
+    货币。
     Currency.
     """
     USD = "USD"
@@ -149,6 +159,7 @@ class Currency(Enum):
 
 class Interval(Enum):
     """
+    K线时间单位。
     Interval of bar data.
     """
     MINUTE = "1m"
