@@ -10,6 +10,7 @@ from utils.config_manager import ConfigManager
 
 from zmq_services.strategy_engine import StrategyEngine
 from utils.logger import setup_logging, logger
+from utils.i18n import get_translator
 
 
 def main():
@@ -19,9 +20,10 @@ def main():
     Runs the strategy engine service.
     :return:
     """
+    _ = get_translator()
     parser = argparse.ArgumentParser(description="Run the Strategy Engine Service.")
     parser.add_argument(
-        "--ctp-env", # Renamed from --env
+        "--ctp-env",
         default="simnow", 
         help="The CTP environment name (e.g., 'simnow'). Currently informational for Strategy Engine."
     )
@@ -46,18 +48,18 @@ def main():
 
     # 正在使用的日志环境(Log environments being used)
     if args.ctp_env == "simnow" and '--ctp-env' not in sys.argv and '--env' not in sys.argv: # Check both old and new name for default message
-        logger.info(f"No --ctp-env specified, using default CTP environment: {args.ctp_env}")
+        logger.info(_("No --ctp-env specified, using default CTP environment: {}").format(args.ctp_env))
     else:
-        logger.info(f"Strategy Engine CTP environment (informational): {args.ctp_env}")
+        logger.info(_("Strategy Engine CTP environment (informational): {}").format(args.ctp_env))
     
     if args.config_env:
-        logger.info(f"Using configuration environment: '{args.config_env}'")
+        logger.info(_("Using configuration environment: '{}'").format(args.config_env))
     else:
         # 如果默认值为 dev，则不会发生这种情况
         # This case should not happen if default is "dev"
-        logger.info("No --config-env specified, using base global_config.yaml only.") 
+        logger.info(_("No --config-env specified, using base global_config.yaml only."))
 
-    logger.info("正在初始化策略引擎...")
+    logger.info(_("正在初始化策略引擎..."))
 
     # +++ 从 ConfigManage 获取连接 URL 和策略配置(Get connection URLs and strategy config from ConfigManager) +++
     md_pub_addr_raw = config_service.get_global_config("zmq_addresses.market_data_pub")
@@ -67,10 +69,10 @@ def main():
 
     # 检查是否已加载所需配置(Check if required configurations were loaded)
     if not all([md_pub_addr_raw, order_gw_rep_addr_raw, order_gw_pub_addr_raw]):
-        logger.critical("错误：未能从 global_config.yaml 中获取必要的 ZMQ 地址。请检查配置。")
+        logger.critical(_("错误：未能从 global_config.yaml 中获取必要的 ZMQ 地址。请检查配置。"))
         sys.exit(1)
     if not strategies_config:
-        logger.critical(f"错误：未能加载策略配置。请检查策略配置是否存在且格式正确。") # Use internal path for error message
+        logger.critical(_("错误：未能加载策略配置。请检查策略配置是否存在且格式正确。")) # 使用内部路径来显示错误消息(Use internal path for error message)
         sys.exit(1)
 
     # 将通配符或 0.0.0.0 替换为 localhost 以进行本地连接(Replace wildcard or 0.0.0.0 with localhost for connecting locally)
@@ -78,10 +80,10 @@ def main():
     order_gw_rep_addr_connect = order_gw_rep_addr_raw.replace("*", "localhost").replace("0.0.0.0", "localhost")
     order_gw_pub_addr_connect = order_gw_pub_addr_raw.replace("*", "localhost").replace("0.0.0.0", "localhost")
 
-    logger.info(f"连接行情发布器地址: {md_pub_addr_connect}")
-    logger.info(f"连接订单网关请求地址: {order_gw_rep_addr_connect}")
-    logger.info(f"连接订单回报发布器地址: {order_gw_pub_addr_connect}")
-    logger.info(f"加载的策略配置: {strategies_config}") # Log loaded strategies
+    logger.info(_("连接行情发布器地址: {}").format(md_pub_addr_connect))
+    logger.info(_("连接订单网关请求地址: {}").format(order_gw_rep_addr_connect))
+    logger.info(_("连接订单回报发布器地址: {}").format(order_gw_pub_addr_connect))
+    logger.info(_("加载的策略配置: {}").format(strategies_config)) # Log loaded strategies
 
     # 创建 StrategyEngine 实例，传递获取的配置(Create the StrategyEngine instance, passing the fetched config)
     engine = None # 初始化 finally 块(Initialize for finally block)
@@ -94,19 +96,19 @@ def main():
             strategies_config=strategies_config # 使用获取的策略配置(Use fetched strategies config)
         )
     except Exception as init_err:
-         logger.exception(f"初始化 StrategyEngine 时发生严重错误: {init_err}")
+         logger.exception(_("初始化 StrategyEngine 时发生严重错误: {}").format(init_err))
          sys.exit(1)
 
     if not engine.strategies:
-         logger.error("未能成功加载任何策略。引擎将退出。")
+         logger.error(_("未能成功加载任何策略。引擎将退出。"))
          sys.exit(1)
 
-    logger.info("尝试启动策略引擎...")
+    logger.info(_("尝试启动策略引擎..."))
     try:
         # start 方法包含主循环(The start method contains the main loop)
         engine.start()
     except KeyboardInterrupt:
-        logger.info("主程序检测到 Ctrl+C，正在停止引擎...")
+        logger.info(_("主程序检测到 Ctrl+C，正在停止引擎..."))
         # engine.start() 应该处理 KeyboardInterrupt 并调用 stop
         # 添加显式 stop 函数，以防循环在调用 stop 函数之前异常退出
         # engine.start() should handle KeyboardInterrupt and call stop
@@ -114,7 +116,7 @@ def main():
         if engine and hasattr(engine, 'running') and engine.running:
             engine.stop()
     except Exception as e:
-        logger.exception(f"策略引擎运行时发生意外错误: {e}")
+        logger.exception(_("策略引擎运行时发生意外错误: {}").format(e))
         if engine and hasattr(engine, 'running') and engine.running:
             engine.stop()
     finally:
@@ -123,9 +125,9 @@ def main():
         # Ensure stop is called if not already done
         # Check if engine object exists and has running attribute before attempting stop
         if 'engine' in locals() and hasattr(engine, 'running') and engine.running:
-             logger.info("执行最终停止清理...")
+             logger.info(_("执行最终停止清理..."))
              engine.stop()
-        logger.info("策略引擎运行结束。")
+        logger.info(_("策略引擎运行结束。"))
 
 if __name__ == "__main__":
     main()
