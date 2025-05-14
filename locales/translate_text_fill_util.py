@@ -11,14 +11,17 @@
 Text translation tool - automatically fills in msgstr fields in .po files, preserving original structure
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
-from utils.logger import logger
+from utils.logger import logger, setup_logging
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
+setup_logging(service_name=os.path.basename(sys.argv[0]))
 
 
 def load_json_file(file_path):
