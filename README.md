@@ -195,7 +195,7 @@ hatch build
 
 ```reStructuredText
 .
-├── assets - 服务运行截图
+├── assets - 图片资源文件
 ├── bat - Windows BAT服务启动脚本
 │   ├── 1_run_market_gateway.bat - 行情网关启动脚本
 │   ├── 2_run_order_gateway.bat - 订单执行网关启动脚本
@@ -255,12 +255,12 @@ hatch build
 │   └── strategy_engine.py - 策略引擎
 ├── .python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
 ├── CHANGELOG.md - 系统版本更新日志
+├── CODE_OF_CONDUCT.md - 行为守则
 ├── LICENSE.txt - license文件
 ├── README.md - 项目中文说明
 ├── README_EN.md - 项目英文说明
 ├── __init__.py - 项目的版本号
 ├── babel.cfg - babel翻译的配置文件
-├── banner.png - 项目banner图片
 ├── build.bat - Windows项目自动构建脚本
 ├── build.sh - Linux项目自动构建脚本
 ├── hatch_build.py - vnpy_ctp构建脚本负责编译 C++ 扩展
@@ -271,7 +271,8 @@ hatch build
 ├── locales.sh - 辅助国际化的脚本
 ├── main.py - 项目主文件，暂时无定义
 ├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
-├── run.bat - 一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
+├── run.bat - Windows脚本，一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
+├── run.sh - Linux脚本，一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
 └── uv.lock - 记录项目的所有依赖，由uv自动管理，不用手动编辑。
 ```
 
