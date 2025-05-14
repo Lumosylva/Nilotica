@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-11 22:44+0800\n"
+"POT-Creation-Date: 2025-05-14 23:54+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -219,28 +219,53 @@ msgstr ""
 msgid "从 {} 加载了 {} 个合约的乘数和 {} 个合约的手续费规则。"
 msgstr ""
 
-#: utils/converter.py:64 utils/converter.py:78
+#: utils/converter.py:88 utils/converter.py:102
 msgid "无法转换列表/元组中的项目，使用字符串表示。"
 msgstr ""
 
-#: utils/converter.py:148
+#: utils/converter.py:190
 #, python-brace-format
 msgid "警告：convert_order_data_to_dict 中未处理的类型: {}。转换为字符串。"
 msgstr ""
 
-#: utils/converter.py:175
+#: utils/converter.py:223
 #, python-brace-format
 msgid "创建 OrderRequest 失败：缺少关键字段：{} from data {}"
 msgstr ""
 
-#: utils/converter.py:178
+#: utils/converter.py:226
 #, python-brace-format
 msgid "创建 OrderRequest 失败：无效的枚举值：{} from data {}"
 msgstr ""
 
-#: utils/converter.py:181
+#: utils/converter.py:229
 #, python-brace-format
 msgid "创建 OrderRequest 时发生未知错误：{} from data {}"
+msgstr ""
+
+#: utils/converter.py:260
+#, python-brace-format
+msgid "从字典 {} 创建 OrderData 时出错。字典：{}"
+msgstr ""
+
+#: utils/converter.py:292
+#, python-brace-format
+msgid "从字典 {} 创建 TradeData 时出错。字典：{}"
+msgstr ""
+
+#: utils/converter.py:322
+#, python-brace-format
+msgid "从字典 {} 创建 TickData 时出错。字典：{}"
+msgstr ""
+
+#: utils/converter.py:344
+#, python-brace-format
+msgid "从字典 {} 创建 AccountData 时出错。字典：{}"
+msgstr ""
+
+#: utils/converter.py:383
+#, python-brace-format
+msgid "从字典 {} 创建 LogData 时出错。字典：{}"
 msgstr ""
 
 #: vnpy/trader/constant.py:17
@@ -1028,16 +1053,19 @@ msgid "订单执行网关服务(RPC模式) for [{}] 已停止。"
 msgstr ""
 
 #: zmq_services/run_market_gateway.py:80 zmq_services/run_order_gateway.py:57
+#: zmq_services/run_strategy_engine.py:51
 #, python-brace-format
 msgid "未指定 --ctp-env，使用默认 CTP 环境：{}"
 msgstr ""
 
 #: zmq_services/run_market_gateway.py:82 zmq_services/run_order_gateway.py:59
+#: zmq_services/run_strategy_engine.py:56
 #, python-brace-format
 msgid "使用配置环境：'{}'"
 msgstr ""
 
 #: zmq_services/run_market_gateway.py:84 zmq_services/run_order_gateway.py:61
+#: zmq_services/run_strategy_engine.py:60
 msgid "未指定 --config-env，仅使用基本 global_config.yaml。"
 msgstr ""
 
@@ -1130,6 +1158,666 @@ msgstr ""
 #: zmq_services/run_order_gateway.py:84
 #, python-brace-format
 msgid "订单执行网关服务(RPC模式) for CTP env: [{}] 已退出。"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:53
+#, python-brace-format
+msgid "策略引擎 CTP 环境：{}"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:62
+msgid "正在初始化策略引擎..."
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:72
+msgid "错误：未能从 global_config.yaml 中获取必要的 ZMQ 地址。请检查配置。"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:75
+msgid "错误：未能加载策略配置。请检查策略配置是否存在且格式正确。"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:83
+#, python-brace-format
+msgid "连接行情发布器地址: {}"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:84
+#, python-brace-format
+msgid "连接订单网关请求地址: {}"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:85
+#, python-brace-format
+msgid "连接订单回报发布器地址: {}"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:86
+#, python-brace-format
+msgid "加载的策略配置: {}"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:99
+#, python-brace-format
+msgid "初始化策略引擎时发生严重错误: {}"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:103
+msgid "未能成功加载任何策略。引擎将退出。"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:106
+msgid "尝试启动策略引擎..."
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:111
+msgid "主程序检测到 Ctrl+C，正在停止引擎..."
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:119
+#, python-brace-format
+msgid "策略引擎运行时发生意外错误: {}"
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:128
+msgid "执行最终停止清理..."
+msgstr ""
+
+#: zmq_services/run_strategy_engine.py:130
+msgid "策略引擎运行结束。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:102
+#, python-brace-format
+msgid "策略引擎连接行情发布器: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:103
+#, python-brace-format
+msgid "策略引擎连接回报发布器: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:108
+#, python-brace-format
+msgid "策略引擎连接订单网关 REQ Socket (RPC): {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:120
+msgid "开始加载策略..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:123
+#, python-brace-format
+msgid "策略名称 '{}' 重复，跳过加载。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:132
+#, python-brace-format
+msgid "策略 '{}' 的 vt_symbol '{}' 格式无效，应为 'symbol.exchange'。跳过加载。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:143
+#, python-brace-format
+msgid "类 '{}' 不是 BaseLiveStrategy 的子类。跳过加载策略 '{}'。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:161
+#, python-brace-format
+msgid "策略 '{}' (类: {}, 合约: {}) 加载成功。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:164
+#, python-brace-format
+msgid "导入策略类 '{}' 失败。跳过加载策略 '{}'。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:166
+#, python-brace-format
+msgid "在模块 '{}' 中未找到策略类 '{}'。跳过加载策略 '{}'。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:168
+#, python-brace-format
+msgid "策略 '{}' 的配置缺少必要键: {}。跳过加载。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:170
+#, python-brace-format
+msgid "加载策略 '{}' 时发生未知错误: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:171
+#, python-brace-format
+msgid "策略加载完成。共加载 {} 个策略实例，映射到 {} 个合约。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:173
+msgid "错误：未成功加载任何策略。引擎无法运行。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:189
+msgid "没有加载任何策略或策略未指定合约，将不订阅任何特定合约数据！"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:197
+#, python-brace-format
+msgid "订阅特定合约主题: {}, {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:209
+#, python-brace-format
+msgid "订阅通用主题前缀: {}*, {}*, {}*, {}, {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:213
+#, python-brace-format
+msgid "最终订阅 {} 个主题/前缀。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:216
+#, python-brace-format
+msgid "最终 SUB 套接字订阅列表：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:239
+msgid "正在初始化所有已加载的策略..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:242
+msgid "所有策略初始化完成。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:250
+#, python-brace-format
+msgid "为 SUB socket 设置了 ZMQ.RCVHWM: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:252
+#, python-brace-format
+msgid "为 SUB socket 设置 ZMQ.RCVHWM 时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:277
+msgid "_send_rpc_request 不应在回测模式下调用！"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:281
+msgid "引擎未运行，无法发送 RPC 请求。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:285
+msgid "订单请求者 (REQ) 套接字对于 RPC 不可用或已关闭。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:303
+#, python-brace-format
+msgid "{} 正在发送请求..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:315
+#, python-brace-format
+msgid "{} 收到成功回复。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:318
+msgid "与订单执行网关的连接已恢复 (RPC Ping). 设置初始连接时间。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:325
+#, python-brace-format
+msgid "{} RPC 调用失败 (网关回复): {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:328
+#, python-brace-format
+msgid "{} 收到来自订单网关的意外回复格式: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:332
+#, python-brace-format
+msgid "{} 请求超时 ({}ms)."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:334
+#, python-brace-format
+msgid "与订单执行网关的连接丢失 (RPC Timeout after {} attempts)!"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:340
+#, python-brace-format
+msgid "{} 发送或接收 RPC 时 ZMQ 错误: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:343
+#, python-brace-format
+msgid "与订单执行网关的连接丢失 (ZMQ Error {})!"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:347
+#, python-brace-format
+msgid "{} Msgpack反序列化 RPC 回复时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:350
+#, python-brace-format
+msgid "{} 处理 RPC 时发生未知错误：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:353
+msgid "与订单执行网关的连接可能丢失 (未知 RPC 错误)!"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:403
+#, python-brace-format
+msgid "(Strategy) 检查交易时间时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:428
+msgid "已成功从 OrderGW 接收 PONG。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:436
+#, python-brace-format
+msgid "{} 收到 PING 的意外结果：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:438
+msgid "与订单执行网关的连接可能存在问题 (Unexpected PING result)! "
+msgstr ""
+
+#: zmq_services/strategy_engine.py:464
+msgid "在回测模式下不应直接调用 StrategyEngine.send_limit_order。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:468
+#, python-brace-format
+msgid "无法发送订单 ({} {} {} @ {}): 与订单执行网关失去连接。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:475
+#, python-brace-format
+msgid "订单发送冷却中 ({}): 距离上次发送不足 {} 秒。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:478
+#, python-brace-format
+msgid "准备发送限价单: {}.{} {} {} @ {} Offset: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:497
+#, python-brace-format
+msgid "send_limit_order: Calling _send_rpc_request with tuple: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:507
+#, python-brace-format
+msgid "从订单网关收到的 vt_orderid 不是字符串: {} (类型: {})。订单可能已发送但ID无效。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:510
+#, python-brace-format
+msgid "订单发送成功 (RPC确认): {}, VT_OrderID: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:515
+#, python-brace-format
+msgid "订单发送失败 (RPC调用未成功或网关返回错误): {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:528
+msgid "在回测模式下不应直接调用 StrategyEngine.cancel_limit_order。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:532
+#, python-brace-format
+msgid "无法发送撤单指令 ({}): 与订单执行网关失去连接。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:536
+#, python-brace-format
+msgid "尝试发送无效 vt_orderid ({}) 的撤单请求。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:539
+#, python-brace-format
+msgid "准备发送撤单指令: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:553
+#, python-brace-format
+msgid "撤单指令发送成功 (RPC确认): {}. 回复: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:558
+#, python-brace-format
+msgid "撤单指令发送失败 (RPC调用未成功): {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:560
+#, python-brace-format
+msgid "撤单指令发送失败 (网关回复错误或格式无效): {}. 回复: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:572
+msgid "策略引擎已在运行中。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:575
+msgid "没有加载任何策略，引擎无法启动。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:578
+msgid "启动策略引擎服务..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:582
+msgid "正在启动所有已加载的策略..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:585
+msgid "所有策略已启动。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:594
+msgid "策略引擎服务已启动，开始监听消息..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:601
+msgid "启动后立即尝试 Ping 订单网关以建立初始连接状态..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:620
+#, python-brace-format
+msgid "StrategyEngine Recv 循环：已接收部分。主题字节数：{!r} (len={})，数据字节长度：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:622
+#, python-brace-format
+msgid "StrategyEngine Recv 循环：收到意外的多部分计数：{}。部分：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:625
+msgid "StrategyEngine Recv 循环：zmq.Again 在 recv_multipart 上捕获（轮询后应该很少见）"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:628
+#, python-brace-format
+msgid "StrategyEngine Recv Loop：recv_multipart 期间出错：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:637
+#, python-brace-format
+msgid "解码主题：'{}'"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:645
+#, python-brace-format
+msgid "Msgpack 解码：对象类型='{}'，模块='{}'"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:656
+#, python-brace-format
+msgid "主题 {} 上的 TickData 对象缺少'vt_symbol'属性。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:662
+#, python-brace-format
+msgid "已成功根据主题 {} 的字典构建 Tick 数据"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:667
+#, python-brace-format
+msgid "从字典重建的 TickData 对象缺少'vt_symbol'。主题：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:669
+#, python-brace-format
+msgid "无法根据在 tick 主题 {} 上收到的字典重建 TickData。字典：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:673
+#, python-brace-format
+msgid "在 tick 主题 {} 上接收到非 TickData/非 dict 对象：Type='{}'，Module='{}'"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:681
+#, python-brace-format
+msgid "已成功根据主题 {} 的字典重建 OrderData"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:684
+#, python-brace-format
+msgid "无法根据订单主题 {} 收到的字典重建订单数据。字典：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:687
+#, python-brace-format
+msgid "在订单主题 {} 上收到非 OrderData/非 dict 对象：{type()}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:695
+#, python-brace-format
+msgid "已成功根据主题 {} 的字典重建 TradeData"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:698
+#, python-brace-format
+msgid "无法根据交易主题 {} 收到的字典重建 TradeData。字典：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:701
+#, python-brace-format
+msgid "收到有关贸易主题 {} 的非 TradeData/非 dict 对象：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:713
+#, python-brace-format
+msgid "收到非 AccountData/非 dict 数据，或帐户主题 {} 重建失败。原始类型：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:725
+#, python-brace-format
+msgid "日志主题 {} 收到非日志数据/非字典，或重建失败。原始类型：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:741
+#, python-brace-format
+msgid "在心跳主题上接收到非字典对象：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:744
+#, python-brace-format
+msgid "未知的消息主题: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:748
+#, python-brace-format
+msgid "Msgpack 解码错误: {}. Topic: '{}', Data (first 100 bytes): {!r}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:751
+#, python-brace-format
+msgid "处理订阅消息时出错 (Topic: {}): {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:761
+msgid "订单网关心跳超时 ..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:797
+#, python-brace-format
+msgid "[交易时段内] 行情数据可能中断或延迟! 超时合约: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:800
+msgid "所有监控合约的行情数据流已恢复。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:808
+#, python-brace-format
+msgid "ZMQ 错误 ({}: {}) 发生在服务停止期间，正常退出。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:811
+#, python-brace-format
+msgid "主循环中意外的 ZMQ 错误: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:814
+msgid "策略引擎检测到中断信号，开始停止..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:817
+#, python-brace-format
+msgid "策略引擎主循环发生未知错误：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:820
+msgid "策略引擎主循环结束。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:841
+#, python-brace-format
+msgid "process_tick：为 vt_symbol“{}”调用策略“{}”on_tick。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:844
+#, python-brace-format
+msgid "策略 {} 在 on_tick 处理 {} 时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:862
+#, python-brace-format
+msgid "process_order 更新：已收到订单 ID={} 状态={}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:870
+#, python-brace-format
+msgid "策略 {} 在 on_order 处理 {} 时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:888
+#, python-brace-format
+msgid "忽略重复交易事件：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:893
+msgid "收到的交易更新没有 vt_tradeid，无法检查重复。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:904
+#, python-brace-format
+msgid "收到成交回报: {} OrderID: {} TradeID: {} Offset: {} Price: {} Vol: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:914
+#, python-brace-format
+msgid "策略 {} 在 on_trade 处理 {} 时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:926
+#, python-brace-format
+msgid "process_account_update：已收到 AccountID 的更新：'{}'"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:933
+#, python-brace-format
+msgid "策略 {} 在 on_account 处理时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:954
+#, python-brace-format
+msgid "[GW LOG - {}] {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:967
+#, python-brace-format
+msgid "收到的心跳格式无效：{}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:975
+#, python-brace-format
+msgid "（调试 HB 接收）TS={}，NOW={}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:980
+msgid "接收到订单网关心跳，标记为已连接。设置初始连接时间。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:990
+#, python-brace-format
+msgid "收到过期的 OrderGW 心跳 (Timestamp: {}, Now: {}) - 可能存在时钟不同步或延迟。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:993
+#, python-brace-format
+msgid "处理 OrderGW 心跳消息时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1003
+msgid "StrategyEngine.stop() 被调用，但引擎未在运行或已被停止。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1006
+msgid "开始停止策略引擎服务..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1010
+msgid "正在停止所有策略..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1015
+#, python-brace-format
+msgid "停止策略 {} 时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1016
+msgid "所有策略已停止。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1019
+msgid "正在关闭策略引擎 ZMQ Sockets..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1031
+#, python-brace-format
+msgid "正在关闭 Socket: {}..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1033
+#, python-brace-format
+msgid "Socket {} 已关闭。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1035
+#, python-brace-format
+msgid "关闭策略引擎 Socket {} 时出错: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1036
+msgid "策略引擎 ZMQ Sockets 已关闭。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1042
+msgid "正在终止策略引擎的 ZMQ Context (from stop method)..."
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1044
+msgid "策略引擎的 ZMQ Context 已成功终止 (from stop method)。"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1046
+#, python-brace-format
+msgid "终止策略引擎的 ZMQ Context 时发生 ZMQ 错误: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1048
+#, python-brace-format
+msgid "终止策略引擎的 ZMQ Context 时发生未知错误: {}"
+msgstr ""
+
+#: zmq_services/strategy_engine.py:1050
+msgid "策略引擎的 ZMQ Context 未找到或已关闭 (from stop method)，跳过终止。"
 msgstr ""
 
 #: zmq_services/zmq_base.py:46
