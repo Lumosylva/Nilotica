@@ -32,38 +32,21 @@
 
 - **Python** ：`3.12.9`版本
 
-- **工具链**：`uv` + `hatch` + `setuptools`
+- **工具链**：uv + hatch + setuptools
 
 - **vnpy** ：`4.0.0`版本
 
 - **vnpy_ctp**： `6.7.7.1`版本（基于CTP期货版的`6.7.7`接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件）
 
-- 若需要其他版本CTP `C++` 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
+- 若需要其他版本CTP C++ 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
 
-- 若直接使用本系统的CTP版本，则不需要进行下方第4步的构建流程，直接下载releases包中 `whl`，然后 `uv pip install` 安装即可
+- 若直接使用本系统的CTP版本，则不需要进行下方第4步的构建流程，直接下载 [Releases](https://github.com/Lumosylva/Nilotica/releases) 包中 `whl`文件，然后 `uv pip install` 安装即可
 
-  https://github.com/Lumosylva/Nilotica/releases
-
-- 注意：目前所有代码仅在`Windows`环境下测试，`Linux`下并未测试
+- **注意**：目前所有代码仅在 Windows 环境下进行测试，Linux 下并未做测试
 
 ### **3. 说明**
 
-本项目修改了`vnpy`库中文件
-
-1. vnpy/trader/utility.py：
-
-    ```python
-    TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
-    ```
-防止与本机中其它vnpy项目共存时用同一用户配置目录发生冲突
-
-2. vnpy_ctp/gateway/ctp_gateway.py：
-
-   在 connect 函数中添加 try...except... 以捕获异常
-
-3. vnpy/rpc/server.py：
-
-   stop 函数添加了 self._socket_rep.close()、self.socket_pub.close() 和 self._context.term()，这些函数在关闭套接字后调用，以终止 ZMQ 上下文。
+本项目修改了 vnpy 库中部分源代码文件。
 
 ### **4. 环境配置**
 

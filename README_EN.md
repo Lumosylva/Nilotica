@@ -31,36 +31,18 @@ The functions currently implemented by the system are:
 ### **2. Basic Environment**
 
 - **Python** : `3.12.9` version
-- **Toolchain**: `uv` + `hatch` + `setuptools`
+- **Toolchain**: uv + hatch + setuptools
 - **vnpy** : version `4.0.0`
 - **vnpy_ctp**: `6.7.7.1` version (developed based on the `6.7.7` interface package of CTP futures version, the interface comes with the dll file of [penetrating real disk environment])
-- If you need to compile other versions of CTP `C++`, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
+- If you need to compile other versions of CTP C++, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
 
-- If you use the CTP version of this system directly, you do not need to follow the build process in step 4 below. You can directly download the `whl` in the release package and then install it with `uv pip install`.
+- If you use the CTP version of this system directly, you do not need to perform the build process in step 4 below. You can directly download the `whl` file in the [Releases](https://github.com/Lumosylva/Nilotica/releases) package, and then install it with `uv pip install`
 
-  https://github.com/Lumosylva/Nilotica/releases
-
-- Note: Currently all codes are only tested under `Windows` environment, not under `Linux`
+- **Note**: Currently all codes are only tested in Windows environment, and have not been tested under Linux
 
 ### **3. Description**
 
-This project modifies the files in the `vnpy` library
-
-1. vnpy/trader/utility.py:
-
-    ```python
-    TRADER_DIR, TEMP_DIR = _get_trader_dir(".nilotica")
-    ```
-
-​		Prevent conflicts with other vnpy projects on the local machine when using the same user configuration directory
-
-2. vnpy_ctp/gateway/ctp_gateway.py:
-
-   Add try...except... in the connect function to catch exceptions
-
-3. vnpy/rpc/server.py:
-
-   The stop function adds self._socket_rep.close(), self.socket_pub.close(), and self._context.term(), which are called after closing the socket to terminate the ZMQ context.
+This project modifies some source code files in the vnpy library.
 
 ### **4. Environment Configuration**
 
