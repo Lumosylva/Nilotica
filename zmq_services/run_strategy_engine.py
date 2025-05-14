@@ -48,16 +48,16 @@ def main():
 
     # 正在使用的日志环境(Log environments being used)
     if args.ctp_env == "simnow" and '--ctp-env' not in sys.argv and '--env' not in sys.argv: # Check both old and new name for default message
-        logger.info(_("No --ctp-env specified, using default CTP environment: {}").format(args.ctp_env))
+        logger.info(_("未指定 --ctp-env，使用默认 CTP 环境：{}").format(args.ctp_env))
     else:
-        logger.info(_("Strategy Engine CTP environment (informational): {}").format(args.ctp_env))
+        logger.info(_("策略引擎 CTP 环境：{}").format(args.ctp_env))
     
     if args.config_env:
-        logger.info(_("Using configuration environment: '{}'").format(args.config_env))
+        logger.info(_("使用配置环境：'{}'").format(args.config_env))
     else:
         # 如果默认值为 dev，则不会发生这种情况
         # This case should not happen if default is "dev"
-        logger.info(_("No --config-env specified, using base global_config.yaml only."))
+        logger.info(_("未指定 --config-env，仅使用基本 global_config.yaml。"))
 
     logger.info(_("正在初始化策略引擎..."))
 
@@ -96,7 +96,7 @@ def main():
             strategies_config=strategies_config # 使用获取的策略配置(Use fetched strategies config)
         )
     except Exception as init_err:
-         logger.exception(_("初始化 StrategyEngine 时发生严重错误: {}").format(init_err))
+         logger.exception(_("初始化策略引擎时发生严重错误: {}").format(init_err))
          sys.exit(1)
 
     if not engine.strategies:
