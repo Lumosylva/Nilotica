@@ -30,16 +30,16 @@ DEFAULT_LOG_FORMAT = (
     " <magenta>{extra[config_env]}</magenta> - "
     "<level>{message}</level>"
 )
-DEFAULT_SERVICE_NAME = "nilotica_default" # Default service name if not patched
-DEFAULT_LOG_ROTATION = "100 MB"  # Rotate when file exceeds 100MB
-DEFAULT_LOG_RETENTION = "7 days" # Keep logs for 7 days
+DEFAULT_SERVICE_NAME = "nilotica_default" # 默认服务名称(Default service name if not patched)
+DEFAULT_LOG_ROTATION = "100 MB"  # 当文件超过 100MB 时(Rotate when file exceeds 100MB)
+DEFAULT_LOG_RETENTION = "7 days" # 保留日志 7 天(Keep logs for 7 days)
 
-# --- Global Logger Object ---
-# Re-export the logger object from loguru
+# --- 全局记录器对象(Global Logger Object) ---
+# 从 loguru 重新导出记录器对象(Re-export the logger object from loguru)
 __all__ = ["logger", "setup_logging", "INFO", "DEBUG", "WARNING", "WARN", "ERROR", "FATAL", "CRITICAL", "NOTSET"]
 
-# Read log level from vnpy settings
-DEFAULT_LOG_LEVEL: str = SETTINGS.get("log.level", "INFO") # Use .get for safety
+# 从 vnpy 设置中读取日志级别(Read log level from vnpy settings)
+DEFAULT_LOG_LEVEL: str = SETTINGS.get("log.level", "INFO")
 
 
 CRITICAL = 50
@@ -82,13 +82,13 @@ def get_level_name(level: int | str):
 
 # --- Setup Function ---
 def setup_logging(
-    level: str | int = DEFAULT_LOG_LEVEL, # Allow int type
+    level: str | int = DEFAULT_LOG_LEVEL, # 允许 int 类型(Allow int type)
     format_ft: str = DEFAULT_LOG_FORMAT,
-    service_name: str = DEFAULT_SERVICE_NAME, # Service name mainly for filename now
+    service_name: str = DEFAULT_SERVICE_NAME, # 服务名称现在主要用于文件名(Service name mainly for filename now)
     config_env: Optional[str] = None,
     rotation: str = DEFAULT_LOG_ROTATION,
     retention: str = DEFAULT_LOG_RETENTION,
-    **kwargs  # Pass additional arguments to loguru.add() if needed
+    **kwargs  # 如果需要，将附加参数传递给 loguru.add()[Pass additional arguments to loguru.add() if needed]
 ):
     """
     为应用程序配置 loguru 记录器。
@@ -128,7 +128,11 @@ def setup_logging(
         Args:
         record (dict): The loguru record
         """
-        translator = get_translator() # Get thread-specific translator
+        translator = get_translator() # 获取线程特定的翻译器(Get thread-specific translator)
+        # Loguru 将原始消息（格式字符串或字面量）存储在 record["message"] 中
+        # 如果传递了参数，则它们存储在 record["parameters"] 中
+        # 我们需要翻译格式字符串 record["message"]
+
         # Loguru stores the original message (format string or literal) in record["message"]
         # If args were passed, they are in record["parameters"]
         # We want to translate the format string record["message"]
@@ -136,7 +140,6 @@ def setup_logging(
             record["message"] = translator(record["message"])
     
     logger.configure(patcher=i18n_patcher) # Apply the patcher
-    # +++ End Add i18n patcher +++
 
     level_name = get_level_name(level)
     
@@ -147,6 +150,7 @@ def setup_logging(
         record["extra"].setdefault("config_env", current_config_env) # Always set a value
         return True
 
+    # 如果意外通过 **kwargs 传递了自定义参数，则清除 kwargs
     # Clean kwargs from our custom parameter if it was accidentally passed via **kwargs
     kwargs_cleaned = kwargs.copy()
     if 'config_env' in kwargs_cleaned:
