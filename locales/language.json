@@ -176,6 +176,11 @@
     "创建 OrderRequest 失败：缺少关键字段：{} from data {}": "Failed to create OrderRequest: Missing key field: {} from data {}",
     "创建 OrderRequest 失败：无效的枚举值：{} from data {}": "Failed to create OrderRequest: Invalid enum value: {} from data {}",
     "创建 OrderRequest 时发生未知错误：{} from data {}": "An unknown error occurred while creating OrderRequest: {} from data {}",
+    "从字典 {} 创建 OrderData 时出错。字典：{}": "Error creating OrderData from dictionary {}. Dictionary: {}",
+    "从字典 {} 创建 TradeData 时出错。字典：{}": "Error creating TradeData from dictionary {}. Dictionary: {}",
+    "从字典 {} 创建 TickData 时出错。字典：{}": "Error creating TickData from dictionary {}. Dictionary: {}",
+    "从字典 {} 创建 AccountData 时出错。字典：{}": "Error creating AccountData from dictionary {}. Dictionary: {}",
+    "从字典 {} 创建 LogData 时出错。字典：{}": "Error creating LogData from dictionary {}. Dictionary: {}",
     "错误：未能从配置中获取 zmq_addresses.order_gateway_rep 或 zmq_addresses.order_gateway_pub。请检查配置。": "ERROR: Could not get zmq_addresses.order_gateway_rep or zmq_addresses.order_gateway_pub from config. Please check config.",
     "订单网关 ZMQ 地址已加载: REP='{}', PUB='{}'": "Order gateway ZMQ address loaded: REP='{}', PUB='{}'",
     "正在初始化订单执行网关服务(RPC模式) for CTP environment: [{}]...": "Initializing order execution gateway service (RPC mode) for CTP environment: [{}]...",
@@ -375,6 +380,7 @@
     "策略 {} 在 on_trade 处理 {} 时出错: {}": "Strategy {} encountered an error while processing {} in on_trade: {}",
     "process_account_update：已收到 AccountID 的更新：'{}'": "process_account_update: Received update for AccountID: '{}'",
     "策略 {} 在 on_account 处理时出错: {}": "Strategy {} had an error in on_account processing: {}",
+    "[GW LOG - {}] {}": "[GW LOG - {}] {}",
     "收到的心跳格式无效：{}": "Received invalid format for heartbeat: {}",
     "（调试 HB 接收）TS={}，NOW={}": "(DEBUG HB Recv) TS={}, NOW={}",
     "接收到订单网关心跳，标记为已连接。设置初始连接时间。": "Receive order network connection jump, mark as connected. Set initial connection time.",
@@ -410,5 +416,4 @@
     "策略引擎运行时发生意外错误: {}": "An unexpected error occurred while running the strategy engine: {}",
     "执行最终停止清理...": "Performing final stop cleanup...",
     "策略引擎运行结束。": "The strategy engine has finished running."
-
 }
