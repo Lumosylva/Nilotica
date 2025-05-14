@@ -1,7 +1,7 @@
 # Nilotica
 
 <p align="center">
-  <img src="banner.png"/>
+  <img src="assets/banner.png"/>
 </p>
 
 ENGLISH | [中文](README.md)
