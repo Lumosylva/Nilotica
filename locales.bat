@@ -7,5 +7,4 @@ echo %CD%
 pybabel extract -F babel.cfg -o locales/messages.pot .
 :: Update an existing .po file with a new .pot file
 pybabel init -i locales/messages.pot -d locales -l en
-pybabel init -i locales/messages.pot -d locales -l zh_CN
 exit
