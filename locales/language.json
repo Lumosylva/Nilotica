@@ -394,6 +394,21 @@
     "策略引擎的 ZMQ Context 已成功终止 (from stop method)。": "The ZMQ Context of the strategy engine has been terminated successfully (from stop method).",
     "终止策略引擎的 ZMQ Context 时发生 ZMQ 错误: {}": "A ZMQ error occurred while terminating the ZMQ Context for the Strategy Engine: {}",
     "终止策略引擎的 ZMQ Context 时发生未知错误: {}": "An unknown error occurred while terminating the ZMQ Context for the strategy engine: {}",
-    "策略引擎的 ZMQ Context 未找到或已关闭 (from stop method)，跳过终止。": "The ZMQ Context for the strategy engine was not found or has been closed (from stop method), skipping termination."
+    "策略引擎的 ZMQ Context 未找到或已关闭 (from stop method)，跳过终止。": "The ZMQ Context for the strategy engine was not found or has been closed (from stop method), skipping termination.",
+    "策略引擎 CTP 环境：{}": "Strategy Engine CTP environment: {}",
+    "正在初始化策略引擎...": "Initializing strategy engine...",
+    "错误：未能从 global_config.yaml 中获取必要的 ZMQ 地址。请检查配置。": "Error: Failed to get necessary ZMQ addresses from global_config.yaml. Please check configuration.",
+    "错误：未能加载策略配置。请检查策略配置是否存在且格式正确。": "Error: Failed to load strategy configuration. Please check that the strategy configuration exists and is in the correct format.",
+    "连接行情发布器地址: {}": "Connect to the market publisher address: {}",
+    "连接订单网关请求地址: {}": "Connection order gateway request address: {}",
+    "连接订单回报发布器地址: {}": "Connect to order return publisher address: {}",
+    "加载的策略配置: {}": "Loaded strategy configuration: {}",
+    "初始化策略引擎时发生严重错误: {}": "A fatal error occurred while initializing strategy engine: {}",
+    "未能成功加载任何策略。引擎将退出。": "Failed to load any Strategies successfully. The engine will exit.",
+    "尝试启动策略引擎...": "Trying to start strategy engine...",
+    "主程序检测到 Ctrl+C，正在停止引擎...": "Main program detected Ctrl+C, stopping engine...",
+    "策略引擎运行时发生意外错误: {}": "An unexpected error occurred while running the strategy engine: {}",
+    "执行最终停止清理...": "Performing final stop cleanup...",
+    "策略引擎运行结束。": "The strategy engine has finished running."
 
 }
