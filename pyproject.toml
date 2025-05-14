@@ -2,7 +2,7 @@
 name = "nilotica"
 dynamic = ["version"]
 description = "一个基于vnpy的量化系统(Based vnpy quant trading system.)"
-license = { file = "LICENSE.txt" }
+license = { file = "LICENSE" }
 authors = [{ name = "Donny", email = "donnymoving@gmail.com" }]
 readme = "README.md"
 classifiers = [
