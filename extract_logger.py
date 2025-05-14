@@ -7,7 +7,7 @@
 @Author     : Donny
 @Email      : donnymoving@gmail.com
 @Software   : PyCharm
-@Description: description
+@Description: 提取 Python 中 logger.info("xxx")... 或 logger.info(self._("xxx")) 双引号包裹的字符串。
 """
 import json
 import re
@@ -15,15 +15,19 @@ import sys
 
 def extract_log_messages(py_file_path) -> list:
     """
-    提取 Python 文件中 logger.info 调用的字符串。
+    提取 Python 中 logger.info("xxx")... 或 logger.info(self._("xxx")) 双引号包裹的字符串。
+    支持以下格式：
+    1. logger.info("message")、logger.debug("message")...
+    2. logger.info(self._("message"))、logger.debug(self._("message"))...
     """
     try:
         with open(py_file_path, 'r', encoding='utf-8') as file:
             content = file.read()
 
-        # 使用正则表达式匹配双引号内的内容
-        # pattern_info = r'logger\.info\(\s*f?["\'](.*?)["\']\s*\)'
-        pattern_info = r'logger\.(?:info|debug|warning|error|exception|critical|fatal)\(\s*f?["\'](.*?)["\']\s*\)'
+        # 使用正则表达式匹配两种格式：
+        # 1. 直接的双引号内容
+        # 2. self._() 中的双引号内容
+        pattern_info = r'logger\.(?:info|debug|warning|error|exception|critical|fatal)\(\s*(?:self\._\()?f?["\'](.*?)["\'](?:\))?\s*\)'
         matches = re.findall(pattern_info, content)
 
         return matches
@@ -34,6 +38,7 @@ def extract_log_messages(py_file_path) -> list:
     except Exception as e:
         print(f"读取文件时出错：{e}")
         return []
+
 
 if __name__ == "__main__":
     output_file = "output.json"
@@ -53,6 +58,6 @@ if __name__ == "__main__":
         print(f"data_dict: {data_dict}")
         with open(output_file, 'w', encoding='utf-8') as json_file:
             json.dump(data_dict, json_file, ensure_ascii=False, indent=4)
-        print(f"JSON文件已创建：{output_file}")
+        print("JSON文件已创建")
     else:
         print("\n未找到 logger 消息！")
