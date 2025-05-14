@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@ProjectName: Nilotica
+@FileName   : strategy_engine.py
+@Date       : 2025/5/9 12:08
+@Author     : Donny
+@Email      : donnymoving@gmail.com
+@Software   : PyCharm
+@Description: 策略引擎，加载策略并建立通信。
+Policy engine, loads policies and establishes communications.
+"""
 from typing import Dict, Any, Set, Optional, List
 from collections import deque
 import zmq
@@ -25,7 +37,7 @@ from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, LogD
 
 from datetime import datetime
 
-class StrategyEngine: # Renamed class
+class StrategyEngine:
     def __init__(self,
                  config_manager: ConfigManager,
                  gateway_pub_url: str,
