@@ -1,12 +1,16 @@
-# Nilotica
-
 <p align="center">
-  <img src="assets/banner.png"/>
+  <a href="https://nilotica.github.io/"><img src="https://nilotica.github.io/assets/newlogo.png" width="350" height="274"  alt="nilotica"></a>
 </p>
+
+<div align="center">
+
+# Nilotica
 
 ENGLISH | [中文](README.md)
 
-## A futures quantitative trading system based on vnpy
+_✨ A futures quantitative trading system based on vnpy ✨_
+
+</div>
 
 ![GitHub License](https://img.shields.io/github/license/Lumosylva/Nilotica)&ensp;![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FLumosylva%2FNilotica%2Fmain%2Fpyproject.toml)&ensp;![GitHub Release](https://img.shields.io/github/v/release/Lumosylva/Nilotica)&ensp;![GitHub Release Date](https://img.shields.io/github/release-date/Lumosylva/Nilotica)&ensp;[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lumosylva/Nilotica)&ensp;[![QQ Group#1](https://img.shields.io/badge/QQ%20Group%231-Join-blue)](https://qun.qq.com/universal-share/share?ac=1&authKey=dzGDk%2F%2Bpy%2FwpVyR%2BTrt9%2B5cxLZrEHL793cZlFWvOXuV5I8szMnOU4Wf3ylap7Ph0&busi_data=eyJncm91cENvZGUiOiI0NDYwNDI3NzciLCJ0b2tlbiI6IlFrM0ZhZmRLd0xIaFdsZE9FWjlPcHFwSWxBRFFLY2xZbFhaTUh4K2RldisvcXlBckZ4NVIrQzVTdDNKUFpCNi8iLCJ1aW4iOiI4MjEzMDAwNzkifQ%3D%3D&data=O1Bf7_yhnvrrLsJxc3g5-p-ga6TWx6EExnG0S1kDNJTyK4sV_Nd9m4p-bkG4rhj_5TdtS5lMjVZRBv4amHyvEA&svctype=4&tempid=h5_group_info) 
 
