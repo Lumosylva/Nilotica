@@ -90,6 +90,6 @@
 [Mozilla 行为准则]：<https://github.com/mozilla/diversity>
 
 有关本行为准则的常见问题，请参阅常见问题解答：
-[常见问题解答]：<https://www.contributor-covenant.org/faq>
+<https://www.contributor-covenant.org/faq>
 另有诸译本：
-[翻译]：<https://www.contributor-covenant.org/translations>
+<https://www.contributor-covenant.org/translations>
