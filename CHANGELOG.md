@@ -1,3 +1,17 @@
+# 0.1.3版本
+
+1. 加入国际化，支持中英文语句输出。
+2. 
+
+
+
+Version 0.1.3
+
+1. Use the new `vnpy` version 4.0.0.
+2. 
+
+
+
 # 0.1.2版本
 
 1. 优化风险管理器 (RiskManagerService) 和策略引擎 (StrategyEngine) 与订单执行网关 (OrderExecutionGatewayService) 连接状态的机制，到订单执行网关的连接，优化了心跳检测，实现了更健壮的超时和重试逻辑。策略引擎使用了两种机制结合的方式来判断与网关的连接状态，1. 监听 PUB/SUB 心跳 (主要检测超时)，2. 主动 RPC Ping (检查/恢复 RPC 连接)。风险管理器使用了单一机制来判断连接状态，主动 RPC Ping。
