@@ -1,10 +1,10 @@
-from types import ModuleType
 from collections.abc import Callable
 from importlib import import_module
+from types import ModuleType
 
-from .object import HistoryRequest, TickData, BarData
-from .setting import SETTINGS
 from .locale import _
+from .object import BarData, HistoryRequest, TickData
+from .setting import SETTINGS
 
 
 class BaseDatafeed:

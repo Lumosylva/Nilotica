@@ -1,12 +1,13 @@
-import zmq
-import time
-import threading
-import sys
 import os
-from datetime import datetime
-from typing import Dict, Tuple, Any, Optional
 import queue
+import sys
+import threading
+import time
+from datetime import datetime
+from typing import Any, Dict, Optional, Tuple
+
 import msgpack
+import zmq
 
 from vnpy.trader.utility import load_json
 
@@ -15,20 +16,25 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from utils.logger import logger
 from utils.config_manager import ConfigManager
+from utils.converter import convert_order_data_to_dict, dict_to_order_request
 from utils.i18n import get_translator
+from utils.logger import logger
 
 # VNPY imports
-from vnpy.event import EventEngine, Event
-from vnpy.trader.object import (OrderData, TradeData, OrderRequest, CancelRequest,
-                                ContractData, AccountData, PositionData)
-from vnpy.trader.event import (EVENT_ORDER, EVENT_TRADE, EVENT_LOG, EVENT_CONTRACT, EVENT_ACCOUNT, EVENT_POSITION)
-from vnpy_ctp import CtpGateway
+from vnpy.event import Event, EventEngine
 from vnpy.rpc import RpcServer
-
-
-from utils.converter import dict_to_order_request, convert_order_data_to_dict
+from vnpy.trader.event import EVENT_ACCOUNT, EVENT_CONTRACT, EVENT_LOG, EVENT_ORDER, EVENT_POSITION, EVENT_TRADE
+from vnpy.trader.object import (
+    AccountData,
+    CancelRequest,
+    ContractData,
+    OrderData,
+    OrderRequest,
+    PositionData,
+    TradeData,
+)
+from vnpy_ctp import CtpGateway
 
 HEARTBEAT_INTERVAL_S = 5.0 # Send heartbeat every 5 seconds
 

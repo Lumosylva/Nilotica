@@ -5,8 +5,7 @@ Basic data structure used for general trading function in the trading platform.
 from dataclasses import dataclass, field
 from datetime import datetime as Datetime
 
-from .constant import Direction, Exchange, Interval, Offset, Status, Product, OptionType, OrderType
-
+from .constant import Direction, Exchange, Interval, Offset, OptionType, OrderType, Product, Status
 
 INFO: int = 20
 

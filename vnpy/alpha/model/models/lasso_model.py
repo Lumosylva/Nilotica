@@ -1,13 +1,8 @@
 import numpy as np
 import polars as pl
-from sklearn.linear_model import Lasso      # type: ignore
+from sklearn.linear_model import Lasso  # type: ignore
 
-from vnpy.alpha import (
-    AlphaDataset,
-    AlphaModel,
-    Segment,
-    logger
-)
+from vnpy.alpha import AlphaDataset, AlphaModel, Segment, logger
 
 
 class LassoModel(AlphaModel):

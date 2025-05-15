@@ -1,18 +1,14 @@
 from datetime import datetime
 
-import pyqtgraph as pg      # type: ignore
+import pyqtgraph as pg  # type: ignore
 
-from vnpy.trader.ui import QtGui, QtWidgets, QtCore
 from vnpy.trader.object import BarData
+from vnpy.trader.ui import QtCore, QtGui, QtWidgets
 
-from .manager import BarManager
-from .base import (
-    GREY_COLOR, WHITE_COLOR, CURSOR_COLOR, BLACK_COLOR,
-    to_int, NORMAL_FONT
-)
 from .axis import DatetimeAxis
+from .base import BLACK_COLOR, CURSOR_COLOR, GREY_COLOR, NORMAL_FONT, WHITE_COLOR, to_int
 from .item import ChartItem
-
+from .manager import BarManager
 
 pg.setConfigOptions(antialias=True)
 

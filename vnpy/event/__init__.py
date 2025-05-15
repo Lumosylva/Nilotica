@@ -1,5 +1,4 @@
-from .engine import Event, EventEngine, EVENT_TIMER
-
+from .engine import EVENT_TIMER, Event, EventEngine
 
 __all__ = [
     "Event",

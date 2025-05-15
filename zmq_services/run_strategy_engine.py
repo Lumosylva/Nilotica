@@ -1,16 +1,15 @@
-import sys
-import os
 import argparse
+import os
+import sys
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from utils.config_manager import ConfigManager
-
-from zmq_services.strategy_engine import StrategyEngine
-from utils.logger import setup_logging, logger
 from utils.i18n import get_translator
+from utils.logger import logger, setup_logging
+from zmq_services.strategy_engine import StrategyEngine
 
 
 def main():

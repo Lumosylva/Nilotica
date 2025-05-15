@@ -4,9 +4,8 @@ from typing import TYPE_CHECKING
 
 import polars as pl
 
-from vnpy.trader.object import BarData, TradeData, OrderData
-from vnpy.trader.constant import Offset, Direction
-
+from vnpy.trader.constant import Direction, Offset
+from vnpy.trader.object import BarData, OrderData, TradeData
 
 if TYPE_CHECKING:
     from vnpy.alpha.strategy.backtesting import BacktestingEngine

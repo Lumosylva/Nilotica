@@ -1,7 +1,7 @@
-import sys
-import os
 import argparse
-import time # Import time for potential sleeps if needed
+import os
+import sys
+import time  # Import time for potential sleeps if needed
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -11,10 +11,10 @@ if project_root not in sys.path:
 # +++ Import ConfigManager +++
 from utils.config_manager import ConfigManager
 
-from zmq_services.risk_manager import RiskManagerService
 # --- Remove old config import --- 
 # from config import zmq_config as config
-from utils.logger import setup_logging, logger
+from utils.logger import logger, setup_logging
+from zmq_services.risk_manager import RiskManagerService
 
 
 def main():

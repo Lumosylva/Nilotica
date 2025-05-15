@@ -1,9 +1,20 @@
 # utils/config_models.py
-from typing import Optional, List, Dict, Tuple, Any
-from pydantic import BaseModel, FilePath, AnyHttpUrl, root_validator, FieldValidationInfo, field_validator, StrictInt, StrictFloat, constr
-import os # For path resolution if needed directly in models (though ConfigManager handles it)
 import datetime
-import re # For vt_symbol validation
+import os  # For path resolution if needed directly in models (though ConfigManager handles it)
+import re  # For vt_symbol validation
+from typing import Any, Dict, List, Optional, Tuple
+
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    FieldValidationInfo,
+    FilePath,
+    StrictFloat,
+    StrictInt,
+    constr,
+    field_validator,
+    root_validator,
+)
 
 # Get project root, assuming this file is in utils/
 PROJECT_ROOT_FOR_MODELS = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

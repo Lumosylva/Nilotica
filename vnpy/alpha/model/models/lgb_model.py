@@ -1,9 +1,9 @@
 from typing import cast
 
-import numpy as np
-import polars as pl
 import lightgbm as lgb
 import matplotlib.pyplot as plt
+import numpy as np
+import polars as pl
 
 from vnpy.alpha.dataset import AlphaDataset, Segment
 from vnpy.alpha.model import AlphaModel

@@ -1,7 +1,7 @@
-import sys
-import os
 import argparse
-import time # Import time if needed for sleeps
+import os
+import sys
+import time  # Import time if needed for sleeps
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -11,12 +11,13 @@ if project_root not in sys.path:
 # +++ Import ConfigManager +++
 from utils.config_manager import ConfigManager
 
-# Import the service class
-from zmq_services.data_recorder import DataRecorderService
 # --- Remove old config import --- 
 # from config import zmq_config as config
 # Import new logger
-from utils.logger import setup_logging, logger
+from utils.logger import logger, setup_logging
+
+# Import the service class
+from zmq_services.data_recorder import DataRecorderService
 
 
 def main():

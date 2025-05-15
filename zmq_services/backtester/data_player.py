@@ -1,15 +1,18 @@
-import zmq
-import msgpack
-import time
-import sys
-import os
-import json
 import glob
-from datetime import datetime, time as dt_time
-import heapq # For efficient sorting/merging if loading multiple project_files
+import heapq  # For efficient sorting/merging if loading multiple project_files
+import json
+import os
 import pickle
+import sys
+import time
+from datetime import datetime
+from datetime import time as dt_time
+
+import msgpack
+import zmq
+
 # +++ Add Logger Import +++
-from utils.logger import logger # Assuming logger is configured elsewhere
+from utils.logger import logger  # Assuming logger is configured elsewhere
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')) # Go up two levels
@@ -206,6 +209,7 @@ class DataPlayerService:
 if __name__ == "__main__":
     # +++ Import ConfigManager for __main__ block +++
     from utils.config_manager import ConfigManager
+
     # +++ Initialize with default 'backtest' environment for standalone runs +++
     config_service = ConfigManager(environment="backtest") 
 

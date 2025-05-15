@@ -1,69 +1,60 @@
 import sys
 from datetime import datetime
-from time import sleep
-from vnpy.event.engine import EventEngine
 from pathlib import Path
+from time import sleep
 
-from vnpy.trader.constant import (
-    Direction,
-    Offset,
-    Exchange,
-    OrderType,
-    Product,
-    Status,
-    OptionType
-)
+from vnpy.event.engine import EventEngine
+from vnpy.trader.constant import Direction, Exchange, Offset, OptionType, OrderType, Product, Status
+from vnpy.trader.event import EVENT_TIMER
 from vnpy.trader.gateway import BaseGateway
 from vnpy.trader.object import (
-    TickData,
-    OrderData,
-    TradeData,
-    PositionData,
     AccountData,
-    ContractData,
-    OrderRequest,
     CancelRequest,
+    ContractData,
+    OrderData,
+    OrderRequest,
+    PositionData,
     SubscribeRequest,
+    TickData,
+    TradeData,
 )
-from vnpy.trader.utility import get_folder_path, ZoneInfo
-from vnpy.trader.event import EVENT_TIMER
+from vnpy.trader.utility import ZoneInfo, get_folder_path
 
 from ..api import (
+    THOST_FTDC_TC_GFD,
+    THOST_FTDC_TC_IOC,
+    THOST_FTDC_VC_AV,
+    THOST_FTDC_VC_CV,
     MdApi,
     TdApi,
-    THOST_FTDC_OAS_Submitted,
-    THOST_FTDC_OAS_Accepted,
-    THOST_FTDC_OAS_Rejected,
-    THOST_FTDC_OST_NoTradeQueueing,
-    THOST_FTDC_OST_PartTradedQueueing,
-    THOST_FTDC_OST_AllTraded,
-    THOST_FTDC_OST_Canceled,
+    THOST_FTDC_AF_Delete,
+    THOST_FTDC_CC_Immediately,
+    THOST_FTDC_CP_CallOptions,
+    THOST_FTDC_CP_PutOptions,
     THOST_FTDC_D_Buy,
     THOST_FTDC_D_Sell,
-    THOST_FTDC_PD_Long,
-    THOST_FTDC_PD_Short,
-    THOST_FTDC_OPT_LimitPrice,
-    THOST_FTDC_OPT_AnyPrice,
+    THOST_FTDC_FCC_NotForceClose,
+    THOST_FTDC_HF_Speculation,
+    THOST_FTDC_OAS_Accepted,
+    THOST_FTDC_OAS_Rejected,
+    THOST_FTDC_OAS_Submitted,
     THOST_FTDC_OF_Open,
     THOST_FTDC_OFEN_Close,
-    THOST_FTDC_OFEN_CloseYesterday,
     THOST_FTDC_OFEN_CloseToday,
+    THOST_FTDC_OFEN_CloseYesterday,
+    THOST_FTDC_OPT_AnyPrice,
+    THOST_FTDC_OPT_LimitPrice,
+    THOST_FTDC_OST_AllTraded,
+    THOST_FTDC_OST_Canceled,
+    THOST_FTDC_OST_NoTradeQueueing,
+    THOST_FTDC_OST_PartTradedQueueing,
+    THOST_FTDC_PC_Combination,
     THOST_FTDC_PC_Futures,
     THOST_FTDC_PC_Options,
     THOST_FTDC_PC_SpotOption,
-    THOST_FTDC_PC_Combination,
-    THOST_FTDC_CP_CallOptions,
-    THOST_FTDC_CP_PutOptions,
-    THOST_FTDC_HF_Speculation,
-    THOST_FTDC_CC_Immediately,
-    THOST_FTDC_FCC_NotForceClose,
-    THOST_FTDC_TC_GFD,
-    THOST_FTDC_VC_AV,
-    THOST_FTDC_TC_IOC,
-    THOST_FTDC_VC_CV,
-    THOST_FTDC_AF_Delete
+    THOST_FTDC_PD_Long,
+    THOST_FTDC_PD_Short,
 )
-
 
 # 委托状态映射
 STATUS_TTS2VT: dict[str, Status] = {

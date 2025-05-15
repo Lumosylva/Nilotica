@@ -2,11 +2,10 @@ from collections import defaultdict
 
 import polars as pl
 
-from vnpy.trader.object import BarData, TradeData
-from vnpy.trader.constant import Direction
-from vnpy.trader.utility import round_to
-
 from vnpy.alpha import AlphaStrategy
+from vnpy.trader.constant import Direction
+from vnpy.trader.object import BarData, TradeData
+from vnpy.trader.utility import round_to
 
 
 class EquityDemoStrategy(AlphaStrategy):

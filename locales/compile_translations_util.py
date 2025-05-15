@@ -17,6 +17,7 @@ Use pybabel for compilation
 import subprocess
 from pathlib import Path
 
+
 def compile_translations():
     """
     编译所有语言的翻译文件

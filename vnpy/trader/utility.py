@@ -4,19 +4,19 @@ General utility functions.
 
 import json
 import sys
-from datetime import datetime, time
-from pathlib import Path
 from collections.abc import Callable
+from datetime import datetime, time
 from decimal import Decimal
-from math import floor, ceil
+from math import ceil, floor
+from pathlib import Path
+from zoneinfo import ZoneInfo, available_timezones  # noqa
 
 import numpy as np
 import talib
-from zoneinfo import ZoneInfo, available_timezones      # noqa
 
-from .object import BarData, TickData
 from .constant import Exchange, Interval
 from .locale import _
+from .object import BarData, TickData
 
 
 def extract_vt_symbol(vt_symbol: str) -> tuple[str, Exchange]:

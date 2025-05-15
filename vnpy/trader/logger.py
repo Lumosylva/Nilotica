@@ -1,13 +1,12 @@
 import sys
 from datetime import datetime
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 from pathlib import Path
-from logging import DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 from loguru import logger
 
 from vnpy.trader.setting import SETTINGS
 from vnpy.trader.utility import get_folder_path
-
 
 __all__ = [
     "DEBUG",

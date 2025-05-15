@@ -1,17 +1,17 @@
+import glob  # +++ Add glob import +++
+import json
+import os
+import pickle
+import sys
+import time
+from datetime import datetime, timedelta
 from typing import Optional
 
+import msgpack  # +++ Add msgpack import +++
 import zmq
-import pickle
-import time
-import sys
-import os
-import json
-import msgpack # +++ Add msgpack import +++
-from datetime import datetime, timedelta
-import glob # +++ Add glob import +++
 
-from utils.logger import logger, setup_logging, DEBUG, \
-    INFO  # Assuming logger is configured elsewhere (e.g., run_backtest.py)
+from utils.logger import INFO  # Assuming logger is configured elsewhere (e.g., run_backtest.py)
+from utils.logger import DEBUG, logger, setup_logging
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')) # Go up two levels
@@ -20,10 +20,8 @@ if project_root not in sys.path:
 
 # Import necessary vnpy constants and objects
 try:
-    from vnpy.trader.constant import (
-        Direction, OrderType, Exchange, Offset, Status
-    )
-    from vnpy.trader.object import OrderRequest, TickData, OrderData, TradeData
+    from vnpy.trader.constant import Direction, Exchange, Offset, OrderType, Status
+    from vnpy.trader.object import OrderData, OrderRequest, TickData, TradeData
     VNPY_AVAILABLE = True
 except ImportError:
     VNPY_AVAILABLE = False
@@ -52,7 +50,8 @@ except ImportError:
 # We need these to process incoming requests and format outgoing reports
 
 # +++ Import the converter function +++
-from utils.converter import convert_vnpy_obj_to_dict # UPDATED IMPORT
+from utils.converter import convert_vnpy_obj_to_dict  # UPDATED IMPORT
+
 
 def create_tick_from_dict(tick_dict: dict) -> Optional[TickData]:
     vt_symbol = tick_dict.get('vt_symbol')

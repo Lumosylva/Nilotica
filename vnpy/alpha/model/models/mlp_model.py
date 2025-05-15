@@ -5,18 +5,12 @@ from typing import Literal, cast
 import numpy as np
 import pandas as pd
 import polars as pl
-from sklearn.metrics import mean_squared_error      # type: ignore
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.metrics import mean_squared_error  # type: ignore
 
-from vnpy.alpha import (
-    AlphaDataset,
-    AlphaModel,
-    Segment,
-    logger
-)
-
+from vnpy.alpha import AlphaDataset, AlphaModel, Segment, logger
 
 
 class MlpModel(AlphaModel):

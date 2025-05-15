@@ -1,11 +1,12 @@
 import logging
-from typing import Any, Dict
 from decimal import Decimal, InvalidOperation
+from typing import Any, Dict
+
+from vnpy.trader.constant import Offset, Status
+from vnpy.trader.object import OrderData, TickData, TradeData
 
 # Import base class and vnpy types
 from zmq_services.strategy_base import BaseLiveStrategy
-from vnpy.trader.object import TickData, OrderData, TradeData
-from vnpy.trader.constant import Offset, Status
 
 
 class ThresholdLiveStrategy(BaseLiveStrategy):

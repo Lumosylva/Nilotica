@@ -1,49 +1,49 @@
-import smtplib
 import os
+import smtplib
 import traceback
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from email.message import EmailMessage
 from queue import Empty, Queue
 from threading import Thread
 from typing import TypeVar
-from collections.abc import Callable
 
 from vnpy.event import Event, EventEngine
+
 from .app import BaseApp
+from .converter import OffsetConverter
 from .event import (
-    EVENT_TICK,
-    EVENT_ORDER,
-    EVENT_TRADE,
-    EVENT_POSITION,
     EVENT_ACCOUNT,
     EVENT_CONTRACT,
     EVENT_LOG,
-    EVENT_QUOTE
+    EVENT_ORDER,
+    EVENT_POSITION,
+    EVENT_QUOTE,
+    EVENT_TICK,
+    EVENT_TRADE,
 )
 from .gateway import BaseGateway
+from .locale import _
+from .logger import CRITICAL, DEBUG, ERROR, INFO, WARNING, logger
 from .object import (
+    AccountData,
+    BarData,
     CancelRequest,
+    ContractData,
+    Exchange,
+    HistoryRequest,
     LogData,
+    OrderData,
     OrderRequest,
+    PositionData,
     QuoteData,
     QuoteRequest,
     SubscribeRequest,
-    HistoryRequest,
-    OrderData,
-    BarData,
     TickData,
     TradeData,
-    PositionData,
-    AccountData,
-    ContractData,
-    Exchange
 )
 from .setting import SETTINGS
 from .utility import TRADER_DIR
-from .converter import OffsetConverter
-from .logger import logger, DEBUG, INFO, WARNING, ERROR, CRITICAL
-from .locale import _
-
 
 EngineType = TypeVar("EngineType", bound="BaseEngine")
 

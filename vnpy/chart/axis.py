@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Any
 
-import pyqtgraph as pg      # type: ignore
+import pyqtgraph as pg  # type: ignore
 
-from .manager import BarManager
 from .base import AXIS_WIDTH, NORMAL_FONT, QtGui
+from .manager import BarManager
 
 
 class DatetimeAxis(pg.AxisItem):

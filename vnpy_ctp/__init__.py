@@ -25,7 +25,6 @@ from importlib import metadata
 
 from .gateway import CtpGateway
 
-
 __all__ = ["CtpGateway"]
 
 

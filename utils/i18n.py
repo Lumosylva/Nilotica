@@ -11,8 +11,8 @@
 Encapsulate i18n logic
 """
 import gettext
-import os
 import logging
+import os
 import threading
 
 # 获取一个专门用于i18n模块的logger(Get a logger specifically for the i18n module)

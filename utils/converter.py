@@ -11,17 +11,23 @@
 Tools for converting objects to msgpack serializable.
 """
 
-from typing import Any, Dict, Union, Optional
+import logging
 from datetime import datetime
 from decimal import Decimal
+from typing import Any, Dict, Optional, Union
 
 from utils.i18n import get_translator
-from vnpy.trader.object import TickData, OrderData, TradeData, AccountData, ContractData, LogData, PositionData, \
-    OrderRequest
-from vnpy.trader.constant import Direction, OrderType, Exchange, Offset, Status, Product, OptionType
-
-import logging
-
+from vnpy.trader.constant import Direction, Exchange, Offset, OptionType, OrderType, Product, Status
+from vnpy.trader.object import (
+    AccountData,
+    ContractData,
+    LogData,
+    OrderData,
+    OrderRequest,
+    PositionData,
+    TickData,
+    TradeData,
+)
 from vnpy.trader.utility import extract_vt_symbol
 
 logger = logging.getLogger(__name__)

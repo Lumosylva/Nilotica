@@ -1,7 +1,7 @@
-import time
-import sys
-import os
 import argparse
+import os
+import sys
+import time
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -10,10 +10,10 @@ if project_root not in sys.path:
 
 # +++ Import ConfigManager +++
 from utils.config_manager import ConfigManager
-
-from utils.logger import setup_logging, logger
 from utils.i18n import get_translator
+from utils.logger import logger, setup_logging
 from zmq_services.order_execution_gateway import OrderExecutionGatewayService
+
 
 def main():
     """

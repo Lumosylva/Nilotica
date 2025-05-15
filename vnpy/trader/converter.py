@@ -1,14 +1,8 @@
 from copy import copy
 from typing import TYPE_CHECKING
 
-from .object import (
-    ContractData,
-    OrderData,
-    TradeData,
-    PositionData,
-    OrderRequest
-)
-from .constant import Direction, Offset, Exchange
+from .constant import Direction, Exchange, Offset
+from .object import ContractData, OrderData, OrderRequest, PositionData, TradeData
 
 if TYPE_CHECKING:
     from .engine import OmsEngine

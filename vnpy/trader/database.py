@@ -1,15 +1,14 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
-from types import ModuleType
 from dataclasses import dataclass
+from datetime import datetime
 from importlib import import_module
+from types import ModuleType
 
-from .constant import Interval, Exchange
+from .constant import Exchange, Interval
+from .locale import _
 from .object import BarData, TickData
 from .setting import SETTINGS
 from .utility import ZoneInfo
-from .locale import _
-
 
 DB_TZ = ZoneInfo(SETTINGS["database.timezone"])
 

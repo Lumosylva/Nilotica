@@ -1,18 +1,17 @@
 import configparser
+import copy
+import json
+import os
+from typing import Any, Dict, Optional, Tuple
 
 import yaml
-import os
-import json
-from typing import Any, Dict, Optional, Tuple
-import copy
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
 from config.constants.params import Params
 from config.constants.path import GlobalPath
-from utils.logger import logger
+from utils.config_models import AllStrategiesConfigModel, GlobalConfigStructure
 from utils.i18n import get_translator
-
-from utils.config_models import GlobalConfigStructure, AllStrategiesConfigModel
+from utils.logger import logger
 from vnpy.trader.utility import load_json
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

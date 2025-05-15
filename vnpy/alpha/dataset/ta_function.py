@@ -2,9 +2,9 @@
 Technical Analysis Operators
 """
 
-import talib
-import polars as pl
 import pandas as pd
+import polars as pl
+import talib
 
 from .utility import DataProxy
 

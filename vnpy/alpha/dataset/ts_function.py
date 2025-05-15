@@ -4,9 +4,9 @@ Time Series Operators
 
 from typing import cast
 
-from scipy import stats     # type: ignore
-import polars as pl
 import numpy as np
+import polars as pl
+from scipy import stats  # type: ignore
 
 from .utility import DataProxy
 

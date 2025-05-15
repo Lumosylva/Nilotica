@@ -7,25 +7,28 @@
 @Author     : Donny
 @Email      : donnymoving@gmail.com
 @Software   : PyCharm
-@Description: 一个简单的基类，用于管理 ZMQ Context 和 PUB Socket，并提供发布方法。
-A simple base class for managing ZMQ Context and PUB Socket, and providing publishing methods.
+@Description: 一个简单的基类, 用于管理 ZMQ Context 和 PUB Socket, 并提供发布方法。
+A simple base class for managing ZMQ Context and PUB Socket, and providing
+publishing methods.
 """
-import zmq
-import msgpack
 import threading
 import time
-from utils.logger import logger
+
+import msgpack
+import zmq
+
 from utils.i18n import get_translator
+from utils.logger import logger
 
 
 class ZmqPublisherBase:
 
     def __init__(self):
         self._context: zmq.Context = zmq.Context()
-        self._socket_pub: zmq.Socket | None = None # PUB socket
+        self._socket_pub: zmq.Socket | None = None  # PUB socket
         self._pub_address: str | None = None
         self._active: bool = False
-        self._lock: threading.Lock = threading.Lock() # 用于保护 socket 访问
+        self._lock: threading.Lock = threading.Lock()  # 用于保护 socket 访问
         self._ = get_translator()
 
     def is_active(self) -> bool:
@@ -40,7 +43,7 @@ class ZmqPublisherBase:
             pub_address: PUB socket 需要绑定的地址 (e.g., "tcp://*:5555").
 
         Returns:
-            True 如果成功启动，False 如果已在运行或启动失败。
+            True 如果成功启动, False 如果已在运行或启动失败。
         """
         if self._active:
             logger.warning(self._("{} 已在运行中。").format(self.__class__.__name__))

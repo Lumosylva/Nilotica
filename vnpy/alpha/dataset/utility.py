@@ -111,26 +111,27 @@ class DataProxy:
 def calculate_by_expression(df: pl.DataFrame, expression: str) -> pl.DataFrame:
     """Execute calculation based on expression"""
     # Import operators locally to avoid polluting global namespace
-    from .ts_function import (              # noqa
-        ts_delay,
-        ts_min, ts_max,
-        ts_argmax, ts_argmin,
-        ts_rank, ts_sum,
-        ts_mean, ts_std,
-        ts_slope, ts_quantile,
-        ts_rsquare, ts_resi,
+    from .cs_function import cs_mean, cs_rank, cs_std  # noqa
+    from .ta_function import ta_atr, ta_rsi  # noqa
+    from .ts_function import (  # noqa
+        ts_abs,
+        ts_argmax,
+        ts_argmin,
         ts_corr,
-        ts_less, ts_greater,
-        ts_log, ts_abs
-    )
-    from .cs_function import (              # noqa
-        cs_rank,
-        cs_mean,
-        cs_std
-    )
-    from .ta_function import (              # noqa
-        ta_rsi,
-        ta_atr
+        ts_delay,
+        ts_greater,
+        ts_less,
+        ts_log,
+        ts_max,
+        ts_mean,
+        ts_min,
+        ts_quantile,
+        ts_rank,
+        ts_resi,
+        ts_rsquare,
+        ts_slope,
+        ts_std,
+        ts_sum,
     )
 
     # Extract feature objects to local space

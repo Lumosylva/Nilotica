@@ -1,23 +1,21 @@
 import logging
-import sys
 import os
+import sys
 import threading
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from utils.logger import logger
 from utils.config_manager import ConfigManager
 from utils.i18n import get_translator
-
-from vnpy.trader.utility import load_json
-from vnpy.event import EventEngine, Event
-from vnpy.trader.object import TickData, SubscribeRequest, LogData, ContractData
-from vnpy.trader.event import EVENT_TICK, EVENT_LOG, EVENT_CONTRACT
-from vnpy_ctp import CtpGateway
+from utils.logger import logger
+from vnpy.event import Event, EventEngine
 from vnpy.trader.constant import Exchange
-
+from vnpy.trader.event import EVENT_CONTRACT, EVENT_LOG, EVENT_TICK
+from vnpy.trader.object import ContractData, LogData, SubscribeRequest, TickData
+from vnpy.trader.utility import load_json
+from vnpy_ctp import CtpGateway
 
 from .zmq_base import ZmqPublisherBase
 

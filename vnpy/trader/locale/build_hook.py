@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 from babel.messages.mofile import write_mo
 from babel.messages.pofile import read_po
+from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
 class LocaleBuildHook(BuildHookInterface):

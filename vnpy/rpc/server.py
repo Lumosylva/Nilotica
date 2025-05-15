@@ -1,12 +1,12 @@
 import threading
 import traceback
-from time import time
 from collections.abc import Callable
+from time import time
 
-import zmq
 import msgpack
+import zmq
 
-from .common import HEARTBEAT_TOPIC, HEARTBEAT_INTERVAL
+from .common import HEARTBEAT_INTERVAL, HEARTBEAT_TOPIC
 
 
 class RpcServer:

@@ -1,6 +1,5 @@
 from vnpy.trader.ui import QtGui
 
-
 WHITE_COLOR = (255, 255, 255)
 BLACK_COLOR = (0, 0, 0)
 GREY_COLOR = (100, 100, 100)

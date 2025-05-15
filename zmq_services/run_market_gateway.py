@@ -1,17 +1,17 @@
-import time
-import sys
-import os
 import argparse
+import os
+import sys
+import time
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from config.constants.path import GlobalPath  # For project_root fallback
 from utils.config_manager import ConfigManager
-from utils.i18n import setup_language, get_translator
-from utils.logger import setup_logging, logger
-from config.constants.path import GlobalPath # For project_root fallback
+from utils.i18n import get_translator, setup_language
+from utils.logger import logger, setup_logging
 from zmq_services.market_data_gateway import MarketDataGatewayService
 
 

@@ -16,11 +16,9 @@ from typing import Optional
 
 from loguru import logger
 
+from utils.i18n import get_translator
 from vnpy.trader.setting import SETTINGS
 from vnpy.trader.utility import get_folder_path
-
-from utils.i18n import get_translator
-
 
 # --- Default Configuration ---
 DEFAULT_LOG_FORMAT = (

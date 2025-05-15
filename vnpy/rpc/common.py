@@ -1,6 +1,5 @@
 import signal
 
-
 # Achieve Ctrl-c interrupt recv
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 

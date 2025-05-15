@@ -1,21 +1,21 @@
-from collections import defaultdict
-from datetime import date, datetime
-from copy import copy
-from typing import cast
 import traceback
+from collections import defaultdict
+from copy import copy
+from datetime import date, datetime
+from typing import cast
 
 import numpy as np
+import plotly.graph_objects as go  # type: ignore
 import polars as pl
-import plotly.graph_objects as go               # type: ignore
-from plotly.subplots import make_subplots       # type: ignore
-from tqdm import tqdm                           # type: ignore
+from plotly.subplots import make_subplots  # type: ignore
+from tqdm import tqdm  # type: ignore
 
-from vnpy.trader.constant import Direction, Offset, Interval, Status
-from vnpy.trader.object import OrderData, TradeData, BarData
-from vnpy.trader.utility import round_to, extract_vt_symbol
+from vnpy.trader.constant import Direction, Interval, Offset, Status
+from vnpy.trader.object import BarData, OrderData, TradeData
+from vnpy.trader.utility import extract_vt_symbol, round_to
 
-from ..logger import logger
 from ..lab import AlphaLab
+from ..logger import logger
 from .template import AlphaStrategy
 
 

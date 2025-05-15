@@ -1,12 +1,12 @@
 import threading
-from time import time
 from functools import lru_cache
+from time import time
 from typing import Any
 
-import zmq
 import msgpack
+import zmq
 
-from .common import HEARTBEAT_TOPIC, HEARTBEAT_TOLERANCE
+from .common import HEARTBEAT_TOLERANCE, HEARTBEAT_TOPIC
 
 
 class RemoteException(Exception):

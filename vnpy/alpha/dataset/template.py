@@ -1,23 +1,18 @@
 import time
-from datetime import datetime
-from typing import cast
 from collections.abc import Callable
+from datetime import datetime
 from multiprocessing import get_context
 from multiprocessing.context import BaseContext
+from typing import cast
 
-import polars as pl
 import pandas as pd
-from tqdm import tqdm                                               # type: ignore
-from alphalens.utils import get_clean_factor_and_forward_returns    # type: ignore
-from alphalens.tears import create_full_tear_sheet                  # type: ignore
+import polars as pl
+from alphalens.tears import create_full_tear_sheet  # type: ignore
+from alphalens.utils import get_clean_factor_and_forward_returns  # type: ignore
+from tqdm import tqdm  # type: ignore
 
 from ..logger import logger
-from .utility import (
-    to_datetime,
-    Segment,
-    calculate_by_expression,
-    calculate_by_polars
-)
+from .utility import Segment, calculate_by_expression, calculate_by_polars, to_datetime
 
 
 class AlphaDataset:

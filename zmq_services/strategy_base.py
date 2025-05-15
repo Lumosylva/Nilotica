@@ -11,17 +11,18 @@
 Abstract base class for live trading strategies operating in the ZMQ/RPC environment.
 Designed to be driven by tick data.
 """
-from abc import ABCMeta, abstractmethod
-from typing import Any, Optional, Dict, Set, Union
 import logging
-from decimal import Decimal, InvalidOperation
-from utils.logger import setup_logging, logger
 import pickle
-import zmq
-import msgpack
-from vnpy.trader.constant import Direction, Offset, Exchange, Status, OrderType
+from abc import ABCMeta, abstractmethod
+from decimal import Decimal, InvalidOperation
+from typing import Any, Dict, Optional, Set, Union
 
-from vnpy.trader.object import TickData, OrderData, TradeData
+import msgpack
+import zmq
+
+from utils.logger import logger, setup_logging
+from vnpy.trader.constant import Direction, Exchange, Offset, OrderType, Status
+from vnpy.trader.object import OrderData, TickData, TradeData
 from zmq_services.strategy_engine import StrategyEngine
 
 

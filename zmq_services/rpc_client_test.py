@@ -1,9 +1,10 @@
-import zmq
-import time
 import pprint
+import time
+
+import zmq
 
 # Import necessary VNPY enums
-from vnpy.trader.constant import Direction, OrderType, Exchange, Offset
+from vnpy.trader.constant import Direction, Exchange, Offset, OrderType
 
 # Gateway REP server address (replace localhost if server is on a different machine)
 SERVER_REP_ADDRESS = "tcp://localhost:5558"

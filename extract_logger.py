@@ -14,6 +14,7 @@ import json
 import re
 import sys
 
+
 def extract_log_messages(py_file_path) -> list:
     """
     提取 Python 中 logger.info("xxx")... 或 logger.info(self._("xxx")) 或 logger.info(_("xxx")) 双引号包裹的字符串。
@@ -23,7 +24,7 @@ def extract_log_messages(py_file_path) -> list:
     3. logger.info(_("message"))、logger.debug(_("message"))...
     """
     try:
-        with open(py_file_path, 'r', encoding='utf-8') as file:
+        with open(py_file_path, "r", encoding="utf-8") as file:
             content = file.read()
 
         # 使用正则表达式匹配三种格式：
@@ -58,7 +59,7 @@ if __name__ == "__main__":
         for idx, message in enumerate(log_messages, 1):
             print(f"{idx}. {message}")
         data_dict = {key: "" for key in log_messages}  # 创建字典，键来自列表，初始值为空字
-        with open(output_file, 'w', encoding='utf-8') as json_file:
+        with open(output_file, "w", encoding="utf-8") as json_file:
             json.dump(data_dict, json_file, ensure_ascii=False, indent=4)
         print("JSON文件已创建")
     else:

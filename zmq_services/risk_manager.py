@@ -1,13 +1,16 @@
-from typing import Dict, Any
-import zmq
-import time
-import sys
 import os
 import pickle
-import msgpack # Add msgpack import
-from datetime import datetime, time as dt_time, timedelta # Add timedelta
-from decimal import Decimal # Add Decimal for potential future use
+import sys
+import time
 from collections import defaultdict, deque
+from datetime import datetime
+from datetime import time as dt_time  # Add timedelta
+from datetime import timedelta
+from decimal import Decimal  # Add Decimal for potential future use
+from typing import Any, Dict
+
+import msgpack  # Add msgpack import
+import zmq
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -17,13 +20,21 @@ if project_root not in sys.path:
 # +++ Import ConfigManager +++
 from utils.config_manager import ConfigManager
 from utils.logger import logger
+
 # --- Remove old config import --- 
 # from config import zmq_config as config
 
 # Import necessary vnpy constants and objects
 try:
-    from vnpy.trader.constant import Direction, Status, Exchange, Offset, OrderType, Product, OptionType
-    from vnpy.trader.object import PositionData, TradeData, OrderData, AccountData, LogData, ContractData # Import ContractData
+    from vnpy.trader.constant import Direction, Exchange, Offset, OptionType, OrderType, Product, Status
+    from vnpy.trader.object import (  # Import ContractData
+        AccountData,
+        ContractData,
+        LogData,
+        OrderData,
+        PositionData,
+        TradeData,
+    )
 except ImportError:
     print("无法导入 vnpy 模块，请确保 vnpy 已安装。Risk Manager 功能可能受限。")
     # Define fallback constants/classes if needed for basic operation

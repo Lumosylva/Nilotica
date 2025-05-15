@@ -1,12 +1,13 @@
-import sys
-import os
 import argparse
+import os
+import sys
 from datetime import datetime
+
+# +++ Import ConfigManager +++
+from utils.config_manager import ConfigManager
 
 # +++ Add Logger Import and Setup +++
 from utils.logger import logger, setup_logging
-# +++ Import ConfigManager +++
-from utils.config_manager import ConfigManager
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')) # Go up two levels
@@ -15,6 +16,7 @@ if project_root not in sys.path:
 
 # Import the service class
 from zmq_services.backtester.data_player import DataPlayerService
+
 # --- Remove old config import --- 
 # from config import zmq_config as config
 

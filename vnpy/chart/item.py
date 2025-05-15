@@ -1,11 +1,11 @@
 from abc import abstractmethod
 
-import pyqtgraph as pg      # type: ignore
+import pyqtgraph as pg  # type: ignore
 
-from vnpy.trader.ui import QtCore, QtGui, QtWidgets
 from vnpy.trader.object import BarData
+from vnpy.trader.ui import QtCore, QtGui, QtWidgets
 
-from .base import BLACK_COLOR, UP_COLOR, DOWN_COLOR, PEN_WIDTH, BAR_WIDTH
+from .base import BAR_WIDTH, BLACK_COLOR, DOWN_COLOR, PEN_WIDTH, UP_COLOR
 from .manager import BarManager
 
 

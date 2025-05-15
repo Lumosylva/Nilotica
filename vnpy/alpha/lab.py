@@ -1,19 +1,19 @@
 import json
-import shelve
 import pickle
-from pathlib import Path
-from datetime import datetime, timedelta
+import shelve
 from collections import defaultdict
+from datetime import datetime, timedelta
 from functools import lru_cache
+from pathlib import Path
 
 import polars as pl
 
-from vnpy.trader.object import BarData
 from vnpy.trader.constant import Interval
+from vnpy.trader.object import BarData
 from vnpy.trader.utility import extract_vt_symbol
 
-from .logger import logger
 from .dataset import AlphaDataset, to_datetime
+from .logger import logger
 from .model import AlphaModel
 
 
