@@ -8,7 +8,7 @@
 
 中文 | [ENGLISH](README_EN.md)
 
-_✨ 基于vnpy的期货量化交易系统 ✨_
+_✨ 基于 vnpy 的期货量化交易系统 ✨_
 
 </div>
 
