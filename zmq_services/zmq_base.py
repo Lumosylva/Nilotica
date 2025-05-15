@@ -18,12 +18,13 @@ import msgpack
 import zmq
 
 from utils.i18n import get_translator
-from utils.logger import logger
+from utils.logger import logger, setup_logging, INFO
 
 
 class ZmqPublisherBase:
 
     def __init__(self):
+        setup_logging(service_name=__class__.__name__, level=INFO)
         self._context: zmq.Context = zmq.Context()
         self._socket_pub: zmq.Socket | None = None  # PUB socket
         self._pub_address: str | None = None

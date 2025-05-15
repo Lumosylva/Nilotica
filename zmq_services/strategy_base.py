@@ -11,7 +11,6 @@
 Abstract base class for live trading strategies operating in the ZMQ/RPC environment.
 Designed to be driven by tick data.
 """
-import logging
 import pickle
 from abc import ABCMeta, abstractmethod
 from decimal import Decimal, InvalidOperation
@@ -20,7 +19,7 @@ from typing import Any, Dict, Optional, Set, Union
 import msgpack
 import zmq
 
-from utils.logger import logger, setup_logging
+from utils.logger import logger, setup_logging, INFO
 from vnpy.trader.constant import Direction, Exchange, Offset, OrderType, Status
 from vnpy.trader.object import OrderData, TickData, TradeData
 from zmq_services.strategy_engine import StrategyEngine
@@ -42,13 +41,11 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         vt_symbol: str,                  # 该策略交易的主要合约(The primary symbol this strategy trades)
         setting: Dict[str, Any]          # 策略参数(Strategy parameters)
     ) -> None:
-        """Constructor"""
         self.strategy_engine: StrategyEngine = strategy_engine
         self.strategy_name: str = strategy_name
         self.vt_symbol: str = vt_symbol
         self.setting: Dict[str, Any] = setting
-
-        setup_logging(service_name=f"{self.__class__.__name__}.{self.strategy_name}", level=logging.INFO)
+        setup_logging(service_name=f"{self.__class__.__name__}[{self.strategy_name}]", level=INFO)
 
         # 策略状态变量(Strategy state variables)
         self.inited: bool = False
@@ -60,7 +57,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         self.entry_price: Optional[Decimal] = None # 当前仓位的平均入场价(Average entry price of the current position)
         self.entry_cost: Decimal = Decimal("0.0")  # 当前仓位总成本(Total cost of the current position)
 
-        self.write_log("Applying strategy settings...", logging.DEBUG)
+        logger.debug("Applying strategy settings...")
         for key, value in setting.items():
             try:
                 target_type = None
@@ -69,7 +66,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 # 从类注释中获取预期类型(Get expected type from class annotations)
                 annotations = getattr(self.__class__, '__annotations__', {})
                 detected_annotation = annotations.get(key)
-                self.write_log(f"[Setting Loop] Key: '{key}', Value: '{value}' (Type: {type(value)}), Detected Annotation: {detected_annotation}", logging.DEBUG)
+                logger.debug(f"[Setting Loop] Key: '{key}', Value: '{value}' (Type: {type(value)}), Detected Annotation: {detected_annotation}")
 
                 if detected_annotation:
                     target_type = detected_annotation
@@ -108,7 +105,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                          if isinstance(value, str):
                              final_value_to_set = int(value)
                          elif isinstance(value, float):
-                              self.write_log(f"[Setting Loop] Converting float setting '{key}' value {value} to int.", logging.DEBUG)
+                              logger.debug(f"[Setting Loop] Converting float setting '{key}' value {value} to int.")
                               final_value_to_set = int(value)
                          elif isinstance(value, int):
                                final_value_to_set = value
@@ -150,11 +147,11 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 setattr(self, key, final_value_to_set)
                 # 设置后的调试日志(Debug log after setting)
                 actual_value = getattr(self, key)
-                self.write_log(f"[Setting Loop] Successfully set '{key}' to {actual_value} (Type: {type(actual_value)})", logging.DEBUG)
+                logger.debug(f"[Setting Loop] Successfully set '{key}' to {actual_value} (Type: {type(actual_value)})")
 
             except (ValueError, TypeError, InvalidOperation) as e:
-                 self.write_log(f"[Setting Loop] Failed to apply setting '{key}'='{value}'. Error: {e}", logging.WARNING)
-        self.write_log("Finished applying strategy settings.", logging.DEBUG)
+                 logger.debug(f"[Setting Loop] Failed to apply setting '{key}'='{value}'. Error: {e}")
+        logger.debug("Finished applying strategy settings.")
         # --- End Apply Settings ---
 
     #----------------------------------------------------------------------
@@ -244,57 +241,49 @@ class BaseLiveStrategy(metaclass=ABCMeta):
     # 标准交易方法（由基类提供）
     # Standard Trading Methods (Provided by Base Class)
     #----------------------------------------------------------------------
-    def buy(self, price: float, volume: float, lock: bool = False, **kwargs) -> Optional[str]:
+    def buy(self, price: float, volume: float) -> Optional[str]:
         """
         发送买入未平仓订单。
 
         Send buy open order.
         :param price:
         :param volume:
-        :param lock:
-        :param kwargs:
         :return:
         """
-        return self.send_order(Direction.LONG, Offset.OPEN, price, volume, lock, **kwargs)
+        return self.send_order(Direction.LONG, Offset.OPEN, price, volume)
 
-    def sell(self, price: float, volume: float, lock: bool = False, **kwargs) -> Optional[str]:
+    def sell(self, price: float, volume: float) -> Optional[str]:
         """
         发送卖出平仓订单。
 
         Send sell close order.
         :param price:
         :param volume:
-        :param lock:
-        :param kwargs:
         :return:
         """
-        return self.send_order(Direction.SHORT, Offset.CLOSE, price, volume, lock, **kwargs)
+        return self.send_order(Direction.SHORT, Offset.CLOSE, price, volume)
 
-    def short(self, price: float, volume: float, lock: bool = False, **kwargs) -> Optional[str]:
+    def short(self, price: float, volume: float) -> Optional[str]:
         """
         发送空仓订单。
 
         Send short open order.
         :param price:
         :param volume:
-        :param lock:
-        :param kwargs:
         :return:
         """
-        return self.send_order(Direction.SHORT, Offset.OPEN, price, volume, lock, **kwargs)
+        return self.send_order(Direction.SHORT, Offset.OPEN, price, volume)
 
-    def cover(self, price: float, volume: float, lock: bool = False, **kwargs) -> Optional[str]:
+    def cover(self, price: float, volume: float) -> Optional[str]:
         """
         发送买入平仓订单。
 
         Send buy close order.
         :param price:
         :param volume:
-        :param lock:
-        :param kwargs:
         :return:
         """
-        return self.send_order(Direction.LONG, Offset.CLOSE, price, volume, lock, **kwargs)
+        return self.send_order(Direction.LONG, Offset.CLOSE, price, volume)
 
     def send_order(
         self,
@@ -302,8 +291,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         offset: Offset,
         price: float,
         volume: float,
-        lock: bool = False, # Notice: 如果需要，实现位置锁定(Implement position locking if needed)
-        **kwargs
+        # Notice: 如果需要，实现位置锁定(Implement position locking if needed)
     ) -> Optional[str]:
         """
         向交易引擎发送限价订单。
@@ -313,8 +301,6 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         :param offset:
         :param price:
         :param volume:
-        :param lock:
-        :param kwargs:
         :return:
         """
         if not self.trading:
@@ -483,18 +469,6 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         """
         return self.entry_price
 
-    def write_log(self, msg: str, level: int = logging.INFO) -> None:
-        """
-        编写以策略名称为前缀的日志消息。
-
-        Write a log message prefixed with strategy name.
-        :param msg:
-        :param level:
-        :return:
-        """
-        # 注意：记录器已经包含策略名称
-        # Note: The logger already includes the strategy name
-        logger.log(level, f"[{self.strategy_name}] {msg}")
 
     def _update_pos(self, trade: TradeData) -> None:
         """
@@ -513,37 +487,33 @@ class BaseLiveStrategy(metaclass=ABCMeta):
              try:
                  trade_volume_float = float(trade_volume_float)
              except (ValueError, TypeError):
-                 self.write_log(f"_update_pos: Could not convert trade volume '{trade.volume}' to float. Ignoring trade {trade.vt_tradeid}.", logging.ERROR)
+                 logger.error(f"_update_pos: Could not convert trade volume '{trade.volume}' to float. Ignoring trade {trade.vt_tradeid}.")
                  return
         try:
             trade_volume = Decimal(str(trade_volume_float))
         except (InvalidOperation, ValueError, TypeError) as e:
-             self.write_log(f"_update_pos: Could not convert trade volume float '{trade_volume_float}' to Decimal: {e}. Ignoring trade {trade.vt_tradeid}.", logging.ERROR)
+             logger.error(f"_update_pos: Could not convert trade volume float '{trade_volume_float}' to Decimal: {e}. Ignoring trade {trade.vt_tradeid}.")
              return
         if trade_volume.is_zero():
-            # self.write_log(f"_update_pos: Ignoring trade {trade.vt_tradeid} with zero volume.", logging.DEBUG) # Often noisy
             return
         # --- End Get Trade Volume ---
 
         # --- 获取交易价格（Decimal）[Get Trade Price (Decimal)] ---
         trade_price_float = getattr(trade, 'price', None)
         if trade_price_float is None:
-            self.write_log(f"_update_pos: Trade {trade.vt_tradeid} has no price. Ignoring entry price update.", logging.WARNING)
+            logger.warning(f"_update_pos: Trade {trade.vt_tradeid} has no price. Ignoring entry price update.")
             trade_price = None # Indicate price is unavailable
         else:
             try:
                 trade_price = Decimal(str(trade_price_float))
             except (InvalidOperation, ValueError, TypeError) as e:
-                 self.write_log(f"_update_pos: Could not convert trade price float '{trade_price_float}' to Decimal: {e}. Ignoring entry price update for trade {trade.vt_tradeid}.", logging.ERROR)
+                 logger.error(f"_update_pos: Could not convert trade price float '{trade_price_float}' to Decimal: {e}. Ignoring entry price update for trade {trade.vt_tradeid}.")
                  trade_price = None # Indicate price is unavailable/invalid
         # --- End Get Trade Price ---
 
         previous_pos = self.pos
         previous_entry_cost = self.entry_cost # Store previous cost
         previous_entry_price = self.entry_price # Store previous entry price
-        pos_change = Decimal("0.0")
-
-        # self.write_log(f"_update_pos: Processing Trade={trade.vt_tradeid}, Direction={repr(trade.direction)}, Offset={repr(trade.offset)}, Volume={trade_volume}, Price={trade_price}", logging.DEBUG)
 
         direction_value = getattr(trade.direction, 'value', None)
         offset_value = getattr(trade.offset, 'value', None)
@@ -554,7 +524,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         elif direction_value == Direction.SHORT.value: # Sell
             pos_change = -trade_volume
         else:
-            self.write_log(f"_update_pos: Unknown or invalid direction value: {direction_value} for trade {trade.vt_tradeid}", logging.ERROR)
+            logger.error(f"_update_pos: Unknown or invalid direction value: {direction_value} for trade {trade.vt_tradeid}")
             return
 
         # --- 应用仓位变更(Apply position change) ---
@@ -562,7 +532,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             self.pos += pos_change
             current_pos = self.pos
         except Exception as e:
-            self.write_log(f"_update_pos: Error during Decimal position update arithmetic: {e}. Pos: {previous_pos}, Change: {pos_change}", logging.ERROR)
+            logger.error(f"_update_pos: Error during Decimal position update arithmetic: {e}. Pos: {previous_pos}, Change: {pos_change}")
             return
 
         # --- 更新入场成本和价格（仅当 trade_price 有效时）[Update Entry Cost and Price (Only if trade_price is valid)] ---
@@ -574,7 +544,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     # 情况 1：平至非平（开盘第一回合）[Case 1: Flat to Non-Flat (Opening first leg)]
                     self.entry_cost = cost_of_this_trade
                     self.entry_price = trade_price
-                    self.write_log(f"_update_pos: Position opened. EntryCost={self.entry_cost:.4f}, EntryPrice={self.entry_price:.4f}", logging.DEBUG)
+                    logger.debug(f"_update_pos: Position opened. EntryCost={self.entry_cost:.4f}, EntryPrice={self.entry_price:.4f}")
 
                 elif not previous_pos.is_zero() and not current_pos.is_zero() and (previous_pos * current_pos > 0):
                     # 情况 2 和 3：添加或部分关闭（同方向）[Case 2 & 3: Adding or Partially Closing (Same Direction)]
@@ -583,9 +553,9 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                         self.entry_cost = previous_entry_cost + cost_of_this_trade
                         if not current_pos.is_zero(): # 这里不应该为零，但无论如何都要检查(Should not be zero here, but check anyway)
                             self.entry_price = self.entry_cost / current_pos.copy_abs()
-                            self.write_log(f"_update_pos: Position increased. New EntryCost={self.entry_cost:.4f}, New EntryPrice={self.entry_price:.4f}", logging.DEBUG)
+                            logger.debug(f"_update_pos: Position increased. New EntryCost={self.entry_cost:.4f}, New EntryPrice={self.entry_price:.4f}")
                         else: # Safety fallback
-                             self.write_log(f"_update_pos: Position zero unexpectedly after adding. Resetting entry cost/price.", logging.WARNING)
+                             logger.warning(f"_update_pos: Position zero unexpectedly after adding. Resetting entry cost/price.")
                              self.entry_cost = Decimal("0.0")
                              self.entry_price = None
 
@@ -597,10 +567,10 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                              self.entry_cost = previous_entry_cost - cost_reduction
                              # 入场价格保持不变(Entry price remains unchanged)
                              self.entry_price = previous_entry_price
-                             self.write_log(f"_update_pos: Position partially closed. New EntryCost={self.entry_cost:.4f}, EntryPrice remains {self.entry_price:.4f}", logging.DEBUG)
+                             logger.debug(f"_update_pos: Position partially closed. New EntryCost={self.entry_cost:.4f}, EntryPrice remains {self.entry_price:.4f}")
                          else:
                              # 如果 pos > 0 则不应该发生，但要采取防御措施(Should not happen if pos > 0, but handle defensively)
-                             self.write_log(f"_update_pos: Cannot reduce cost - previous entry price is missing! Cost remains {previous_entry_cost:.4f}, Price remains None.", logging.WARNING)
+                             logger.warning(f"_update_pos: Cannot reduce cost - previous entry price is missing! Cost remains {previous_entry_cost:.4f}, Price remains None.")
                              self.entry_cost = previous_entry_cost
                              self.entry_price = None
                     # 否则：交易量不变？交易量非零时不应发生这种情况
@@ -610,7 +580,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     # 情况 4：非平缓至平缓（收盘最后一段）[Case 4: Non-Flat to Flat (Closing last leg)]
                     self.entry_cost = Decimal("0.0")
                     self.entry_price = None
-                    self.write_log(f"_update_pos: Position closed. EntryCost reset to 0, EntryPrice reset to None.", logging.DEBUG)
+                    logger.debug(f"_update_pos: Position closed. EntryCost reset to 0, EntryPrice reset to None.")
 
                 # --- 用乘法检查代替 .sign() 检查(Replace .sign() check with multiplication check) ---
                 # elif previous_pos.sign() != current_pos.sign():
@@ -626,7 +596,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     self.entry_cost = trade_price * current_pos.copy_abs() 
                     # --- End Correction ---
                     self.entry_price = trade_price # New position entry price is the flip trade price
-                    self.write_log(f"_update_pos: Position flipped. New EntryCost={self.entry_cost:.4f}, New EntryPrice={self.entry_price:.4f}", logging.DEBUG)
+                    logger.debug(f"_update_pos: Position flipped. New EntryCost={self.entry_cost:.4f}, New EntryPrice={self.entry_price:.4f}")
 
                 # --- 健全性检查/舍入（可选但推荐）[Sanity Check/Rounding (Optional but recommended)] ---
                 # 如果位置非常接近零，则重置成本/价格(If position is very close to zero, reset cost/price)
@@ -639,7 +609,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 #     self.entry_price = self.entry_price.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP) # Adjust precision as needed
 
             except Exception as e_entry_price:
-                self.write_log(f"_update_pos: Error calculating entry cost/price: {e_entry_price}", logging.ERROR)
+                logger.error(f"_update_pos: Error calculating entry cost/price: {e_entry_price}")
                 # 为安全起见，发生错误时重置？(Reset on error for safety?)
                 self.entry_cost = Decimal("0.0")
                 self.entry_price = None
@@ -648,11 +618,10 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         # --- 记录仓位更新(Log the position update) ---
         log_entry_price = f" EntryPrice={self.entry_price:.4f}" if self.entry_price is not None else " EntryPrice=None"
         log_entry_cost = f" EntryCost={self.entry_cost:.4f}" # Always log cost
-        self.write_log(
+        logger.info(
             f"Position Update: Symbol={trade.vt_symbol}, TradeID={trade.vt_tradeid}, "
             f"DirectionValue={direction_value}, OffsetValue={offset_value}, Price={trade.price}, Volume={trade_volume}. "
-            f"PrevPos={previous_pos}, Change={pos_change}, NewPos={current_pos}.{log_entry_cost}{log_entry_price}",
-            logging.INFO
+            f"PrevPos={previous_pos}, Change={pos_change}, NewPos={current_pos}.{log_entry_cost}{log_entry_price}"
         )
 
     def _update_active_orders(self, order: OrderData) -> None:
@@ -670,7 +639,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             # If order is now inactive, and we were tracking it, remove it.
             if not order.is_active() and is_active_order:
                 self.active_orders.remove(order.vt_orderid)
-                self.write_log(f"Order {order.vt_orderid} removed from active list (Status: {order.status}). Active count: {len(self.active_orders)}.", logging.DEBUG)
+                logger.debug(f"Order {order.vt_orderid} removed from active list (Status: {order.status}). Active count: {len(self.active_orders)}.")
             # 如果订单现在处于活动状态并且我们尚未跟踪它，请添加它。
             # 这处理了真实 ID 在回测中到达或实时订单出现的情况。
             # If order is now active, and we were NOT tracking it, add it.
@@ -680,9 +649,9 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                  # Check status to avoid adding already cancelled/rejected orders if initial update was missed
                  if order.status not in [Status.CANCELLED, Status.REJECTED]:
                       self.active_orders.add(order.vt_orderid)
-                      self.write_log(f"Order {order.vt_orderid} added to active list (Status: {order.status}). Active count: {len(self.active_orders)}.", logging.DEBUG)
+                      logger.debug(f"Order {order.vt_orderid} added to active list (Status: {order.status}). Active count: {len(self.active_orders)}.")
                  else:
-                      self.write_log(f"Order {order.vt_orderid} update received but status is {order.status}, not adding to active list.", logging.DEBUG)
+                      logger.debug(f"Order {order.vt_orderid} update received but status is {order.status}, not adding to active list.")
         # 如果订单属于另一个合约，则忽略此实例的活动订单跟踪。
         # If order belongs to another symbol, ignore for active order tracking of this instance.
 
@@ -700,7 +669,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         self.inited = True
         try:
             self.on_init()
-            self.write_log("策略初始化完成")
+            logger.info("策略初始化完成")
         except Exception as e:
              logger.exception(f"Error during on_init: {e}")
              self.inited = False # Mark as failed initialization
@@ -722,7 +691,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         self.trading = True
         try:
             self.on_start()
-            self.write_log("策略启动")
+            logger.info("策略启动")
         except Exception as e:
             logger.exception(f"Error during on_start: {e}")
             self.trading = False # Mark as failed start
@@ -744,8 +713,8 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             try:
                 self.cancel_all() # Ensure all orders are cancelled on stop
                 self.on_stop()
-                self.write_log("策略停止")
+                logger.info("策略停止")
             except Exception as e:
                 logger.exception(f"Error during on_stop or cancel_all: {e}")
         else:
-             self.write_log("策略停止 (未曾启动或启动失败)")
+             logger.info("策略停止 (未曾启动或启动失败)")
