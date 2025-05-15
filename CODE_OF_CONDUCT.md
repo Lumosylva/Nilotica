@@ -1,157 +1,95 @@
-# Contributor Covenant Code of Conduct
+# Nilotica 贡献者契约行为准则
 
-## Our Pledge
+## 我们的承诺
 
-We as members, contributors, and leaders pledge to make participation in our
-community a harassment-free experience for everyone, regardless of age, body
-size, visible or invisible disability, ethnicity, sex characteristics, gender
-identity and expression, level of experience, education, socio-economic status,
-nationality, personal appearance, race, caste, color, religion, or sexual
-identity and orientation.
+身为项目成员、贡献者和负责人，我们保证参与此社区的每个人都不受骚扰，无论其年龄、体型、可见或不可见的残疾、种族、性别特征、性别认同和表达、经验水平、教育程度、社会经济地位、国籍、外貌、种族、种姓、肤色、宗教信仰或性取向如何。
 
-We pledge to act and interact in ways that contribute to an open, welcoming,
-diverse, inclusive, and healthy community.
+我们承诺以有助于构建一个开放、友好、多元、包容和健康的社区的方式行事和互动。
 
-## Our Standards
+## 我们的准则
 
-Examples of behavior that contributes to a positive environment for our
-community include:
+有助于为我们的社区营造积极环境的行为包括但不限于：
 
-* Demonstrating empathy and kindness toward other people.
-* Being respectful of differing opinions, viewpoints, and experiences.
-* Giving and gracefully accepting constructive feedback.
-* Accepting responsibility and apologizing to those affected by our mistakes,
-  and learning from the experience.
-* Focusing on what is best not just for us as individuals, but for the overall
-  community.
+* 对他人表现出同理心和善意。
+* 尊重不同的意见、观点和经历。
+* 提供并优雅地接受建设性反馈。
+* 承担责任并向受我们错误影响的人道歉，并从经验中吸取教训。
+* 不仅关注我们个人，也关注整个社区的最佳利益。
 
-Examples of unacceptable behavior include:
+不可接受的行为包括但不限于：
 
-* The use of sexualized language or imagery, and sexual attention or advances of
-  any kind.
-* Trolling, insulting or derogatory comments, and personal or political attacks.
-* Public or private harassment.
-* Publishing others' private information, such as a physical or email address,
-  without their explicit permission.
-* Other conduct which could reasonably be considered inappropriate in a
-  professional setting.
+* 使用带有性暗示的语言或图像，以及任何形式的性关注或性挑逗。
+* 恶意挑衅、侮辱或贬损性评论，以及人身攻击或政治攻击。
+* 公开或私下骚扰。
+* 未经他人明确许可，发布他人的私人信息，例如真实地址或电子邮件地址。
+* 其他在专业环境中可能被合理视为不当的行为。
 
-## Enforcement Responsibilities
+## 执行责任
 
-Community leaders are responsible for clarifying and enforcing our standards of
-acceptable behavior and will take appropriate and fair corrective action in
-response to any behavior that they deem inappropriate, threatening, offensive,
-or harmful.
+社区负责人负责阐明和执行我们可接受行为的标准，并将针对任何他们认为不适当、威胁性、冒犯性或有害的行为采取适当且公平的纠正措施。
 
-Community leaders have the right and responsibility to remove, edit, or reject
-comments, commits, code, wiki edits, issues, and other contributions that are
-not aligned to this Code of Conduct, and will communicate reasons for moderation
-decisions when appropriate.
+社区负责人有权利和责任删除、编辑或拒绝不符合本行为准则的评论、提交、代码、wiki 编辑、问题和其他贡献，并将在适当的情况下告知审核决定的理由。
 
-## Scope
+## 适用范围
 
-This Code of Conduct applies within all community spaces, and also applies when
-an individual is officially representing the community in public spaces.
-Examples of representing our community include using an official email address,
-posting via an official social media account, or acting as an appointed
-representative at an online or offline event.
+本行为准则适用于所有社区空间，也适用于个人在公共场所正式代表社区的情况。
+代表我们社区的情形包括但不限于使用官方电子邮件地址、通过官方社交媒体账户发帖，或作为指定代表参与线上或线下活动。
 
-## Enforcement
+## 贯彻落实
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-donnymoving@gmail.com
-All complaints will be reviewed and investigated promptly and fairly.
+如有辱骂、骚扰或其他不可接受的行为，请向负责执行的社区负责人报告，邮箱地址为 <donnymoving@gmail.com>。所有投诉都将得到及时和公正的审查和调查，所有社区负责人都有义务尊重任何事件报告者的隐私和安全。
 
-All community leaders are obligated to respect the privacy and security of the
-reporter of any incident.
+## 执行指南
 
-## Enforcement Guidelines
+社区负责人将遵循以下社区影响指南，以确定其认为违反本行为准则的任何行为的后果：
 
-Community leaders will follow these Community Impact Guidelines in determining
-the consequences for any action they deem in violation of this Code of Conduct:
+### 1. 纠正
 
-### 1. Correction
+**社区影响**：使用不当语言或其他被认为不专业或不受社区欢迎的行为。
 
-**Community Impact**: Use of inappropriate language or other behavior deemed
-unprofessional or unwelcome in the community.
+**处理意见**：社区负责人发出的私人书面警告，明确违规性质并解释行为不当的原因。可能会要求公开道歉。
 
-**Consequence**: A private, written warning from community leaders, providing
-clarity around the nature of the violation and an explanation of why the
-behavior was inappropriate. A public apology may be requested.
+### 2. 警告
 
-### 2. Warning
+**社区影响**：通过单一事件或一系列行为造成的违规。
 
-**Community Impact**: A violation through a single incident or series of
-actions.
+**处理意见**：警告，并说明持续行为的后果。在规定时间内，不得与相关人员互动，包括不得与执行本行为准则的人员进行未经请求的互动。这包括避免在社区空间以及社交媒体等外部渠道进行互动。违反这些条款可能会导致暂时或永久封禁。
 
-**Consequence**: A warning with consequences for continued behavior. No
-interaction with the people involved, including unsolicited interaction with
-those enforcing the Code of Conduct, for a specified period of time. This
-includes avoiding interactions in community spaces as well as external channels
-like social media. Violating these terms may lead to a temporary or permanent
-ban.
+### 3. 暂时封禁
 
-### 3. Temporary Ban
+**社区影响**：严重违反社区准则，包括持续的不当行为。
 
-**Community Impact**: A serious violation of community standards, including
-sustained inappropriate behavior.
+**处理意见**：在指定时间内暂时禁止与社区进行任何形式的互动或公开交流。在此期间，不得与相关人员进行任何公开或私下的互动，包括与执行《行为准则》的人员进行未经请求的互动。违反这些条款可能会导致永久封禁。
 
-**Consequence**: A temporary ban from any sort of interaction or public
-communication with the community for a specified period of time. No public or
-private interaction with the people involved, including unsolicited interaction
-with those enforcing the Code of Conduct, is allowed during this period.
-Violating these terms may lead to a permanent ban.
+### 4. 永久封禁
 
-### 4. Permanent Ban
+**社区影响**：持续违反社区准则，包括持续的不当行为、骚扰个人、攻击或诋毁某些群体。
 
-**Community Impact**: Demonstrating a pattern of violation of community
-standards, including sustained inappropriate behavior, harassment of an
-individual, or aggression toward or disparagement of classes of individuals.
+**处理意见**：永久禁止在社区内进行任何形式的公开交流。
 
-**Consequence**: A permanent ban from any sort of public interaction within the
-community.
+### Issues 礼仪
 
-### Slack and Issues Etiquettes
+这些 Issues 礼仪指南旨在为所有社区成员营造一个包容、尊重和高效的环境。遵循这些最佳实践，我们能够确保有效的沟通和协作，同时最大限度地减少干扰。让我们携手共建一个互相支持、热情友好的社区！
 
-These Slack and Issues etiquette guidelines are designed to foster an inclusive, respectful, and productive environment
-for all community members. By following these best practices, we ensure effective communication and collaboration while
-minimizing disruptions. Let’s work together to build a supportive and welcoming community!
+* 保持尊重和专业的沟通，避免使用讽刺或粗鲁的语言，并记住，文字中的语气可能难以理解。
+* 使用特定讨论的主题，使频道井然有序，更易于跟进。
+* 仅在他人的意见至关重要或紧急时才标记他们，并谨慎使用 @here、@channel 或 @everyone，以最大限度地减少干扰。
+* 请耐心等待，因为开源贡献者和维护者通常有其他安排，可能需要时间来回复。
+* 在最相关的 Issues ([issues](https://github.com/Lumosylva/Nilotica/issues)) 中发布问题或讨论。
+* 寻求帮助或提出问题时，请提供必要的详细信息，例如链接、屏幕截图或清晰的解释，以提供背景信息。
+* 尽可能在公开渠道进行讨论，以便其他人能够从对话中受益，除非问题涉及敏感或隐私。
+* 始终遵守[我们的标准](https://github.com/Lumosylva/Nilotica/blob/main/CODE_OF_CONDUCT.md#our-standards)，以确保营造友好协作的氛围。
 
-- Communicate respectfully and professionally, avoiding sarcasm or harsh language, and remember that tone can be
-  difficult to interpret in text.
-- Use threads for specific discussions to keep channels organized and easier to follow.
-- Tag others only when their input is critical or urgent, and use @here, @channel or @everyone sparingly to minimize
-  disruptions.
-- Be patient, as open-source contributors and maintainers often have other commitments and may need time to respond.
-- Post questions or discussions in the most relevant
-  issues ([issues](https://github.com/Lumosylva/Nilotica/issues)).
-- When asking for help or raising issues, include necessary details like links, screenshots, or clear explanations to
-  provide context.
-- Keep discussions in public channels whenever possible to allow others to benefit from the conversation, unless the
-  matter is sensitive or private.
-- Always adhere to [our standards](https://github.com/Lumosylva/Nilotica/blob/main/CODE_OF_CONDUCT.md#our-standards)
-  to ensure a welcoming and collaborative environment.
+## 署名
 
-## Attribution
+本行为准则改编自贡献者契约主页 2.1 版，可在此查阅
+[主页]：<https://www.contributor-covenant.org>
+[v2.1]：<https://www.contributor-covenant.org/version/2/1/code_of_conduct.html>
 
-This Code of Conduct is adapted from the [Contributor Covenant][homepage],
-version 2.1, available at
-[https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1].
+社区影响指南的灵感源自
+[Mozilla 行为准则]：<https://github.com/mozilla/diversity>
 
-Community Impact Guidelines were inspired by
-[Mozilla's code of conduct enforcement ladder][Mozilla CoC].
-
-For answers to common questions about this code of conduct, see the FAQ at
-[https://www.contributor-covenant.org/faq][FAQ]. Translations are available at
-[https://www.contributor-covenant.org/translations][translations].
-
-[homepage]: https://www.contributor-covenant.org
-
-[v2.1]: https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
-
-[Mozilla CoC]: https://github.com/mozilla/diversity
-
-[FAQ]: https://www.contributor-covenant.org/faq
-
-[translations]: https://www.contributor-covenant.org/translations
+有关本行为准则的常见问题，请参阅常见问题解答：
+[常见问题解答]：<https://www.contributor-covenant.org/faq>
+另有诸译本：
+[翻译]：<https://www.contributor-covenant.org/translations>
