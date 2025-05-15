@@ -7,7 +7,7 @@
 
 Version 0.1.3
 
-1. Use the new `vnpy` version 4.0.0.
+1. Added internationalization to support Chinese and English sentence output.
 2. 
 
 
