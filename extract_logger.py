@@ -51,7 +51,7 @@ if __name__ == "__main__":
         file_path = sys.argv[1]
     else:
         # file_path = input("请输入 Python 文件路径: ")
-        file_path = "./zmq_services/run_strategy_engine.py"
+        file_path = "./zmq_services/strategy_base.py"
 
     log_messages: list = extract_log_messages(file_path)
     if log_messages:

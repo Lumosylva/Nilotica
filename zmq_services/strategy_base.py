@@ -20,6 +20,7 @@ import msgpack
 import zmq
 
 from utils.logger import logger, setup_logging, INFO
+from utils.i18n import get_translator
 from vnpy.trader.constant import Direction, Exchange, Offset, OrderType, Status
 from vnpy.trader.object import OrderData, TickData, TradeData
 from zmq_services.strategy_engine import StrategyEngine
@@ -41,6 +42,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         vt_symbol: str,                  # 该策略交易的主要合约(The primary symbol this strategy trades)
         setting: Dict[str, Any]          # 策略参数(Strategy parameters)
     ) -> None:
+        self._ = get_translator()
         self.strategy_engine: StrategyEngine = strategy_engine
         self.strategy_name: str = strategy_name
         self.vt_symbol: str = vt_symbol
@@ -57,7 +59,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         self.entry_price: Optional[Decimal] = None # 当前仓位的平均入场价(Average entry price of the current position)
         self.entry_cost: Decimal = Decimal("0.0")  # 当前仓位总成本(Total cost of the current position)
 
-        logger.debug("Applying strategy settings...")
+        logger.debug(self._("正在应用策略设置..."))
         for key, value in setting.items():
             try:
                 target_type = None
@@ -66,7 +68,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 # 从类注释中获取预期类型(Get expected type from class annotations)
                 annotations = getattr(self.__class__, '__annotations__', {})
                 detected_annotation = annotations.get(key)
-                logger.debug(f"[Setting Loop] Key: '{key}', Value: '{value}' (Type: {type(value)}), Detected Annotation: {detected_annotation}")
+                logger.debug(self._("[设置循环] 键：'{}'，值：'{}'（类型：{}），检测到的注释：{}").format(key, value, type(value), detected_annotation))
 
                 if detected_annotation:
                     target_type = detected_annotation
@@ -105,7 +107,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                          if isinstance(value, str):
                              final_value_to_set = int(value)
                          elif isinstance(value, float):
-                              logger.debug(f"[Setting Loop] Converting float setting '{key}' value {value} to int.")
+                              logger.debug(self._("[设置循环] 将浮点设置'{}'值{}转换为整数。").format(key, value))
                               final_value_to_set = int(value)
                          elif isinstance(value, int):
                                final_value_to_set = value
@@ -147,11 +149,11 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 setattr(self, key, final_value_to_set)
                 # 设置后的调试日志(Debug log after setting)
                 actual_value = getattr(self, key)
-                logger.debug(f"[Setting Loop] Successfully set '{key}' to {actual_value} (Type: {type(actual_value)})")
+                logger.debug(self._("[设置循环] 成功将“{}”设置为{}（类型：{}）").format(key, actual_value, type(actual_value)))
 
             except (ValueError, TypeError, InvalidOperation) as e:
-                 logger.debug(f"[Setting Loop] Failed to apply setting '{key}'='{value}'. Error: {e}")
-        logger.debug("Finished applying strategy settings.")
+                 logger.debug(self._("[设置循环] 无法应用设置'{}'='{}'。错误：{}").format(key, value, e))
+        logger.debug(self._("已完成应用策略设置。"))
         # --- End Apply Settings ---
 
     #----------------------------------------------------------------------
@@ -312,7 +314,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         try:
              exchange_enum = Exchange(exchange_part)
         except ValueError:
-             logger.error(f"Invalid exchange '{exchange_part}' in vt_symbol '{self.vt_symbol}'. Cannot send order.")
+             logger.error(self._("vt_symbol'{}'中的交易所'{}'无效。无法发送订单。").format(exchange_part, self.vt_symbol))
              return None
 
         # --- 使用引擎标志检测回测模式(Detect Backtest Mode using engine flag) ---
@@ -323,7 +325,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         vt_orderid = None
         if is_backtest_mode:
             # --- 回测：通过 PUSH 直接发送 pickled tuple(Backtest: Send pickled tuple directly via PUSH) ---
-            logger.debug("Backtest Mode: Preparing to send order tuple directly via PUSH.")
+            logger.debug(self._("回测模式：准备通过PUSH直接发送订单元组。"))
             order_req_dict = {
                 "symbol": symbol_part,
                 "exchange": exchange_enum.value,
@@ -341,20 +343,20 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 # --- Use order_pusher socket ---
                 self.strategy_engine.order_pusher.send(packed_request)
                 # +++ 添加日志：确认 PUSH 发送操作已执行 +++
-                logger.debug(f"[BaseLiveStrategy SendOrder Backtest] PUSH send executed for request tuple: {req_tuple}")
+                logger.debug(self._("[BaseLiveStrategy SendOrder 回测] 针对请求元组 {} 执行 PUSH 发送").format(req_tuple))
                 # +++ 结束添加 +++
                 # --- End Use order_pusher ---
                 vt_orderid = None # ID 将通过 OrderData 从 SimulationEngine 获取(ID will come from SimulationEngine via OrderData)
             except pickle.PicklingError as e:
-                 logger.error(f"Backtest Mode: Failed to pickle order request: {e}")
+                 logger.error(self._("回测模式：pickle 订单请求失败：{}").format(e))
             except (msgpack.PackException, TypeError) as e_pack:
-                 logger.error(f"Backtest Mode: Failed to msgpack order request: {e_pack}")
+                 logger.error(self._("回测模式：无法发送订单请求消息：{}").format(e_pack))
             except zmq.ZMQError as e:
-                 logger.error(f"Backtest Mode: ZMQ error sending order request: {e}")
+                 logger.error(self._("回测模式：ZMQ发送订单请求时出错：{}").format(e))
             # --- End Backtest Send ---
         else:
             # --- 实时交易：使用 RPC（通过引擎的方法）[Live Trading: Use RPC (via engine's method)] ---
-            logger.debug("Live Mode: Sending order via RPC.")
+            logger.debug(self._("实时模式：通过 RPC 发送订单。"))
             # 使用引擎方法的现有 RPC 逻辑(Existing RPC logic using the engine's method)
             vt_orderid = self.strategy_engine.send_limit_order(
                 symbol=symbol_part,
@@ -369,10 +371,10 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         # --- 通用逻辑：仅在实时模式下添加到有效订单(Common Logic: Add to active orders ONLY in live mode) ---
         if vt_orderid and not is_backtest_mode:
             self.active_orders.add(vt_orderid)
-            logger.info(f"Sent Order: {self.vt_symbol} {direction.value} {offset.value} {volume} @ {price} -> {vt_orderid} (Mode: Live)")
+            logger.info(self._("已发送订单：{} {} {} {} @ {} -> {}（模式：实时）").format(self.vt_symbol, direction.value, offset.value, volume, price, vt_orderid))
         elif is_backtest_mode:
             # 记录请求已发送但 ID 待处理(Log that request was sent, but ID is pending)
-            logger.info(f"Sent Order Request: {self.vt_symbol} {direction.value} {offset.value} {volume} @ {price} (Mode: Backtest, ID Pending)")
+            logger.info(self._("已发送订单请求：{} {} {} {} @ {}（模式：回测，ID 待定）").format(self.vt_symbol, direction.value, offset.value, volume, price))
         # Error logging is handled within each branch or by the engine's live method
         # 错误日志在每个分支内处理，或通过引擎的实时方法处理
         return vt_orderid # Returns real ID in live, None in backtest
@@ -386,20 +388,19 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         :return:
         """
         if not self.trading:
-            logger.warning(f"Strategy not trading, cannot cancel order {vt_orderid}.")
+            logger.warning(self._("策略未交易，无法取消订单{}。").format(vt_orderid))
             return
 
         if vt_orderid not in self.active_orders:
-            logger.debug(f"Order {vt_orderid} not in active orders list for strategy {self.strategy_name}. Maybe already inactive? Skipping cancel request.")
+            logger.debug(self._("订单 {} 不在策略 {} 的有效订单列表中。可能已经处于非活动状态？跳过取消请求。").format(vt_orderid, self.strategy_name))
             # 如果订单在取消调用之前可能变为非活动状态，则避免记录警告
             # Avoid logging warning if order might have become inactive just before cancel call
-            # logger.warning(f"Order {vt_orderid} not in active orders list for strategy {self.strategy_name}.")
             return # 如果没有被追踪为活跃状态，则不发送取消(Simply don't send cancel if not tracked as active)
 
         # --- 检测回测模式(Detect Backtest Mode) ---
         is_backtest_mode = getattr(self.strategy_engine, 'is_backtest_mode', False)
 
-        logger.info(f"Requesting Cancel for order {vt_orderid} (Mode: {'Backtest' if is_backtest_mode else 'Live'}) ")
+        logger.info(self._("请求取消订单 {}（模式：{}）").format(vt_orderid, ('Backtest' if is_backtest_mode else 'Live')))
         
         if is_backtest_mode:
             # --- 回测：通过 PUSH 发送取消请求(Backtest: Send cancel request via PUSH) ---
@@ -410,17 +411,17 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             try:
                 packed_request = msgpack.packb(cancel_req_dict, use_bin_type=True)
                 self.strategy_engine.order_pusher.send(packed_request)
-                logger.info(f"Backtest Mode: Sent cancel request for {vt_orderid}")
+                logger.info(self._("回测模式：已发送 {} 的取消请求").format(vt_orderid))
             except (msgpack.PackException, TypeError) as e_pack:
-                 logger.error(f"Backtest Mode: Failed to msgpack cancel request: {e_pack}")
+                 logger.error(self._("回测模式：无法发送 msgpack 取消请求：{}").format(e_pack))
             except zmq.ZMQError as e:
-                 logger.error(f"Backtest Mode: ZMQ error sending cancel request: {e}")
+                 logger.error(self._("回测模式：ZMQ 发送取消请求时出错：{}").format(e))
             # --- End Backtest Send --- 
         else:
             # --- 实时交易：使用 RPC(Live Trading: Use RPC) ---
             # 通过 RPC 将取消委托给引擎(Delegate cancellation to the engine via RPC)
             if not hasattr(self.strategy_engine, 'cancel_limit_order'):
-                 logger.error("Strategy engine does not have 'cancel_limit_order' method for live trading.")
+                 logger.error(self._("策略引擎没有用于实时交易的'cancel_limit_order'方法。"))
                  return
             self.strategy_engine.cancel_limit_order(vt_orderid)
             # --- End Live Trading Send --- 
@@ -441,7 +442,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         if not self.active_orders:
             return
 
-        logger.info(f"Cancelling all ({len(self.active_orders)}) active orders for {self.strategy_name}...")
+        logger.info(self._("正在取消所有 ({}) 个 {} 的有效订单...").format(len(self.active_orders), self.strategy_name))
         # 迭代副本，因为cancel_order可能会通过on_order间接修改集合
         # Iterate over a copy as cancel_order might modify the set indirectly via on_order
         for vt_orderid in list(self.active_orders):
@@ -487,12 +488,12 @@ class BaseLiveStrategy(metaclass=ABCMeta):
              try:
                  trade_volume_float = float(trade_volume_float)
              except (ValueError, TypeError):
-                 logger.error(f"_update_pos: Could not convert trade volume '{trade.volume}' to float. Ignoring trade {trade.vt_tradeid}.")
+                 logger.error(self._("_update_pos：无法将交易量'{}'转换为浮点数。忽略交易'{}'。").format(trade.volume, trade.vt_tradeid))
                  return
         try:
             trade_volume = Decimal(str(trade_volume_float))
         except (InvalidOperation, ValueError, TypeError) as e:
-             logger.error(f"_update_pos: Could not convert trade volume float '{trade_volume_float}' to Decimal: {e}. Ignoring trade {trade.vt_tradeid}.")
+             logger.error(self._("_update_pos：无法将交易量浮点数'{}'转换为十进制：{}。忽略交易{}。").format(trade_volume_float, e, trade.vt_tradeid))
              return
         if trade_volume.is_zero():
             return
@@ -501,13 +502,13 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         # --- 获取交易价格（Decimal）[Get Trade Price (Decimal)] ---
         trade_price_float = getattr(trade, 'price', None)
         if trade_price_float is None:
-            logger.warning(f"_update_pos: Trade {trade.vt_tradeid} has no price. Ignoring entry price update.")
+            logger.warning(self._("_update_pos：交易 {} 无价格。忽略入场价格更新。").format(trade.vt_tradeid))
             trade_price = None # Indicate price is unavailable
         else:
             try:
                 trade_price = Decimal(str(trade_price_float))
             except (InvalidOperation, ValueError, TypeError) as e:
-                 logger.error(f"_update_pos: Could not convert trade price float '{trade_price_float}' to Decimal: {e}. Ignoring entry price update for trade {trade.vt_tradeid}.")
+                 logger.error(self._("_update_pos：无法将交易价格浮点数'{}'转换为十进制：{}。忽略交易'{}'的入场价格更新。").format(trade_price_float, e, trade.vt_tradeid))
                  trade_price = None # Indicate price is unavailable/invalid
         # --- End Get Trade Price ---
 
@@ -524,7 +525,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         elif direction_value == Direction.SHORT.value: # Sell
             pos_change = -trade_volume
         else:
-            logger.error(f"_update_pos: Unknown or invalid direction value: {direction_value} for trade {trade.vt_tradeid}")
+            logger.error(self._("_update_pos：交易方向值未知或无效：{}").format(direction_value, trade.vt_tradeid))
             return
 
         # --- 应用仓位变更(Apply position change) ---
@@ -532,7 +533,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             self.pos += pos_change
             current_pos = self.pos
         except Exception as e:
-            logger.error(f"_update_pos: Error during Decimal position update arithmetic: {e}. Pos: {previous_pos}, Change: {pos_change}")
+            logger.error(self._("_update_pos: Error during Decimal position update arithmetic: {}. Pos: {}, Change: {}").format(e, previous_pos, pos_change))
             return
 
         # --- 更新入场成本和价格（仅当 trade_price 有效时）[Update Entry Cost and Price (Only if trade_price is valid)] ---
@@ -544,7 +545,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     # 情况 1：平至非平（开盘第一回合）[Case 1: Flat to Non-Flat (Opening first leg)]
                     self.entry_cost = cost_of_this_trade
                     self.entry_price = trade_price
-                    logger.debug(f"_update_pos: Position opened. EntryCost={self.entry_cost:.4f}, EntryPrice={self.entry_price:.4f}")
+                    logger.debug(self._("_update_pos: Position opened. EntryCost={:.4f}, EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
 
                 elif not previous_pos.is_zero() and not current_pos.is_zero() and (previous_pos * current_pos > 0):
                     # 情况 2 和 3：添加或部分关闭（同方向）[Case 2 & 3: Adding or Partially Closing (Same Direction)]
@@ -553,9 +554,9 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                         self.entry_cost = previous_entry_cost + cost_of_this_trade
                         if not current_pos.is_zero(): # 这里不应该为零，但无论如何都要检查(Should not be zero here, but check anyway)
                             self.entry_price = self.entry_cost / current_pos.copy_abs()
-                            logger.debug(f"_update_pos: Position increased. New EntryCost={self.entry_cost:.4f}, New EntryPrice={self.entry_price:.4f}")
+                            logger.debug(self._("_update_pos: Position increased. New EntryCost={:.4f}, New EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
                         else: # Safety fallback
-                             logger.warning(f"_update_pos: Position zero unexpectedly after adding. Resetting entry cost/price.")
+                             logger.warning(self._("_update_pos: Position zero unexpectedly after adding. Resetting entry cost/price."))
                              self.entry_cost = Decimal("0.0")
                              self.entry_price = None
 
@@ -567,10 +568,10 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                              self.entry_cost = previous_entry_cost - cost_reduction
                              # 入场价格保持不变(Entry price remains unchanged)
                              self.entry_price = previous_entry_price
-                             logger.debug(f"_update_pos: Position partially closed. New EntryCost={self.entry_cost:.4f}, EntryPrice remains {self.entry_price:.4f}")
+                             logger.debug(self._("_update_pos: Position partially closed. New EntryCost={:.4f}, EntryPrice remains {:.4f}").format(self.entry_cost, self.entry_price))
                          else:
                              # 如果 pos > 0 则不应该发生，但要采取防御措施(Should not happen if pos > 0, but handle defensively)
-                             logger.warning(f"_update_pos: Cannot reduce cost - previous entry price is missing! Cost remains {previous_entry_cost:.4f}, Price remains None.")
+                             logger.warning(self._("_update_pos: Cannot reduce cost - previous entry price is missing! Cost remains {:.4f}, Price remains None.").format(previous_entry_cost))
                              self.entry_cost = previous_entry_cost
                              self.entry_price = None
                     # 否则：交易量不变？交易量非零时不应发生这种情况
@@ -580,7 +581,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     # 情况 4：非平缓至平缓（收盘最后一段）[Case 4: Non-Flat to Flat (Closing last leg)]
                     self.entry_cost = Decimal("0.0")
                     self.entry_price = None
-                    logger.debug(f"_update_pos: Position closed. EntryCost reset to 0, EntryPrice reset to None.")
+                    logger.debug(self._("_update_pos: Position closed. EntryCost reset to 0, EntryPrice reset to None."))
 
                 # --- 用乘法检查代替 .sign() 检查(Replace .sign() check with multiplication check) ---
                 # elif previous_pos.sign() != current_pos.sign():
@@ -596,7 +597,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     self.entry_cost = trade_price * current_pos.copy_abs() 
                     # --- End Correction ---
                     self.entry_price = trade_price # New position entry price is the flip trade price
-                    logger.debug(f"_update_pos: Position flipped. New EntryCost={self.entry_cost:.4f}, New EntryPrice={self.entry_price:.4f}")
+                    logger.debug(self._("_update_pos: Position flipped. New EntryCost={:.4f}, New EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
 
                 # --- 健全性检查/舍入（可选但推荐）[Sanity Check/Rounding (Optional but recommended)] ---
                 # 如果位置非常接近零，则重置成本/价格(If position is very close to zero, reset cost/price)
@@ -609,7 +610,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 #     self.entry_price = self.entry_price.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP) # Adjust precision as needed
 
             except Exception as e_entry_price:
-                logger.error(f"_update_pos: Error calculating entry cost/price: {e_entry_price}")
+                logger.error(self._("_update_pos: Error calculating entry cost/price: {}").format(e_entry_price))
                 # 为安全起见，发生错误时重置？(Reset on error for safety?)
                 self.entry_cost = Decimal("0.0")
                 self.entry_price = None
@@ -618,11 +619,13 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         # --- 记录仓位更新(Log the position update) ---
         log_entry_price = f" EntryPrice={self.entry_price:.4f}" if self.entry_price is not None else " EntryPrice=None"
         log_entry_cost = f" EntryCost={self.entry_cost:.4f}" # Always log cost
-        logger.info(
-            f"Position Update: Symbol={trade.vt_symbol}, TradeID={trade.vt_tradeid}, "
-            f"DirectionValue={direction_value}, OffsetValue={offset_value}, Price={trade.price}, Volume={trade_volume}. "
-            f"PrevPos={previous_pos}, Change={pos_change}, NewPos={current_pos}.{log_entry_cost}{log_entry_price}"
-        )
+        logger.info(self._("Position Update: Symbol={}, TradeID={}, DirectionValue={}, OffsetValue={}, Price={}, Volume={}. PrevPos={}, Change={}, NewPos={}.{}")
+            .format(
+                trade.vt_symbol, trade.vt_tradeid,
+                direction_value, offset_value, trade.price, trade_volume,
+                previous_pos, pos_change, current_pos,
+                log_entry_cost, log_entry_price
+            ))
 
     def _update_active_orders(self, order: OrderData) -> None:
         """
@@ -639,7 +642,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             # If order is now inactive, and we were tracking it, remove it.
             if not order.is_active() and is_active_order:
                 self.active_orders.remove(order.vt_orderid)
-                logger.debug(f"Order {order.vt_orderid} removed from active list (Status: {order.status}). Active count: {len(self.active_orders)}.")
+                logger.debug(self._("Order {} removed from active list (Status: {}). Active count: {}.").format(order.vt_orderid, order.status, len(self.active_orders)))
             # 如果订单现在处于活动状态并且我们尚未跟踪它，请添加它。
             # 这处理了真实 ID 在回测中到达或实时订单出现的情况。
             # If order is now active, and we were NOT tracking it, add it.
@@ -649,9 +652,9 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                  # Check status to avoid adding already cancelled/rejected orders if initial update was missed
                  if order.status not in [Status.CANCELLED, Status.REJECTED]:
                       self.active_orders.add(order.vt_orderid)
-                      logger.debug(f"Order {order.vt_orderid} added to active list (Status: {order.status}). Active count: {len(self.active_orders)}.")
+                      logger.debug(self._("Order {} added to active list (Status: {}). Active count: {}.").format(order.vt_orderid, order.status, len(self.active_orders)))
                  else:
-                      logger.debug(f"Order {order.vt_orderid} update received but status is {order.status}, not adding to active list.")
+                      logger.debug(self._("Order {} update received but status is {}, not adding to active list.").format(order.vt_orderid, order.status))
         # 如果订单属于另一个合约，则忽略此实例的活动订单跟踪。
         # If order belongs to another symbol, ignore for active order tracking of this instance.
 
@@ -669,9 +672,9 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         self.inited = True
         try:
             self.on_init()
-            logger.info("策略初始化完成")
+            logger.info(self._("策略初始化完成"))
         except Exception as e:
-             logger.exception(f"Error during on_init: {e}")
+             logger.exception(self._("Error during on_init: {}").format(e))
              self.inited = False # Mark as failed initialization
 
 
@@ -683,17 +686,17 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         :return:
         """
         if not self.inited:
-             logger.error("Strategy cannot be started because initialization failed or was skipped.")
+             logger.error(self._("Strategy cannot be started because initialization failed or was skipped."))
              return
         if self.trading:
-             logger.warning("Strategy already started.")
+             logger.warning(self._("Strategy already started."))
              return
         self.trading = True
         try:
             self.on_start()
-            logger.info("策略启动")
+            logger.info(self._("策略启动"))
         except Exception as e:
-            logger.exception(f"Error during on_start: {e}")
+            logger.exception(self._("Error during on_start: {}").format(e))
             self.trading = False # Mark as failed start
 
     def _stop_strategy(self) -> None:
@@ -713,8 +716,8 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             try:
                 self.cancel_all() # Ensure all orders are cancelled on stop
                 self.on_stop()
-                logger.info("策略停止")
+                logger.info(self._("策略停止"))
             except Exception as e:
-                logger.exception(f"Error during on_stop or cancel_all: {e}")
+                logger.exception(self._("Error during on_stop or cancel_all: {}").format(e))
         else:
-             logger.info("策略停止 (未曾启动或启动失败)")
+             logger.info(self._("策略停止 (未曾启动或启动失败)"))
