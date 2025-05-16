@@ -465,5 +465,8 @@
     "on_start 期间出错：{}": "Error during on_start: {}",
     "策略停止": "Strategy Stop",
     "on_stop 或 cancellation_all 期间出错：{}": "Error during on_stop or cancel_all: {}",
-    "策略停止 (未曾启动或启动失败)": "The policy is stopped (never started or failed to start)"
+    "策略停止 (未曾启动或启动失败)": "The policy is stopped (never started or failed to start)",
+    "未找到语言'{}'（或其后备语言）的翻译文件 (messages.mo)，将使用原文。搜索范围：{}": "Translation file (messages.mo) not found for language '{}' (or its fallbacks), will use original text. Searched in: {}",
+    "语言设置为：{}，翻译器已为当前线程加载。路径：{}": "Language set to: {}, translator loaded for current thread. Path: {}",
+    "初始化语言'{}'的 gettext 时出错：{}。恢复原始文本。": "Error occurred while initializing gettext for language '{}': {}. Falling back to original text."
 }

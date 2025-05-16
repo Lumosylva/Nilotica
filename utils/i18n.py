@@ -58,15 +58,15 @@ def setup_language(language_code: str, project_root: str):
 
         if isinstance(translation, gettext.NullTranslations):
             i18n_logger.warning(
-                _("Translation file (messages.mo) not found for language '{language_code}' (or its fallbacks), will use original text. Searched in: {localedir}").format(
+                _("未找到语言'{}'（或其后备语言）的翻译文件 (messages.mo)，将使用原文。搜索范围：{}").format(
                     language_code=language_code,
                     localedir=localedir # Path where it looked, not the specific .mo path
                 )
             )
         else:
             i18n_logger.info(
-                _("Language set to: {language_code}, translator loaded for current thread. Path: {localedir}").format(
-                    language_code=language_code, localedir=localedir
+                _("语言设置为：{}，翻译器已为当前线程加载。路径：{}").format(
+                    language_code, localedir
                 )
             )
     except Exception as e:
@@ -74,8 +74,8 @@ def setup_language(language_code: str, project_root: str):
         _thread_locals.translator = gettext.NullTranslations().gettext
         _ = _thread_locals.translator # Use the null translator for this log message
         i18n_logger.error(
-            _("Error occurred while initializing gettext for language '{language_code}': {error}. Falling back to original text.").format(
-                language_code=language_code, error=str(e)
+            _("初始化语言'{}'的 gettext 时出错：{}。恢复原始文本。").format(
+                language_code, str(e)
             )
         )
 

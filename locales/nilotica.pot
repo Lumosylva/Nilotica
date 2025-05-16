@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-16 17:40+0800\n"
+"POT-Creation-Date: 2025-05-16 18:05+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -270,23 +270,17 @@ msgstr ""
 
 #: utils/i18n.py:61
 #, python-brace-format
-msgid ""
-"Translation file (messages.mo) not found for language '{language_code}' "
-"(or its fallbacks), will use original text. Searched in: {localedir}"
+msgid "未找到语言'{}'（或其后备语言）的翻译文件 (messages.mo)，将使用原文。搜索范围：{}"
 msgstr ""
 
 #: utils/i18n.py:68
 #, python-brace-format
-msgid ""
-"Language set to: {language_code}, translator loaded for current thread. "
-"Path: {localedir}"
+msgid "语言设置为：{}，翻译器已为当前线程加载。路径：{}"
 msgstr ""
 
 #: utils/i18n.py:77
 #, python-brace-format
-msgid ""
-"Error occurred while initializing gettext for language '{language_code}':"
-" {error}. Falling back to original text."
+msgid "初始化语言'{}'的 gettext 时出错：{}。恢复原始文本。"
 msgstr ""
 
 #: vnpy/trader/constant.py:17
