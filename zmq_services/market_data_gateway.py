@@ -19,7 +19,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from utils.config_manager import ConfigManager
-from utils.i18n import get_translator
+from utils.i18n import _
 from utils.logger import logger, setup_logging, INFO
 from vnpy.event import Event, EventEngine
 from vnpy.trader.constant import Exchange
@@ -40,9 +40,8 @@ class MarketDataGatewayService(ZmqPublisherBase):
         self.config_service = config_manager
         self.environment_name = environment_name
         setup_logging(service_name=f"{__class__.__name__}[{self.environment_name}]", level=INFO)
-        self._ = get_translator()
-        
-        logger.info(self._("使用提供的 ConfigManager 为环境 [{}] 初始化 MarketDataGatewayService。").format(environment_name))
+
+        logger.info(_("使用提供的 ConfigManager 为环境 [{}] 初始化 MarketDataGatewayService。").format(environment_name))
 
         self.event_engine = EventEngine()
         self.gateway: CtpGateway = CtpGateway(self.event_engine, f"CTP_{environment_name}")
