@@ -533,7 +533,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             self.pos += pos_change
             current_pos = self.pos
         except Exception as e:
-            logger.error(self._("_update_pos: Error during Decimal position update arithmetic: {}. Pos: {}, Change: {}").format(e, previous_pos, pos_change))
+            logger.error(self._("_update_pos：小数位置更新算法出错：{}。位置：{}，变化：{}").format(e, previous_pos, pos_change))
             return
 
         # --- 更新入场成本和价格（仅当 trade_price 有效时）[Update Entry Cost and Price (Only if trade_price is valid)] ---
@@ -545,7 +545,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     # 情况 1：平至非平（开盘第一回合）[Case 1: Flat to Non-Flat (Opening first leg)]
                     self.entry_cost = cost_of_this_trade
                     self.entry_price = trade_price
-                    logger.debug(self._("_update_pos: Position opened. EntryCost={:.4f}, EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
+                    logger.debug(self._("_update_pos：已开仓位。EntryCost={:.4f}，EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
 
                 elif not previous_pos.is_zero() and not current_pos.is_zero() and (previous_pos * current_pos > 0):
                     # 情况 2 和 3：添加或部分关闭（同方向）[Case 2 & 3: Adding or Partially Closing (Same Direction)]
@@ -554,9 +554,9 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                         self.entry_cost = previous_entry_cost + cost_of_this_trade
                         if not current_pos.is_zero(): # 这里不应该为零，但无论如何都要检查(Should not be zero here, but check anyway)
                             self.entry_price = self.entry_cost / current_pos.copy_abs()
-                            logger.debug(self._("_update_pos: Position increased. New EntryCost={:.4f}, New EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
+                            logger.debug(self._("_update_pos: 位置增加。新的 EntryCost={:.4f}，新的 EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
                         else: # Safety fallback
-                             logger.warning(self._("_update_pos: Position zero unexpectedly after adding. Resetting entry cost/price."))
+                             logger.warning(self._("_update_pos：添加后位置意外为零。重置入场成本/价格。"))
                              self.entry_cost = Decimal("0.0")
                              self.entry_price = None
 
@@ -568,10 +568,10 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                              self.entry_cost = previous_entry_cost - cost_reduction
                              # 入场价格保持不变(Entry price remains unchanged)
                              self.entry_price = previous_entry_price
-                             logger.debug(self._("_update_pos: Position partially closed. New EntryCost={:.4f}, EntryPrice remains {:.4f}").format(self.entry_cost, self.entry_price))
+                             logger.debug(self._("_update_pos：仓位部分平仓。新的 EntryCost={:.4f}，EntryPrice 保持不变 {:.4f}").format(self.entry_cost, self.entry_price))
                          else:
                              # 如果 pos > 0 则不应该发生，但要采取防御措施(Should not happen if pos > 0, but handle defensively)
-                             logger.warning(self._("_update_pos: Cannot reduce cost - previous entry price is missing! Cost remains {:.4f}, Price remains None.").format(previous_entry_cost))
+                             logger.warning(self._("_update_pos：无法降低成本 - 之前的入场价格缺失！成本仍为 {:.4f}，价格仍为 None。").format(previous_entry_cost))
                              self.entry_cost = previous_entry_cost
                              self.entry_price = None
                     # 否则：交易量不变？交易量非零时不应发生这种情况
@@ -581,7 +581,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     # 情况 4：非平缓至平缓（收盘最后一段）[Case 4: Non-Flat to Flat (Closing last leg)]
                     self.entry_cost = Decimal("0.0")
                     self.entry_price = None
-                    logger.debug(self._("_update_pos: Position closed. EntryCost reset to 0, EntryPrice reset to None."))
+                    logger.debug(self._("_update_pos：仓位已平仓。EntryCost 重置为 0，EntryPrice 重置为 None。"))
 
                 # --- 用乘法检查代替 .sign() 检查(Replace .sign() check with multiplication check) ---
                 # elif previous_pos.sign() != current_pos.sign():
@@ -597,7 +597,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                     self.entry_cost = trade_price * current_pos.copy_abs() 
                     # --- End Correction ---
                     self.entry_price = trade_price # New position entry price is the flip trade price
-                    logger.debug(self._("_update_pos: Position flipped. New EntryCost={:.4f}, New EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
+                    logger.debug(self._("_update_pos：位置已反转。新的 EntryCost={:.4f}，新的 EntryPrice={:.4f}").format(self.entry_cost, self.entry_price))
 
                 # --- 健全性检查/舍入（可选但推荐）[Sanity Check/Rounding (Optional but recommended)] ---
                 # 如果位置非常接近零，则重置成本/价格(If position is very close to zero, reset cost/price)
@@ -610,7 +610,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 #     self.entry_price = self.entry_price.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP) # Adjust precision as needed
 
             except Exception as e_entry_price:
-                logger.error(self._("_update_pos: Error calculating entry cost/price: {}").format(e_entry_price))
+                logger.error(self._("_update_pos：计算入场成本/价格时出错：{}").format(e_entry_price))
                 # 为安全起见，发生错误时重置？(Reset on error for safety?)
                 self.entry_cost = Decimal("0.0")
                 self.entry_price = None
@@ -619,7 +619,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         # --- 记录仓位更新(Log the position update) ---
         log_entry_price = f" EntryPrice={self.entry_price:.4f}" if self.entry_price is not None else " EntryPrice=None"
         log_entry_cost = f" EntryCost={self.entry_cost:.4f}" # Always log cost
-        logger.info(self._("Position Update: Symbol={}, TradeID={}, DirectionValue={}, OffsetValue={}, Price={}, Volume={}. PrevPos={}, Change={}, NewPos={}.{}")
+        logger.info(self._("持仓更新：Symbol={}, TradeID={}, DirectionValue={}, OffsetValue={}, Price={}, Volume={}. PrevPos={}, Change={}, NewPos={}.{}")
             .format(
                 trade.vt_symbol, trade.vt_tradeid,
                 direction_value, offset_value, trade.price, trade_volume,
@@ -642,7 +642,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             # If order is now inactive, and we were tracking it, remove it.
             if not order.is_active() and is_active_order:
                 self.active_orders.remove(order.vt_orderid)
-                logger.debug(self._("Order {} removed from active list (Status: {}). Active count: {}.").format(order.vt_orderid, order.status, len(self.active_orders)))
+                logger.debug(self._("订单 {} 已从活跃列表中移除（状态：{}）。活跃数量：{}。").format(order.vt_orderid, order.status, len(self.active_orders)))
             # 如果订单现在处于活动状态并且我们尚未跟踪它，请添加它。
             # 这处理了真实 ID 在回测中到达或实时订单出现的情况。
             # If order is now active, and we were NOT tracking it, add it.
@@ -652,9 +652,9 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                  # Check status to avoid adding already cancelled/rejected orders if initial update was missed
                  if order.status not in [Status.CANCELLED, Status.REJECTED]:
                       self.active_orders.add(order.vt_orderid)
-                      logger.debug(self._("Order {} added to active list (Status: {}). Active count: {}.").format(order.vt_orderid, order.status, len(self.active_orders)))
+                      logger.debug(self._("订单 {} 已添加到有效列表（状态：{}）。有效数量：{}。").format(order.vt_orderid, order.status, len(self.active_orders)))
                  else:
-                      logger.debug(self._("Order {} update received but status is {}, not adding to active list.").format(order.vt_orderid, order.status))
+                      logger.debug(self._("已收到订单 {} 更新但状态为 {}，未添加到活动列表。").format(order.vt_orderid, order.status))
         # 如果订单属于另一个合约，则忽略此实例的活动订单跟踪。
         # If order belongs to another symbol, ignore for active order tracking of this instance.
 
@@ -674,7 +674,7 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             self.on_init()
             logger.info(self._("策略初始化完成"))
         except Exception as e:
-             logger.exception(self._("Error during on_init: {}").format(e))
+             logger.exception(self._("on_init 期间出错：{}").format(e))
              self.inited = False # Mark as failed initialization
 
 
@@ -686,17 +686,17 @@ class BaseLiveStrategy(metaclass=ABCMeta):
         :return:
         """
         if not self.inited:
-             logger.error(self._("Strategy cannot be started because initialization failed or was skipped."))
+             logger.error(self._("由于初始化失败或被跳过，无法启动策略。"))
              return
         if self.trading:
-             logger.warning(self._("Strategy already started."))
+             logger.warning(self._("策略已开始。"))
              return
         self.trading = True
         try:
             self.on_start()
             logger.info(self._("策略启动"))
         except Exception as e:
-            logger.exception(self._("Error during on_start: {}").format(e))
+            logger.exception(self._("on_start 期间出错：{}").format(e))
             self.trading = False # Mark as failed start
 
     def _stop_strategy(self) -> None:
@@ -718,6 +718,6 @@ class BaseLiveStrategy(metaclass=ABCMeta):
                 self.on_stop()
                 logger.info(self._("策略停止"))
             except Exception as e:
-                logger.exception(self._("Error during on_stop or cancel_all: {}").format(e))
+                logger.exception(self._("on_stop 或 cancellation_all 期间出错：{}").format(e))
         else:
              logger.info(self._("策略停止 (未曾启动或启动失败)"))
