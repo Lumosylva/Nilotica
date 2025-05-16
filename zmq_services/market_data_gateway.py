@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@ProjectName: Nilotica
+@FileName   : market_data_gateway.py
+@Date       : 2025/4/12 10:02
+@Author     : Donny
+@Email      : donnymoving@gmail.com
+@Software   : PyCharm
+@Description: 行情网关
+"""
 import logging
 import os
 import sys
@@ -9,7 +20,7 @@ if project_root not in sys.path:
 
 from utils.config_manager import ConfigManager
 from utils.i18n import get_translator
-from utils.logger import logger
+from utils.logger import logger, setup_logging, INFO
 from vnpy.event import Event, EventEngine
 from vnpy.trader.constant import Exchange
 from vnpy.trader.event import EVENT_CONTRACT, EVENT_LOG, EVENT_TICK
@@ -28,7 +39,7 @@ class MarketDataGatewayService(ZmqPublisherBase):
         super().__init__()
         self.config_service = config_manager
         self.environment_name = environment_name
-        
+        setup_logging(service_name=f"{__class__.__name__}[{self.environment_name}]", level=INFO)
         self._ = get_translator()
         
         logger.info(self._("使用提供的 ConfigManager 为环境 [{}] 初始化 MarketDataGatewayService。").format(environment_name))

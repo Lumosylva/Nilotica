@@ -125,7 +125,7 @@ symbol_contract_map: dict[str, ContractData] = {}
 
 class CtpGateway(BaseGateway):
     """
-    VeighNa用于对接期货CTP柜台的交易接口。
+    VeighNa 用于对接期货CTP柜台的交易接口。
     """
 
     default_name: str = "CTP"

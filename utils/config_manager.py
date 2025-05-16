@@ -5,13 +5,13 @@ import os
 from typing import Any, Dict, Optional, Tuple
 
 import yaml
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import BaseModel, ValidationError, TypeAdapter
 
 from config.constants.params import Params
 from config.constants.path import GlobalPath
 from utils.config_models import AllStrategiesConfigModel, GlobalConfigStructure
 from utils.i18n import get_translator
-from utils.logger import logger
+from utils.logger import logger, setup_logging, INFO
 from vnpy.trader.utility import load_json
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -51,6 +51,7 @@ class ConfigManager:
             environment: The name of the environment(e.g., 'dev', 'prod', 'backtest').
             If provided, loads and merges {environment}_config.yaml.
         """
+        setup_logging(service_name=__class__.__name__, level=INFO)
         self._ = get_translator()
         self._global_config_path = global_config_path
         self._environment = environment
@@ -226,7 +227,7 @@ class ConfigManager:
         
         if raw_strategies_data: # load_json returns {} if file not found or empty, _load_json also does
             try:
-                validated_strategies = parse_obj_as(AllStrategiesConfigModel, raw_strategies_data)
+                validated_strategies = TypeAdapter(AllStrategiesConfigModel).validate_python(raw_strategies_data)
                 self._strategies_data = {name: model.model_dump() for name, model in validated_strategies.items()}
                 logger.info(self._("策略配置已成功验证并加载。"))
             except ValidationError as e_strat:
