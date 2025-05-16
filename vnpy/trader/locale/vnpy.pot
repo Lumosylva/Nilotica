@@ -1,0 +1,233 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2025-05-16 16:44+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: vnpy\trader\constant.py:17
+msgid "多"
+msgstr ""
+
+#: vnpy\trader\constant.py:18
+msgid "空"
+msgstr ""
+
+#: vnpy\trader\constant.py:19
+msgid "净"
+msgstr ""
+
+#: vnpy\trader\constant.py:28
+msgid "开"
+msgstr ""
+
+#: vnpy\trader\constant.py:29
+msgid "平"
+msgstr ""
+
+#: vnpy\trader\constant.py:30
+msgid "平今"
+msgstr ""
+
+#: vnpy\trader\constant.py:31
+msgid "平昨"
+msgstr ""
+
+#: vnpy\trader\constant.py:39
+msgid "提交中"
+msgstr ""
+
+#: vnpy\trader\constant.py:40
+msgid "未成交"
+msgstr ""
+
+#: vnpy\trader\constant.py:41
+msgid "部分成交"
+msgstr ""
+
+#: vnpy\trader\constant.py:42
+msgid "全部成交"
+msgstr ""
+
+#: vnpy\trader\constant.py:43
+msgid "已撤销"
+msgstr ""
+
+#: vnpy\trader\constant.py:44
+msgid "拒单"
+msgstr ""
+
+#: vnpy\trader\constant.py:52
+msgid "股票"
+msgstr ""
+
+#: vnpy\trader\constant.py:53
+msgid "期货"
+msgstr ""
+
+#: vnpy\trader\constant.py:54
+msgid "期权"
+msgstr ""
+
+#: vnpy\trader\constant.py:55
+msgid "指数"
+msgstr ""
+
+#: vnpy\trader\constant.py:56
+msgid "外汇"
+msgstr ""
+
+#: vnpy\trader\constant.py:57
+msgid "现货"
+msgstr ""
+
+#: vnpy\trader\constant.py:59
+msgid "债券"
+msgstr ""
+
+#: vnpy\trader\constant.py:60
+msgid "权证"
+msgstr ""
+
+#: vnpy\trader\constant.py:61
+msgid "价差"
+msgstr ""
+
+#: vnpy\trader\constant.py:62
+msgid "基金"
+msgstr ""
+
+#: vnpy\trader\constant.py:64
+msgid "互换"
+msgstr ""
+
+#: vnpy\trader\constant.py:72
+msgid "限价"
+msgstr ""
+
+#: vnpy\trader\constant.py:73
+msgid "市价"
+msgstr ""
+
+#: vnpy\trader\constant.py:77
+msgid "询价"
+msgstr ""
+
+#: vnpy\trader\constant.py:85
+msgid "看涨期权"
+msgstr ""
+
+#: vnpy\trader\constant.py:86
+msgid "看跌期权"
+msgstr ""
+
+#: vnpy\trader\database.py:153
+msgid "找不到数据库驱动{}，使用默认的SQLite数据库"
+msgstr ""
+
+#: vnpy\trader\datafeed.py:25
+msgid "查询K线数据失败：没有正确配置数据服务"
+msgstr ""
+
+#: vnpy\trader\datafeed.py:32
+msgid "查询Tick数据失败：没有正确配置数据服务"
+msgstr ""
+
+#: vnpy\trader\datafeed.py:52
+msgid "没有配置要使用的数据服务，请修改全局配置中的datafeed相关内容"
+msgstr ""
+
+#: vnpy\trader\datafeed.py:66
+msgid "无法加载数据服务模块，请运行 pip install {} 尝试安装"
+msgstr ""
+
+#: vnpy\trader\engine.py:174
+msgid "找不到底层接口：{}"
+msgstr ""
+
+#: vnpy\trader\engine.py:183
+msgid "找不到引擎：{}"
+msgstr ""
+
+#: vnpy\trader\engine.py:602
+msgid "邮件发送失败: {}"
+msgstr ""
+
+#: vnpy\trader\optimize.py:46
+msgid "固定参数添加成功"
+msgstr ""
+
+#: vnpy\trader\optimize.py:49
+msgid "参数优化起始点必须小于终止点"
+msgstr ""
+
+#: vnpy\trader\optimize.py:52
+msgid "参数优化步进必须大于0"
+msgstr ""
+
+#: vnpy\trader\optimize.py:63
+msgid "范围参数添加成功，数量{}"
+msgstr ""
+
+#: vnpy\trader\optimize.py:89
+msgid "优化参数组合为空，请检查"
+msgstr ""
+
+#: vnpy\trader\optimize.py:93
+msgid "优化目标未设置，请检查"
+msgstr ""
+
+#: vnpy\trader\optimize.py:109
+msgid "开始执行穷举算法优化"
+msgstr ""
+
+#: vnpy\trader\optimize.py:110 vnpy\trader\optimize.py:194
+msgid "参数优化空间：{}"
+msgstr ""
+
+#: vnpy\trader\optimize.py:127
+msgid "穷举算法优化完成，耗时{}秒"
+msgstr ""
+
+#: vnpy\trader\optimize.py:193
+msgid "开始执行遗传算法优化"
+msgstr ""
+
+#: vnpy\trader\optimize.py:195
+msgid "每代族群总数：{}"
+msgstr ""
+
+#: vnpy\trader\optimize.py:196
+msgid "优良筛选个数：{}"
+msgstr ""
+
+#: vnpy\trader\optimize.py:197
+msgid "迭代次数：{}"
+msgstr ""
+
+#: vnpy\trader\optimize.py:198
+msgid "交叉概率：{:.0%}"
+msgstr ""
+
+#: vnpy\trader\optimize.py:199
+msgid "突变概率：{:.0%}"
+msgstr ""
+
+#: vnpy\trader\optimize.py:217
+msgid "遗传算法优化完成，耗时{}秒"
+msgstr ""
+
+#: vnpy\trader\utility.py:201
+msgid "合成日K线必须传入每日收盘时间"
+msgstr ""
+
