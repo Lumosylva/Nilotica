@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-16 18:05+0800\n"
-"PO-Revision-Date: 2025-05-16 18:05+0800\n"
+"POT-Creation-Date: 2025-05-16 21:09+0800\n"
+"PO-Revision-Date: 2025-05-16 21:09+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
 "Language-Team: en <LL@li.org>\n"
@@ -269,20 +269,33 @@ msgstr "Error creating AccountData from dictionary {}. Dictionary: {}"
 msgid "从字典 {} 创建 LogData 时出错。字典：{}"
 msgstr "Error creating LogData from dictionary {}. Dictionary: {}"
 
-#: utils/i18n.py:61
+#: utils/i18n.py:63
 #, python-brace-format
-msgid "未找到语言'{}'（或其后备语言）的翻译文件 (messages.mo)，将使用原文。搜索范围：{}"
-msgstr "Translation file (messages.mo) not found for language '{}' (or its fallbacks), will use original text. Searched in: {}"
+msgid ""
+"Translation file (messages.mo) not found for language '{language_code}' "
+"at {path}, will use original text."
+msgstr ""
 
-#: utils/i18n.py:68
+#: utils/i18n.py:76
 #, python-brace-format
-msgid "语言设置为：{}，翻译器已为当前线程加载。路径：{}"
-msgstr "Language set to: {}, translator loaded for current thread. Path: {}"
+msgid ""
+"Failed to load translations or .mo file is empty for language "
+"'{language_code}' using polib from {path}, will use original text."
+msgstr ""
 
-#: utils/i18n.py:77
+#: utils/i18n.py:92
 #, python-brace-format
-msgid "初始化语言'{}'的 gettext 时出错：{}。恢复原始文本。"
-msgstr "Error occurred while initializing gettext for language '{}': {}. Falling back to original text."
+msgid ""
+"Language set to: {language_code}, translator loaded using polib for "
+"current thread. Path: {mo_file_path}"
+msgstr ""
+
+#: utils/i18n.py:101
+#, python-brace-format
+msgid ""
+"Error occurred while initializing translations for language "
+"'{language_code}' using polib: {error}. Falling back to original text."
+msgstr ""
 
 #: vnpy/trader/constant.py:17
 msgid "多"

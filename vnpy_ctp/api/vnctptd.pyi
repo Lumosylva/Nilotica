@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 __all__ = ['TdApi']
 class TdApi:
     def __init__(self) -> None:

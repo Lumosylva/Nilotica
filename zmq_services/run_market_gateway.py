@@ -10,7 +10,7 @@ if project_root not in sys.path:
 
 from config.constants.path import GlobalPath  # For project_root fallback
 from utils.config_manager import ConfigManager
-from utils.i18n import get_translator, setup_language
+from utils.i18n import _
 from utils.logger import logger, setup_logging
 from zmq_services.market_data_gateway import MarketDataGatewayService
 
@@ -66,11 +66,6 @@ def main():
     actual_project_root = getattr(config_service, 'PROJECT_ROOT', project_root) # Use local project_root as fallback
     if not actual_project_root: # Further fallback if needed
         actual_project_root = GlobalPath.project_root_path
-
-    setup_language(language_to_use, actual_project_root)
-    
-    # --- Define _ for convenience in this main function after language setup ---
-    _ = get_translator()
 
     # Setup logging AFTER i18n is initialized and potentially overridden by --lang
     setup_logging(service_name=f"MarketGatewayRunner[{args.ctp_env}]", level=args.log_level.upper(), config_env=args.config_env)

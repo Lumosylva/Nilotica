@@ -50,6 +50,7 @@ dependencies = [
     "importlib-metadata>=8.6.1",
     "pyyaml>=6.0.2",
     "pydantic>=2.11.4",
+    "polib>=1.2.0",
 ]
 
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]

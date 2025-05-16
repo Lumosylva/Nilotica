@@ -4,7 +4,7 @@ title Internationalization scripts
 cd ..\
 call .venv\Scripts\activate
 :: Generate pot file
-pybabel extract -F babel.cfg -o locales/nilotica.pot .
+pybabel extract -F babel.cfg -o locales/messages.pot .
 :: Update an existing .po file with a new .pot file
-pybabel init -i locales/nilotica.pot -d locales -l en
+pybabel init -i locales/messages.pot -d locales -l en
 exit
