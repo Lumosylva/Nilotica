@@ -124,9 +124,9 @@ def setup_logging(
         Patches the translation function into the loguru record
 
         Args:
-        record (dict): The loguru record
+        record (dict): loguru记录(The loguru record)
         """
-        translator = get_translator() # 获取线程特定的翻译器(Get thread-specific translator)
+        translator = get_translator()  # 获取线程特定的翻译器(Get thread-specific translator)
         # Loguru 将原始消息（格式字符串或字面量）存储在 record["message"] 中
         # 如果传递了参数，则它们存储在 record["parameters"] 中
         # 我们需要翻译格式字符串 record["message"]

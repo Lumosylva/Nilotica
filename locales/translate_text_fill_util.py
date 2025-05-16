@@ -39,7 +39,7 @@ def load_json_file(file_path):
 
 def process_po_file(po_file_path, json_data):
     """
-    处理PO文件，填充msgstr字段，保留原有结构和msgid
+    处理PO文件，填充msgstr字段，保留原有结构和 msgid
 
     Process PO files, fill in msgstr fields, retain original structure and msgid
     :param po_file_path: PO文件路径
