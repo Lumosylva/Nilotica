@@ -54,7 +54,13 @@ The functions currently implemented by the system are:
 
 ### **3. Description**
 
-This project modifies some source code files in the vnpy library.
+This project modified some source code files in the vnpy library and used some key third-party libraries:
+
+* Python project management tool: uv
+* Python project building tool: hatch
+* Internationalization (i18n): Babel
+* C++ and Python binding: pybind11
+* Stub generation: pybind11-stubgen
 
 ### **4. Environment Configuration**
 

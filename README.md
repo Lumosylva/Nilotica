@@ -58,7 +58,13 @@ _✨ 基于 vnpy 的期货量化交易系统 ✨_
 
 ### **3. 说明**
 
-本项目修改了 vnpy 库中部分源代码文件。
+本项目修改了 vnpy 库中部分源代码文件，使用到的一些关键的第三方库：
+* Python项目管理工具：uv
+* Python项目构建工具：hatch
+* 国际化（i18n）：Babel
+* C++ 与 Python 绑定：pybind11
+* 存根生成：pybind11-stubgen
+
 
 ### **4. 环境配置**
 
@@ -119,9 +125,9 @@ _✨ 基于 vnpy 的期货量化交易系统 ✨_
 
 ### **5. 编译VNPY_CTP**
 
-需要对`vnpy_ctp`编译时，执行 `hatch build` 命令将会在项目 vnpy_ctp\api\ 下利用`hatch_build.py`构建脚本，编译vnctpmd和vnctptd模块为.pyd文件（在Windows上）或.so文件（在Linux上），并生成对应的Python接口存根文件（.pyi）。该脚本使用了pybind11库来简化C++与Python之间的绑定过程，并通过setuptools和hatchling来执行构建操作。
+需要对 vnpy_ctp 编译时，执行 hatch build 命令将会在项目 vnpy_ctp\api\ 下利用 hatch_build.py 构建脚本，编译 vnctpmd 和 vnctptd 模块为 .pyd 文件（在Windows上）或.so文件（在Linux上），并生成对应的 Python 接口存根文件（.pyi）。该脚本使用了 pybind11 库来简化 C++ 与 Python 之间的绑定过程，并通过 setuptools 和 hatchling 来执行构建操作。
 
-需要对`vnpy_tts`编译时，请修改`pyproject.toml`中`[tool.hatch.build.hooks.custom]`构建脚本的`path`为`hatch_build_tts.py`，再执行`hatch build`可编译同上述类似的过程。
+需要对 vnpy_tts 编译时，请修改 pyproject.toml 中 [tool.hatch.build.hooks.custom] 构建脚本的 `path` 为 hatch_build_tts.py ，再执行 hatch build 可编译同上述类似的过程。
 
 #### **(1) 清理旧的构建**
 
