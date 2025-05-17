@@ -56,7 +56,7 @@ class ConfigManager:
         self._env_config_path: Optional[str] = None
         self._config_data: GlobalConfigStructure | Dict[str, Any] = {} # Can be model or dict if validation fails
         self._strategies_data: Dict[str, Any] = {} # Will store validated strategy data (or raw if validation fails)
-        setup_logging(service_name=f"{__class__.__name__}[{self._environment}]", level=INFO)
+        setup_logging(service_name=self.__class__.__name__)
         self._load_configs()
 
     @staticmethod
@@ -86,18 +86,18 @@ class ConfigManager:
         Loads a YAML file.
         """
         if not os.path.exists(file_path):
-            logger.error(_("Configuration file not found: {}").format(file_path))
+            logger.error("Configuration file not found: {}".format(file_path))
             return {}
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f)
-            logger.debug(_("Successfully loaded YAML configuration from {}").format(file_path))
+            logger.debug("Successfully loaded YAML configuration from {}".format(file_path))
             return data if data else {}
         except yaml.YAMLError as e:
-            logger.error(_("Unable to parse YAML file {}: {}").format(file_path, e))
+            logger.error("Unable to parse YAML file {}: {}".format(file_path, e))
             return {}
         except IOError as e:
-            logger.error(_("Unable to read file {}: {}").format(file_path, e))
+            logger.error("Unable to read file {}: {}".format(file_path, e))
             return {}
 
     @staticmethod
@@ -134,7 +134,7 @@ class ConfigManager:
         # 1. Load Base Global Config
         base_config = self._load_yaml(self._global_config_path)
         if not base_config:
-             logger.warning(_("The base global configuration ({}) failed to load or is empty.").format(self._global_config_path))
+             logger.warning("The base global configuration ({}) failed to load or is empty.".format(self._global_config_path))
 
         language_to_set = "en"  # 默认语言
         # 从配置中获取语言设置，并调用 setup_language
@@ -163,17 +163,6 @@ class ConfigManager:
         if env_specific_config: # Only merge if env_specific_config has content
             logger.info(_("将环境配置 ('{}') 合并到基本配置中。").format(self._environment))
             merged_config_data = self._deep_merge(base_config, env_specific_config)
-        
-
-        # 再次调用 setup_logging 以确保其使用已配置的语言（如果其消息被翻译）
-        # 或者，如果 setup_logging 自身的日志消息不打算被翻译，可以将其移到 __init__ 的开头。
-        # 为简单起见，如果 setup_logging 的消息是纯英文或代码标识符，则无需再次调用。
-        # 假设 setup_logging 的消息不需要翻译，则 __init__ 中的原始位置即可。
-        # 我们在 __init__ 中没有设置日志级别，所以这里设置一次
-        log_level_str = "INFO" # Default
-        if merged_config_data and isinstance(merged_config_data.get("logging"), dict):
-            log_level_str = merged_config_data["logging"].get("default_level", "INFO").upper()
-        setup_logging(service_name=self.__class__.__name__, level=log_level_str)
 
         # +++ 4. Validate merged configuration using Pydantic model +++
         if merged_config_data: # Proceed only if there's some config data to validate

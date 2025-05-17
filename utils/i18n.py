@@ -57,15 +57,13 @@ def setup_language(language_code: str, project_root: str):
     if language_code == "":
         _thread_locals.language_code = ""
         _thread_locals.translator = _null_translator
-        # 可选：如果希望在明确设置为空字符串时不进行日志记录，可以在此返回
-        # i18n_logger.info(_("Language is set to empty string. No translation will be applied (original text will
-        # be used)."))
         return # 如果语言代码是空字符串，则不加载任何 .mo 文件
     elif language_code == "en":
         _thread_locals.language_code = "en"
         mo_file_path = os.path.join(localedir, language_code, 'LC_MESSAGES', 'messages.mo')
     else:
-        i18n_logger.warning(_("Unsupported language code: '{}'. Falling back to no translation (original text will be used).").format(language_code))
+        i18n_logger.warning("Unsupported language code: '{}'. Falling back to no translation (original text will be "
+                            "used).".format(language_code))
         _thread_locals.language_code = "" # 或 language_code，取决于是否想记录不支持的码
         _thread_locals.translator = _null_translator
         return # 不支持的语言，不加载 .mo 文件
@@ -75,9 +73,8 @@ def setup_language(language_code: str, project_root: str):
         if not os.path.exists(mo_file_path):
             _thread_locals.translator = _null_translator
             _ = _thread_locals.translator
-            i18n_logger.warning(
-                _("Translation file (messages.mo) not found for language '{}' at {}, will use original text.").format(
-                    language_code, mo_file_path))
+            i18n_logger.warning("Translation file (messages.mo) not found for language '{}' at {}, will use original "
+                                "text.".format(language_code, mo_file_path))
             return
 
         mo_file = polib.mofile(mo_file_path)
@@ -85,8 +82,8 @@ def setup_language(language_code: str, project_root: str):
         if not mo_file or len(mo_file) == 0:
             _thread_locals.translator = _null_translator
             _ = _thread_locals.translator
-            i18n_logger.warning(
-                 _("Failed to load translations or .mo file is empty for language '{}' using polib from {}, will use original text.").format(language_code, mo_file_path))
+            i18n_logger.warning("Failed to load translations or .mo file is empty for language '{}' using polib "
+                                "from {}, will use original text.".format(language_code, mo_file_path))
         else:
             def polib_translator(msgid: str) -> str:
                 entry = mo_file.find(msgid)
@@ -94,8 +91,7 @@ def setup_language(language_code: str, project_root: str):
             
             _thread_locals.translator = polib_translator
             _ = _thread_locals.translator
-            i18n_logger.info(
-                _("Language set to: {}, translator loaded using polib for current thread. Path: {}").format(
+            i18n_logger.info("Language set to: {}, translator loaded using polib for current thread. Path: {}".format(
                     language_code, mo_file_path
                 )
             )
@@ -103,11 +99,8 @@ def setup_language(language_code: str, project_root: str):
     except Exception as e:
         _thread_locals.translator = _null_translator
         _ = _thread_locals.translator
-        i18n_logger.error(
-            _("Error occurred while initializing translations for language '{}' using polib: {}. Falling back to original text.").format(
-                language_code, str(e)
-            )
-        )
+        i18n_logger.error("Error occurred while initializing translations for language '{}' using polib: {}. Falling \
+        back to original text.".format(language_code, str(e)))
 
 def get_current_language() -> str | None:
     """

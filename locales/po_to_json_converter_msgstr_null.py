@@ -7,8 +7,8 @@
 @Author     : Your Name/Donny
 @Email      : your_email@example.com
 @Software   : PyCharm
-@Description: 将 .po 文件中的 msgid 和 msgstr 提取并转换为 JSON 文件。
-             Extracts msgid and msgstr from a .po file and converts them to a JSON file.
+@Description: 从 .po 文件中提取 msgstr 为空的条目的 msgid，并保存为 JSON 文件。
+             Extracts msgids from a .po file where msgstr is empty and saves them to a JSON file.
 """
 import json
 import os
@@ -32,9 +32,9 @@ except ImportError:
     logger.info("Project-specific logger not found, using basic logging.")
 
 
-def convert_po_to_json(po_file_path: Path, json_file_path: Path):
+def extract_empty_msgstr_keys(po_file_path: Path, json_file_path: Path):
     """
-    读取 PO 文件，提取 msgid 和 msgstr，并保存为 JSON 文件。
+    读取 PO 文件，提取 msgstr 为空的条目的 msgid，并以 {msgid: ""} 格式保存为 JSON 文件。
 
     Args:
         po_file_path (Path): 输入的 .po 文件路径。
@@ -44,32 +44,28 @@ def convert_po_to_json(po_file_path: Path, json_file_path: Path):
         logger.error(f"错误：PO 文件 '{po_file_path}' 未找到。")
         return
 
-    translations = {}
+    empty_msgstr_keys = {}
     try:
         po = polib.pofile(str(po_file_path))
         processed_count = 0
-        skipped_empty_msgstr = 0
+        extracted_count = 0
 
         for entry in po:
-            # 跳过头部条目 (msgid="")、废弃条目以及没有翻译的条目 (msgstr为空)
-            if entry.obsolete or not entry.msgid: # msgid 为空也跳过 (例如头部)
+            processed_count +=1
+            # 跳过头部条目 (msgid="") 和废弃条目
+            if entry.obsolete or not entry.msgid:
                 continue
 
-            if not entry.msgstr:
-                logger.warning(f"跳过 msgid '{entry.msgid}' 因为 msgstr 为空。")
-                skipped_empty_msgstr += 1
-                continue
-            
-            # polib 会自动处理多行 msgid 和 msgstr 的拼接和解码
-            translations[entry.msgid] = entry.msgstr
-            processed_count += 1
+            # 检查 msgstr 是否为空
+            if not entry.msgstr: # msgstr is an empty string
+                empty_msgstr_keys[entry.msgid] = ""
+                extracted_count += 1
         
         with open(json_file_path, 'w', encoding='utf-8') as json_file:
-            json.dump(translations, json_file, ensure_ascii=False, indent=4)
+            json.dump(empty_msgstr_keys, json_file, ensure_ascii=False, indent=4)
         
-        logger.info(f"成功将 {processed_count} 个条目从 '{po_file_path.name}' 转换到 '{json_file_path.name}'。")
-        if skipped_empty_msgstr > 0:
-            logger.info(f"跳过了 {skipped_empty_msgstr} 个因为 msgstr 为空的条目。")
+        logger.info(f"处理了 {processed_count} 个条目。")
+        logger.info(f"成功将 {extracted_count} 个 msgstr 为空的条目的 msgid 从 '{po_file_path.name}' 提取到 '{json_file_path.name}'。")
 
     except Exception as e:
         logger.error(f"处理 PO 文件 '{po_file_path}' 或写入 JSON 文件 '{json_file_path}' 时出错：{e}")
@@ -77,16 +73,16 @@ def convert_po_to_json(po_file_path: Path, json_file_path: Path):
 
 def main():
     locales_dir = project_root / "locales"
-    # po_file_input_path = locales_dir / "vnpy.po"  # 输入的 PO 文件
-    po_file_input_path = locales_dir / "en/LC_MESSAGES/messages.po"
-    json_file_output_path = locales_dir / "vnpy_translations.json"  # 输出的 JSON 文件
+    # 注意：根据你的最新需求，输入文件是 messages.po
+    po_file_input_path = locales_dir / "en" / "LC_MESSAGES" / "messages.po"  
+    json_file_output_path = locales_dir / "empty_msgstr_keys.json"  # 新的输出文件名
 
-    logger.info(f"开始转换过程...")
+    logger.info(f"开始提取 msgstr 为空的条目...")
     logger.info(f"输入 PO 文件路径：{po_file_input_path}")
     logger.info(f"输出 JSON 文件路径：{json_file_output_path}")
 
-    convert_po_to_json(po_file_input_path, json_file_output_path)
-    logger.info(f"转换完成。")
+    extract_empty_msgstr_keys(po_file_input_path, json_file_output_path)
+    logger.info(f"提取完成。")
 
 if __name__ == "__main__":
     main() 

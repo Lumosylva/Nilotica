@@ -1,0 +1,2527 @@
+# English translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-05-17 23:40+0800\n"
+"PO-Revision-Date: 2025-05-17 23:40+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: en <LL@li.org>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: utils/config_manager.py:111
+#, python-brace-format
+msgid "未找到可选的 JSON 配置文件：{}"
+msgstr "Optional JSON configuration file not found: {}"
+
+#: utils/config_manager.py:116
+#, python-brace-format
+msgid "已成功从 {} 加载 JSON 配置"
+msgstr "Successfully loaded JSON configuration from: {}"
+
+#: utils/config_manager.py:119
+#, python-brace-format
+msgid "无法解析 JSON 文件 {}: {}"
+msgstr "Failed to parse JSON file {}: {}"
+
+#: utils/config_manager.py:122
+#, python-brace-format
+msgid "无法读取文件 {}: {}"
+msgstr "Failed to read file {}: {}"
+
+#: utils/config_manager.py:154
+#, python-brace-format
+msgid "尝试从以下位置加载环境 '{}' 的配置: {}"
+msgstr "Trying to load configuration for environment '{}' from: {}"
+
+#: utils/config_manager.py:157
+#, python-brace-format
+msgid "环境配置文件 ({}) 未找到或为空。如果有任何被覆盖的键，将使用基本配置值。"
+msgstr ""
+"The environment configuration file ({}) was not found or is empty. If any "
+"keys are overridden, the base configuration values will be used."
+
+#: utils/config_manager.py:159
+msgid "未指定环境，仅使用基本配置。"
+msgstr "No environment is specified, only the basic configuration is used."
+
+#: utils/config_manager.py:164
+#, python-brace-format
+msgid "将环境配置 ('{}') 合并到基本配置中。"
+msgstr "Merge environment configuration ('{}') into the base configuration."
+
+#: utils/config_manager.py:175
+msgid "全局配置已成功验证并加载到 Pydantic 模型中。"
+msgstr ""
+"The global configuration is successfully validated and loaded into the "
+"Pydantic model."
+
+#: utils/config_manager.py:177
+#, python-brace-format
+msgid "全局配置验证失败！错误: {}"
+msgstr "Global configuration validation failed! Error: {}"
+
+#: utils/config_manager.py:179
+msgid "关键配置错误。中止程序启动。"
+msgstr "Critical configuration error. Aborting program startup."
+
+#: utils/config_manager.py:180
+msgid "配置验证失败。查看日志了解详情。"
+msgstr "Configuration validation failed. Check the logs for details."
+
+#: utils/config_manager.py:185
+#, python-brace-format
+msgid "在全局配置的 Pydantic 模型实例化过程中发生意外错误: {}"
+msgstr ""
+"An unexpected error occurred during instantiation of a globally configured "
+"Pydantic model: {}"
+
+#: utils/config_manager.py:186
+msgid "全局配置处理过程中发生关键错误。中止程序启动。"
+msgstr ""
+"A critical error occurred during global configuration processing. Aborting "
+"program startup."
+
+#: utils/config_manager.py:187
+msgid "全局配置处理过程中发生意外错误。"
+msgstr "An unexpected error occurred during global configuration processing."
+
+#: utils/config_manager.py:189
+msgid "合并的全局配置数据为空。未执行 Pydantic 验证。"
+msgstr ""
+"The merged global configuration data is empty. No Pydantic validation is "
+"performed."
+
+#: utils/config_manager.py:203
+msgid "全局 Pydantic 模型已重新验证并更新了已解析的绝对路径。"
+msgstr ""
+"Global Pydantic models have been revalidated and updated with resolved "
+"absolute paths."
+
+#: utils/config_manager.py:205
+#, python-brace-format
+msgid "路径解析后重新验证全局配置模型时出错: {}。可能无法通过 Pydantic 模型访问已解析的路径。"
+msgstr ""
+"Error revalidating global config model after path resolution: {}. Resolved "
+"paths may not be accessible via Pydantic models."
+
+#: utils/config_manager.py:225
+#, python-brace-format
+msgid "尝试从配置的路径加载策略配置: {}"
+msgstr "Try loading strategy configuration from the configured path: {}"
+
+#: utils/config_manager.py:228
+#, python-brace-format
+msgid "在 '{}' 指定的策略配置文件未找到或为空。"
+msgstr ""
+"The strategy configuration file specified in '{}' was not found or is empty."
+
+#: utils/config_manager.py:232
+#, python-brace-format
+msgid "未从特定配置路径加载策略，或路径未设置。尝试默认用户位置 '{}'..."
+msgstr ""
+"Strategy was not loaded from the specified configuration path, or the path "
+"was not set. Trying the default user location '{}'..."
+
+#: utils/config_manager.py:239
+msgid "策略配置已成功验证并加载。"
+msgstr "The strategy configuration was successfully validated and loaded."
+
+#: utils/config_manager.py:241
+#, python-brace-format
+msgid "策略配置验证失败！错误: {}"
+msgstr "Strategy configuration validation failed! Error: {}"
+
+#: utils/config_manager.py:242
+msgid "由于验证错误，使用未验证的原始策略数据。行为可能不可预测。"
+msgstr ""
+"Due to validation errors, unvalidated raw strategy data is used. Behavior "
+"may be unpredictable."
+
+#: utils/config_manager.py:245
+#, python-brace-format
+msgid "在策略配置的 Pydantic 模型实例化过程中发生意外错误: {}"
+msgstr ""
+"An unexpected error occurred during instantiation of the Pydantic model for "
+"the strategy configuration: {}"
+
+#: utils/config_manager.py:248
+msgid "未找到策略配置文件或为空（已检查特定路径和默认路径）。未加载任何策略。"
+msgstr ""
+"The strategy configuration file was not found or was empty (both specific "
+"and default paths were checked). No strategy was loaded."
+
+#: utils/config_manager.py:263
+msgid "配置中缺少 'paths' 部分或不是字典。无法解析路径。"
+msgstr ""
+"The 'paths' section in the configuration is missing or is not a dictionary. "
+"Unable to resolve paths."
+
+#: utils/config_manager.py:271
+#, python-brace-format
+msgid "已解析 '{}': {} -> {}"
+msgstr "Parsed '{}': {} -> {}"
+
+#: utils/config_manager.py:280
+#, python-brace-format
+msgid "'backtest_data_source_path' 默认为 'data_recording_path_abs': {}"
+msgstr "'backtest_data_source_path' defaults to 'data_recording_path_abs': {}"
+
+#: utils/config_manager.py:313
+#, python-brace-format
+msgid "配置数据（类型: {}）既不是 Pydantic 模型也不是字典。无法获取键 '{}'。"
+msgstr ""
+"Configuration data (type: {}) is neither a Pydantic model nor a dictionary. "
+"Cannot get key '{}'."
+
+#: utils/config_manager.py:316
+#, python-brace-format
+msgid "访问键 '{}' 时出错。返回默认值：{}"
+msgstr "Error accessing key '{}'. Returning default value: {}"
+
+#: utils/config_manager.py:328
+msgid "无法获取所有全局配置：_config_data 不是 Pydantic 模型或字典。"
+msgstr ""
+"Unable to fetch all global configuration: _config_data is not a Pydantic "
+"model or dictionary."
+
+#: utils/config_manager.py:372
+#, python-brace-format
+msgid "错误：产品信息文件未找到 {}"
+msgstr "Error: Product information file not found {}"
+
+#: utils/config_manager.py:377
+#, python-brace-format
+msgid "错误：读取产品信息文件 {} 时出错：{}"
+msgstr "Error: Error reading product information file {}: {}"
+
+#: utils/config_manager.py:383
+#, python-brace-format
+msgid "警告：文件 {} 中的 [{}] 缺少 'multiplier'，跳过此合约。"
+msgstr ""
+"Warning: Missing 'multiplier' in [{}] of file {}, skipping this contract."
+
+#: utils/config_manager.py:397
+#, python-brace-format
+msgid "警告：解析文件 {} 中 [{}] 的数值时出错: {}，跳过此合约。"
+msgstr ""
+"Warning: Error parsing value of [{}] in file {}: {}, skipping this contract."
+
+#: utils/config_manager.py:400
+#, python-brace-format
+msgid "警告：处理文件 {} 中 [{}] 时发生未知错误: {}，跳过此合约。"
+msgstr ""
+"WARNING: An unknown error occurred while processing [{}] in file {}: {}, "
+"skipping this contract."
+
+#: utils/config_manager.py:402
+#, python-brace-format
+msgid "从 {} 加载了 {} 个合约的乘数和 {} 个合约的手续费规则。"
+msgstr ""
+"Loaded multipliers for {} contracts and fee rules for {} contracts from {}."
+
+#: utils/converter.py:94 utils/converter.py:108
+msgid "无法转换列表/元组中的项目，使用字符串表示。"
+msgstr "Unable to convert items in list/tuple to string representation."
+
+#: utils/converter.py:196
+#, python-brace-format
+msgid "警告：convert_order_data_to_dict 中未处理的类型: {}。转换为字符串。"
+msgstr ""
+"Warning: Unhandled type: {} in convert_order_data_to_dict. Converting to "
+"string."
+
+#: utils/converter.py:229
+#, python-brace-format
+msgid "创建 OrderRequest 失败：缺少关键字段：{} from data {}"
+msgstr "Failed to create OrderRequest: Missing key field: {} from data {}"
+
+#: utils/converter.py:232
+#, python-brace-format
+msgid "创建 OrderRequest 失败：无效的枚举值：{} from data {}"
+msgstr "Failed to create OrderRequest: Invalid enum value: {} from data {}"
+
+#: utils/converter.py:235
+#, python-brace-format
+msgid "创建 OrderRequest 时发生未知错误：{} from data {}"
+msgstr ""
+"An unknown error occurred while creating OrderRequest: {} from data {}"
+
+#: utils/converter.py:266
+#, python-brace-format
+msgid "从字典 {} 创建 OrderData 时出错。字典：{}"
+msgstr "Error creating OrderData from dictionary {}. Dictionary: {}"
+
+#: utils/converter.py:298
+#, python-brace-format
+msgid "从字典 {} 创建 TradeData 时出错。字典：{}"
+msgstr "Error creating TradeData from dictionary {}. Dictionary: {}"
+
+#: utils/converter.py:328
+#, python-brace-format
+msgid "从字典 {} 创建 TickData 时出错。字典：{}"
+msgstr "Error creating TickData from dictionary {}. Dictionary: {}"
+
+#: utils/converter.py:350
+#, python-brace-format
+msgid "从字典 {} 创建 AccountData 时出错。字典：{}"
+msgstr "Error creating AccountData from dictionary {}. Dictionary: {}"
+
+#: utils/converter.py:389
+#, python-brace-format
+msgid "从字典 {} 创建 LogData 时出错。字典：{}"
+msgstr "Error creating LogData from dictionary {}. Dictionary: {}"
+
+#: vnpy/trader/constant.py:17
+msgid "多"
+msgstr "Long"
+
+#: vnpy/trader/constant.py:18
+msgid "空"
+msgstr "Short"
+
+#: vnpy/trader/constant.py:19
+msgid "净"
+msgstr "Net"
+
+#: vnpy/trader/constant.py:28
+msgid "开"
+msgstr "Open"
+
+#: vnpy/trader/constant.py:29
+msgid "平"
+msgstr "Close"
+
+#: vnpy/trader/constant.py:30
+msgid "平今"
+msgstr "Close Today"
+
+#: vnpy/trader/constant.py:31
+msgid "平昨"
+msgstr "Close Yesterday"
+
+#: vnpy/trader/constant.py:39
+msgid "提交中"
+msgstr "Submitting"
+
+#: vnpy/trader/constant.py:40
+msgid "未成交"
+msgstr "Not Traded"
+
+#: vnpy/trader/constant.py:41
+msgid "部分成交"
+msgstr "Part Traded"
+
+#: vnpy/trader/constant.py:42
+msgid "全部成交"
+msgstr "All Traded"
+
+#: vnpy/trader/constant.py:43
+msgid "已撤销"
+msgstr "Cancelled"
+
+#: vnpy/trader/constant.py:44
+msgid "拒单"
+msgstr "Rejected"
+
+#: vnpy/trader/constant.py:52
+msgid "股票"
+msgstr "Stock"
+
+#: vnpy/trader/constant.py:53
+msgid "期货"
+msgstr "Futures"
+
+#: vnpy/trader/constant.py:54
+msgid "期权"
+msgstr "Option"
+
+#: vnpy/trader/constant.py:55
+msgid "指数"
+msgstr "Index"
+
+#: vnpy/trader/constant.py:56
+msgid "外汇"
+msgstr "Forex"
+
+#: vnpy/trader/constant.py:57
+msgid "现货"
+msgstr "Spot"
+
+#: vnpy/trader/constant.py:59
+msgid "债券"
+msgstr "Bond"
+
+#: vnpy/trader/constant.py:60
+msgid "权证"
+msgstr "Warrant"
+
+#: vnpy/trader/constant.py:61
+msgid "价差"
+msgstr "Spread"
+
+#: vnpy/trader/constant.py:62
+msgid "基金"
+msgstr "Fund"
+
+#: vnpy/trader/constant.py:64
+msgid "互换"
+msgstr "Swap"
+
+#: vnpy/trader/constant.py:72
+msgid "限价"
+msgstr "Limit"
+
+#: vnpy/trader/constant.py:73
+msgid "市价"
+msgstr "Market"
+
+#: vnpy/trader/constant.py:77
+msgid "询价"
+msgstr "RFQ"
+
+#: vnpy/trader/constant.py:85
+msgid "看涨期权"
+msgstr "Call"
+
+#: vnpy/trader/constant.py:86
+msgid "看跌期权"
+msgstr "Put"
+
+#: vnpy/trader/database.py:153
+#, python-brace-format
+msgid "找不到数据库驱动{}，使用默认的SQLite数据库"
+msgstr "Database driver {} not found, using default SQLite driver"
+
+#: vnpy/trader/datafeed.py:25
+msgid "查询K线数据失败：没有正确配置数据服务"
+msgstr "Failed to query bar data: the datafeed is not configured correctly"
+
+#: vnpy/trader/datafeed.py:32
+msgid "查询Tick数据失败：没有正确配置数据服务"
+msgstr "Failed to query tick data: the datafeed is not configured correctly"
+
+#: vnpy/trader/datafeed.py:52
+msgid "没有配置要使用的数据服务，请修改全局配置中的datafeed相关内容"
+msgstr ""
+"The datafeed to be used is not configured. Please modify the datafeed "
+"settings in the global configuration."
+
+#: vnpy/trader/datafeed.py:66
+#, python-brace-format
+msgid "无法加载数据服务模块，请运行 pip install {} 尝试安装"
+msgstr ""
+"Unable to load datafeed module, please run 'pip install {}' to install"
+
+#: vnpy/trader/engine.py:174
+#, python-brace-format
+msgid "找不到底层接口：{}"
+msgstr "Gateway not found: {}"
+
+#: vnpy/trader/engine.py:183
+#, python-brace-format
+msgid "找不到引擎：{}"
+msgstr "Engine not found: {}"
+
+#: vnpy/trader/engine.py:602
+#, python-brace-format
+msgid "邮件发送失败: {}"
+msgstr "Sending email failed: {}"
+
+#: vnpy/trader/optimize.py:46
+msgid "固定参数添加成功"
+msgstr "Fixed parameter added successfully"
+
+#: vnpy/trader/optimize.py:49
+msgid "参数优化起始点必须小于终止点"
+msgstr "For the parameter to be optimized, start must be less than end"
+
+#: vnpy/trader/optimize.py:52
+msgid "参数优化步进必须大于0"
+msgstr "For the parameter to be optimized, step must be positive"
+
+#: vnpy/trader/optimize.py:63
+#, python-brace-format
+msgid "范围参数添加成功，数量{}"
+msgstr "Range parameter added successfully, total {}"
+
+#: vnpy/trader/optimize.py:89
+msgid "优化参数组合为空，请检查"
+msgstr "The parameter combination for optimization is empty, please check"
+
+#: vnpy/trader/optimize.py:93
+msgid "优化目标未设置，请检查"
+msgstr "Optimization target not set, please check"
+
+#: vnpy/trader/optimize.py:109
+msgid "开始执行穷举算法优化"
+msgstr "Starting optimization with brute force algorithm"
+
+#: vnpy/trader/optimize.py:110 vnpy/trader/optimize.py:194
+#, python-brace-format
+msgid "参数优化空间：{}"
+msgstr "Parameter optimization space: {}"
+
+#: vnpy/trader/optimize.py:127
+#, python-brace-format
+msgid "穷举算法优化完成，耗时{}秒"
+msgstr "Optimization with brute force algorithm complete, {} seconds elapsed"
+
+#: vnpy/trader/optimize.py:193
+msgid "开始执行遗传算法优化"
+msgstr "Starting optimization with genetic algorithm"
+
+#: vnpy/trader/optimize.py:195
+#, python-brace-format
+msgid "每代族群总数：{}"
+msgstr "Total number of populations per generation: {}"
+
+#: vnpy/trader/optimize.py:196
+#, python-brace-format
+msgid "优良筛选个数：{}"
+msgstr "Number of good filters: {}"
+
+#: vnpy/trader/optimize.py:197
+#, python-brace-format
+msgid "迭代次数：{}"
+msgstr "Number of iterations: {}"
+
+#: vnpy/trader/optimize.py:198
+#, python-brace-format
+msgid "交叉概率：{:.0%}"
+msgstr "Crossover probability: {:.0%}"
+
+#: vnpy/trader/optimize.py:199
+#, python-brace-format
+msgid "突变概率：{:.0%}"
+msgstr "Mutation probability: {:.0%}"
+
+#: vnpy/trader/optimize.py:217
+#, python-brace-format
+msgid "遗传算法优化完成，耗时{}秒"
+msgstr "Optimization with genetic algorithm complete, {} seconds elapsed"
+
+#: vnpy/trader/utility.py:201
+msgid "合成日K线必须传入每日收盘时间"
+msgstr "The daily_end parameter is required for generating daily bar"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:229
+msgid "代码"
+msgstr "Symbol"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:229
+msgid "信息"
+msgstr "Message"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:275
+msgid "行情服务器连接成功"
+msgstr "The market data server is connected successfully"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:281
+#, python-brace-format
+msgid "行情服务器连接断开，原因{}"
+msgstr "The market data server connection is disconnected, reason {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:287
+msgid "行情服务器登录成功"
+msgstr "The market server login is successful"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:292
+msgid "行情服务器登录失败"
+msgstr "Market server login failed"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:296
+msgid "行情接口报错"
+msgstr "Market interface error"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:303
+msgid "行情订阅失败"
+msgstr "Quote subscription failed"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:450
+msgid "交易服务器连接成功"
+msgstr "Trading server connection successful"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:459
+#, python-brace-format
+msgid "交易服务器连接断开，原因{}"
+msgstr "The connection to the trading server was disconnected due to {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:465
+msgid "交易服务器授权验证成功"
+msgstr "Transaction server authorization verification successful"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:470
+msgid "交易服务器授权验证失败"
+msgstr "Transaction server authorization verification failed"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:478
+msgid "交易服务器登录成功"
+msgstr "Trading server login successful"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:484
+msgid "交易服务器登录失败"
+msgstr "Trading server login failed"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:507
+msgid "交易委托失败"
+msgstr "Transaction order failed"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:511
+msgid "交易撤单失败"
+msgstr "Transaction withdrawal failed"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:515
+msgid "结算信息确认成功"
+msgstr "Settlement information confirmed successfully"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:522
+#, python-brace-format
+msgid "CtpTdApi：reqQryInstrument 失败，代码为 {}，正在重试..."
+msgstr "CtpTdApi: reqQryInstrument failed with code {}, retrying..."
+
+#: vnpy_ctp/gateway/ctp_gateway.py:599
+#, python-brace-format
+msgid "CtpTdApi：onRspQryInstrument 已完成。最后：{}，错误 ID：{}"
+msgstr "CtpTdApi: onRspQryInstrument finished. Last: {}, ErrorID: {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:635
+msgid "合约信息查询成功"
+msgstr "Contract information query successful"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:661
+#, python-brace-format
+msgid "收到不支持的委托状态，委托号：{}"
+msgstr "Received unsupported order status, order number: {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:671
+#, python-brace-format
+msgid "收到不支持的委托类型，委托号：{}"
+msgstr "Received an unsupported order type, order number: {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:740
+#, python-brace-format
+msgid "CtpTdApi：尝试创建路径为 {} 的 API"
+msgstr "CtpTdApi: Attempting to create API with path: {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:743
+msgid "CtpTdApi：createFtdcTraderApi调用成功。"
+msgstr "CtpTdApi: createFtdcTraderApi called successfully."
+
+#: vnpy_ctp/gateway/ctp_gateway.py:745
+#, python-brace-format
+msgid "CtpTdApi：createFtdcTraderApi 失败！错误：{}"
+msgstr "CtpTdApi: createFtdcTraderApi FAILED! Error: {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:746
+#, python-brace-format
+msgid "CtpTdApi：createFtdcTraderApi 回溯：{}"
+msgstr "CtpTdApi: createFtdcTraderApi Traceback: {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:753
+#, python-brace-format
+msgid "CtpTdApi：尝试使用地址初始化 API：{}..."
+msgstr "CtpTdApi: Attempting to init API with address: {}..."
+
+#: vnpy_ctp/gateway/ctp_gateway.py:756
+msgid "CtpTdApi：init 调用成功。"
+msgstr "CtpTdApi: init called successfully."
+
+#: vnpy_ctp/gateway/ctp_gateway.py:758
+#, python-brace-format
+msgid "CtpTdApi：初始化失败！错误：{}"
+msgstr "CtpTdApi: init FAILED! Error: {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:759
+#, python-brace-format
+msgid "CtpTdApi：初始化回溯：{}"
+msgstr "CtpTdApi: init Traceback: {}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:764
+msgid "CtpTdApi：已连接，正在尝试身份验证。"
+msgstr "CtpTdApi: Already connected, attempting authentication."
+
+#: vnpy_ctp/gateway/ctp_gateway.py:799
+msgid "请选择开平方向"
+msgstr "Please select the direction of open or close"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:803
+#, python-brace-format
+msgid "当前接口不支持该类型的委托{}"
+msgstr "The current interface does not support this type of delegate{}"
+
+#: vnpy_ctp/gateway/ctp_gateway.py:835
+#, python-brace-format
+msgid "委托请求发送失败，错误代码：{}"
+msgstr "The delegation request failed to send, error code: {}"
+
+#: zmq_services/market_data_gateway.py:44
+#, python-brace-format
+msgid "使用提供的 ConfigManager 为环境 [{}] 初始化 MarketDataGatewayService。"
+msgstr ""
+"Initializing MarketDataGatewayService for environment: [{}] using provided "
+"ConfigManager."
+
+#: zmq_services/market_data_gateway.py:57
+#, python-brace-format
+msgid "已为环境加载 CTP 设置：[{}]"
+msgstr "Loaded CTP settings for environment: [{}]"
+
+#: zmq_services/market_data_gateway.py:59
+#: zmq_services/order_execution_gateway.py:92
+#, python-brace-format
+msgid "在 connect_ctp.json 中未找到环境 '{}'！无法连接 CTP。"
+msgstr "Environment '{}' not found in connect_ctp.json! Cannot connect CTP."
+
+#: zmq_services/market_data_gateway.py:61
+#: zmq_services/order_execution_gateway.py:95
+msgid "未找到 connect_ctp.json！无法连接 CTP。"
+msgstr "connect_ctp.json not found! Cannot connect CTP."
+
+#: zmq_services/market_data_gateway.py:63
+#, python-brace-format
+msgid "加载或解析 connect_ctp.json 时出错：{}"
+msgstr "Error loading or parsing connect_ctp.json: {}"
+
+#: zmq_services/market_data_gateway.py:66
+#, python-brace-format
+msgid "行情网关服务 for [{}] 初始化完成."
+msgstr "The market gateway service for [{}] has been initialized."
+
+#: zmq_services/market_data_gateway.py:72
+#, python-brace-format
+msgid "发布Tick: {} - Price: {}"
+msgstr "Release Tick: {} - Price: {}"
+
+#: zmq_services/market_data_gateway.py:76
+#, python-brace-format
+msgid "发布 Tick 失败 (主题: {})"
+msgstr "Failed to publish Tick (subject: {})"
+
+#: zmq_services/market_data_gateway.py:81
+msgid "检测到 CTP 行情登录成功信号！"
+msgstr "CTP market login success signal detected!"
+
+#: zmq_services/market_data_gateway.py:104
+#, python-brace-format
+msgid "[VNPY 日志 - MDGW 已处理] {} - {}"
+msgstr "[VNPY LOG - MDGW Processed] {} - {}"
+
+#: zmq_services/market_data_gateway.py:109
+#, python-brace-format
+msgid "发布 Log 失败 (主题: {})"
+msgstr "Failed to publish log (topic: {})"
+
+#: zmq_services/market_data_gateway.py:116
+#, python-brace-format
+msgid "发布 Contract 失败 (主题: {})"
+msgstr "Failed to publish Contract (Subject: {})"
+
+#: zmq_services/market_data_gateway.py:121
+msgid "行情发布地址 'zmq_addresses.market_data_pub' 未在配置中找到，无法启动."
+msgstr ""
+"The market data publishing address 'zmq_addresses.market_data_pub' was not "
+"found in the configuration and could not be started."
+
+#: zmq_services/market_data_gateway.py:125
+#, python-brace-format
+msgid "无法启动 ZmqPublisherBase (绑定到 {})，行情网关启动中止."
+msgstr ""
+"Unable to start ZmqPublisherBase (bound to {}), market gateway startup "
+"aborted."
+
+#: zmq_services/market_data_gateway.py:128
+#, python-brace-format
+msgid "行情网关服务 for [{}] 正在启动..."
+msgstr "Market Gateway Service for [{}] is starting..."
+
+#: zmq_services/market_data_gateway.py:134
+msgid "事件引擎已启动."
+msgstr "The event engine has been started."
+
+#: zmq_services/market_data_gateway.py:136
+#, python-brace-format
+msgid "连接 CTP 网关 for [{}]..."
+msgstr "Connect CTP Gateway for [{}]..."
+
+#: zmq_services/market_data_gateway.py:138
+#: zmq_services/order_execution_gateway.py:676
+msgid "CTP 设置未加载或环境无效，无法连接 CTP 网关。"
+msgstr ""
+"CTP settings not loaded or environment invalid, cannot connect CTP gateway."
+
+#: zmq_services/market_data_gateway.py:142
+#, python-brace-format
+msgid "CTP 连接配置 (Env: {}): UserID={}, BrokerID={}, MD={}"
+msgstr "CTP connection configuration (Env: {}): UserID={}, BrokerID={}, MD={}"
+
+#: zmq_services/market_data_gateway.py:152
+#, python-brace-format
+msgid "CTP 网关连接请求已发送。等待连接成功信号 (超时: {}s)..."
+msgstr ""
+"CTP gateway connection request has been sent. Waiting for connection success"
+" signal (timeout: {}s)..."
+
+#: zmq_services/market_data_gateway.py:157
+#, python-brace-format
+msgid "CTP 行情连接超时 ({}s)！未收到登录成功信号."
+msgstr ""
+"CTP market connection timed out ({}s)! No login success signal received."
+
+#: zmq_services/market_data_gateway.py:161
+msgid "CTP 行情网关连接成功."
+msgstr "CTP market gateway connection is successful."
+
+#: zmq_services/market_data_gateway.py:163
+msgid "订阅行情..."
+msgstr "Subscribe to Quotes..."
+
+#: zmq_services/market_data_gateway.py:169
+msgid "'default_subscribe_symbols' 未在配置中找到或为空，不订阅任何合约."
+msgstr "'default_subscribe_symbols' 未在配置中找到或为空，不订阅任何合约."
+
+#: zmq_services/market_data_gateway.py:179
+#, python-brace-format
+msgid "发送订阅请求: {}"
+msgstr "Send subscription request: {}"
+
+#: zmq_services/market_data_gateway.py:182
+#, python-brace-format
+msgid "错误的合约格式，跳过订阅: {} (应为 SYMBOL.EXCHANGE)"
+msgstr ""
+"Wrong contract format, skipping subscription: {} (should be SYMBOL.EXCHANGE)"
+
+#: zmq_services/market_data_gateway.py:185
+#, python-brace-format
+msgid "订阅 {} 时出错: {}"
+msgstr "Error subscribing to {}: {}"
+
+#: zmq_services/market_data_gateway.py:187
+#, python-brace-format
+msgid "共发送 {} 个合约的订阅请求."
+msgstr "A total of {} contracts' subscription requests were sent."
+
+#: zmq_services/market_data_gateway.py:189
+#, python-brace-format
+msgid "以下合约订阅失败或跳过: {}"
+msgstr "The following contract subscriptions failed or were skipped: {}"
+
+#: zmq_services/market_data_gateway.py:192
+#, python-brace-format
+msgid "连接或订阅 CTP 网关时发生严重错误 (Env: {}): {}"
+msgstr ""
+"A critical error occurred while connecting or subscribing to the CTP Gateway"
+" (Env: {}): {}"
+
+#: zmq_services/market_data_gateway.py:195
+#, python-brace-format
+msgid "行情网关服务 for [{}] 启动流程完成."
+msgstr "The market gateway service for [{}] startup process is completed."
+
+#: zmq_services/market_data_gateway.py:201
+#, python-brace-format
+msgid "停止行情网关服务 for [{}]..."
+msgstr "Stop the market gateway service for [{}]..."
+
+#: zmq_services/market_data_gateway.py:208
+msgid "事件引擎已停止."
+msgstr "The event engine has stopped."
+
+#: zmq_services/market_data_gateway.py:210
+#: zmq_services/order_execution_gateway.py:744
+#, python-brace-format
+msgid "停止事件引擎时出错: {}"
+msgstr "Error stopping event engine: {}"
+
+#: zmq_services/market_data_gateway.py:215
+msgid "CTP 网关已关闭."
+msgstr "The CTP gateway is down."
+
+#: zmq_services/market_data_gateway.py:217
+#: zmq_services/order_execution_gateway.py:752
+#, python-brace-format
+msgid "关闭 CTP 网关时出错: {}"
+msgstr "Error shutting down CTP Gateway: {}"
+
+#: zmq_services/order_execution_gateway.py:60
+#, python-brace-format
+msgid ""
+"正在初始化 OrderExecutionGatewayService for environment: [{}] using provided "
+"ConfigManager."
+msgstr ""
+"正在初始化 OrderExecutionGatewayService for environment: [{}] using provided "
+"ConfigManager."
+
+#: zmq_services/order_execution_gateway.py:90
+#, python-brace-format
+msgid "已加载环境 [{}] 的 CTP 设置"
+msgstr "Loaded CTP settings for environment [{}]"
+
+#: zmq_services/order_execution_gateway.py:98
+#, python-brace-format
+msgid "加载或解析 connect_ctp.json 时出错: {}"
+msgstr "Error loading or parsing connect_ctp.json: {}"
+
+#: zmq_services/order_execution_gateway.py:108
+#, python-brace-format
+msgid "尝试从 {} 加载产品信息..."
+msgstr "Trying to load product information from {}..."
+
+#: zmq_services/order_execution_gateway.py:111
+msgid "警告：未能成功加载手续费规则或合约乘数，手续费计算可能不准确！"
+msgstr ""
+"Warning: Failed to load the fee rules or contract multiplier, fee "
+"calculation may be inaccurate!"
+
+#: zmq_services/order_execution_gateway.py:133
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for [{}] 初始化完成。"
+msgstr ""
+"Order execution gateway service (RPC mode) for [{}] initialization "
+"completed."
+
+#: zmq_services/order_execution_gateway.py:144
+#, python-brace-format
+msgid "RPC: 收到 send_order 请求: {}"
+msgstr "RPC: Received send_order request: {}"
+
+#: zmq_services/order_execution_gateway.py:148
+msgid "RPC: send_order - 无法将请求转换为 OrderRequest。"
+msgstr "RPC: send_order - Unable to convert request to an OrderRequest."
+
+#: zmq_services/order_execution_gateway.py:154
+#, python-brace-format
+msgid "RPC: send_order - 订单已发送至 CTP: {}, VT_OrderID: {}"
+msgstr "RPC: send_order - Order sent to CTP: {}, VT_OrderID: {}"
+
+#: zmq_services/order_execution_gateway.py:159
+#, python-brace-format
+msgid "RPC: send_order - CTP 网关未能发送订单 (gateway.send_order 返回 None): {}"
+msgstr ""
+"RPC: send_order - CTP gateway failed to send order (gateway.send_order "
+"returned None): {}"
+
+#: zmq_services/order_execution_gateway.py:161
+#, python-brace-format
+msgid "对于 {}，gateway.send_order 返回 None"
+msgstr "gateway.send_order returned None for {}"
+
+#: zmq_services/order_execution_gateway.py:165
+#, python-brace-format
+msgid "RPC: send_order - 发送订单时 CTP 网关出错: {}"
+msgstr "RPC: send_order - CTP Gateway error while sending order: {}"
+
+#: zmq_services/order_execution_gateway.py:166
+#, python-brace-format
+msgid "send_order 异常：{}"
+msgstr "send_order exception: {}"
+
+#: zmq_services/order_execution_gateway.py:180
+#, python-brace-format
+msgid "RPC: 收到 cancel_order 请求 for {}"
+msgstr "RPC: Received cancel_order request for {}"
+
+#: zmq_services/order_execution_gateway.py:182
+msgid "RPC: cancel_order - 收到无效的撤单指令：缺少 'vt_orderid' 字段。"
+msgstr ""
+"RPC: cancel_order - Invalid cancel order instruction received: missing "
+"'vt_orderid' field."
+
+#: zmq_services/order_execution_gateway.py:193
+#, python-brace-format
+msgid "RPC: cancel_order - 尝试撤销失败：在内部缓存中未找到活动订单 {} (可能已完成或不存在)"
+msgstr ""
+"RPC: cancel_order - attempt to cancel failed: no active order {} found in "
+"internal cache (may have been completed or does not exist)"
+
+#: zmq_services/order_execution_gateway.py:202
+#, python-brace-format
+msgid "RPC: cancel_order - 撤单请求已发送 for {}"
+msgstr "RPC: cancel_order - Cancel order request sent for {}"
+
+#: zmq_services/order_execution_gateway.py:206
+#, python-brace-format
+msgid "RPC: cancel_order - 处理撤单指令时出错 (vt_orderid: {}): {}"
+msgstr ""
+"RPC: cancel_order - Error processing cancel order (vt_orderid: {}): {}"
+
+#: zmq_services/order_execution_gateway.py:215
+msgid "RPC: 收到 query_contracts 请求"
+msgstr "RPC: Received query_contracts request"
+
+#: zmq_services/order_execution_gateway.py:224
+msgid "RPC: 收到 query_account 请求"
+msgstr "RPC: Received query_account request"
+
+#: zmq_services/order_execution_gateway.py:248
+msgid "无法尝试 CTP 重连：未存储 CTP 配置。"
+msgstr "Unable to attempt CTP reconnect: CTP configuration not stored."
+
+#: zmq_services/order_execution_gateway.py:252
+#, python-brace-format
+msgid "CTP 重连请求过于频繁，已跳过。上次尝试在 {} 秒内。原因: {}"
+msgstr ""
+"CTP reconnect request too frequent, skipped. Last attempt within {} seconds."
+" Reason: {}"
+
+#: zmq_services/order_execution_gateway.py:255
+#, python-brace-format
+msgid "检测到 CTP 连接问题 (原因: {})，尝试重新连接 CTP..."
+msgstr ""
+"CTP connection problem detected (reason: {}), trying to reconnect CTP..."
+
+#: zmq_services/order_execution_gateway.py:260
+msgid "无法重连 CTP：网关对象不存在。"
+msgstr "Unable to reconnect CTP: Gateway object does not exist."
+
+#: zmq_services/order_execution_gateway.py:268
+msgid "调用 self.gateway.connect 使用已存储的配置进行 CTP 重连..."
+msgstr ""
+"Call self.gateway.connect to reconnect using the stored configuration..."
+
+#: zmq_services/order_execution_gateway.py:270
+msgid "CTP 重新连接请求已发送。请监控后续日志确认连接状态。"
+msgstr ""
+"CTP reconnect request has been sent. Please monitor subsequent logs to "
+"confirm the connection status."
+
+#: zmq_services/order_execution_gateway.py:275
+#, python-brace-format
+msgid "尝试 CTP 重新连接时发生错误: {}"
+msgstr "An error occurred while trying to reconnect to CTP: {}"
+
+#: zmq_services/order_execution_gateway.py:306
+#, python-brace-format
+msgid "事件处理器: 过滤掉的事件类型: {} (总事件计数: {})"
+msgstr "Event handler: Filtered event types: {} (Total event count: {})"
+
+#: zmq_services/order_execution_gateway.py:335
+#, python-brace-format
+msgid "订单 {} 状态变为非活动 ({}), 已从 active_order_ids 移除。"
+msgstr ""
+"Order {} status changed to inactive ({}), removed from active_order_ids."
+
+#: zmq_services/order_execution_gateway.py:343
+#, python-brace-format
+msgid ""
+"订单状态更新: [{}] VTOrderID={}, 状态={}, 已成交={}/{}, 价格={}, 代码={}, 方向={}, 开平={}"
+msgstr ""
+"Order status update: [{}] VTOrderID={}, status={}, filled={}/{}, price={}, "
+"code={}, direction={}, open={}"
+
+#: zmq_services/order_execution_gateway.py:364
+#, python-brace-format
+msgid "收到 EVENT_TRADE: VTOrderID={}, Symbol={}"
+msgstr "Receive EVENT_TRADE: VTOrderID={}, Symbol={}"
+
+#: zmq_services/order_execution_gateway.py:385
+#, python-brace-format
+msgid ""
+"账户资金更新 (每5分钟): AccountID={}, Balance={:.2f}, Available={:.2f}, Frozen={:.2f}"
+msgstr ""
+"Account funds update (every 5 minutes): AccountID={}, Balance={:.2f}, "
+"Available={:.2f}, Frozen={:.2f}"
+
+#: zmq_services/order_execution_gateway.py:403
+#, python-brace-format
+msgid "持仓更新: 代码={}, 方向={}, 数量={}, 昨仓={}, 冻结={}, 均价={:.3f}"
+msgstr ""
+"Position update: code={}, direction={}, quantity={}, yesterday's "
+"position={}, frozen={}, average price={:.3f}"
+
+#: zmq_services/order_execution_gateway.py:430
+#, python-brace-format
+msgid "事件处理器: 将事件放入发布队列: Topic={}"
+msgstr "Event handler: put the event into the publishing queue: Topic={}"
+
+#: zmq_services/order_execution_gateway.py:434
+#, python-brace-format
+msgid "处理 VNPY 事件 {} (类型: {}) 并准备放入队列时出错: {}"
+msgstr "Error processing VNPY event {} (type: {}) and preparing to queue: {}"
+
+#: zmq_services/order_execution_gateway.py:447
+msgid "发布线程启动 (批处理模式)。"
+msgstr "Publishing thread started (batch mode)."
+
+#: zmq_services/order_execution_gateway.py:467
+#, python-brace-format
+msgid "发布线程: 当前发布队列大小 (self._publish_queue): {}"
+msgstr ""
+"Publishing thread: Current publishing queue size (self._publish_queue): {}"
+
+#: zmq_services/order_execution_gateway.py:470
+#, python-brace-format
+msgid "发布线程: 处理的 VNPY 事件总数 (计数器): {}"
+msgstr "Posting thread: Total VNPY events processed (counter): {}"
+
+#: zmq_services/order_execution_gateway.py:502
+msgid "发布线程：MAIN PUB socket 不可用或已关闭。本批次消息将被丢弃。"
+msgstr ""
+"Publishing thread: MAIN PUB socket is unavailable or closed. This batch of "
+"messages will be discarded."
+
+#: zmq_services/order_execution_gateway.py:510
+msgid "发布线程：检测到 MAIN PUB socket 可用。"
+msgstr "Publishing thread: Detected that the MAIN PUB socket is available."
+
+#: zmq_services/order_execution_gateway.py:511
+msgid "订单执行网关服务(RPC模式)准备就绪。按 Ctrl+C 停止主程序。"
+msgstr ""
+"The order execution gateway service (RPC mode) is ready. Press Ctrl+C to "
+"stop the main program."
+
+#: zmq_services/order_execution_gateway.py:528
+#, python-brace-format
+msgid "发布线程: [SEND HWM/Again] ZMQ发送缓冲区满或无订阅者，消息被丢弃. Topic: {}. 当前队列大小: {}"
+msgstr ""
+"Publishing thread: [SEND HWM/Again] ZMQ send buffer is full or there is no "
+"subscriber, the message is discarded. Topic: {}. Current queue size: {}"
+
+#: zmq_services/order_execution_gateway.py:535
+#, python-brace-format
+msgid "发布线程: [SEND ZMQERR] ZMQ 发送错误: {}. Topic: {}"
+msgstr "Publishing thread: [SEND ZMQERR] ZMQ send error: {}. Topic: {}"
+
+#: zmq_services/order_execution_gateway.py:538
+#, python-brace-format
+msgid "发布线程: [SEND GENERR] 未知发送错误: {}. Topic: {}"
+msgstr "Posting thread: [SEND GENERR] Unknown send error: {}. Topic: {}"
+
+#: zmq_services/order_execution_gateway.py:547
+#, python-brace-format
+msgid "发布线程: CRITICAL! 调用 task_done 时出错: {}"
+msgstr "Posting thread: CRITICAL! Error calling task_done: {}"
+
+#: zmq_services/order_execution_gateway.py:551
+msgid "发布线程停止。"
+msgstr "The publishing thread stops."
+
+#: zmq_services/order_execution_gateway.py:561
+#, python-brace-format
+msgid "心跳线程启动 (间隔: {}s, 主题: {})。"
+msgstr "Heartbeat thread started (interval: {}s, topic: {})."
+
+#: zmq_services/order_execution_gateway.py:575
+#, python-brace-format
+msgid "发送心跳: Timestamp={}"
+msgstr "Send heartbeat: Timestamp={}"
+
+#: zmq_services/order_execution_gateway.py:578
+msgid "发送心跳时遇到 ZMQ EAGAIN (缓冲区可能已满？)"
+msgstr "Encountered ZMQ EAGAIN when sending heartbeat (buffer full perhaps?)"
+
+#: zmq_services/order_execution_gateway.py:580
+#, python-brace-format
+msgid "发送心跳时出错: {}"
+msgstr "Error sending heartbeat: {}"
+
+#: zmq_services/order_execution_gateway.py:584
+msgid "心跳线程：MAIN PUB socket 不可用或已关闭，无法发送心跳。"
+msgstr ""
+"Heartbeat thread: The MAIN PUB socket is unavailable or closed, and the "
+"heartbeat cannot be sent."
+
+#: zmq_services/order_execution_gateway.py:594
+msgid "心跳线程停止。"
+msgstr "The heartbeat thread stops."
+
+#: zmq_services/order_execution_gateway.py:605
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for [{}] 已在运行中。"
+msgstr ""
+"Order Execution Gateway Service (RPC Mode) for [{}] is already running."
+
+#: zmq_services/order_execution_gateway.py:608
+#, python-brace-format
+msgid "启动订单执行网关服务(RPC模式) for [{}]..."
+msgstr "Start order execution gateway service (RPC mode) for [{}]..."
+
+#: zmq_services/order_execution_gateway.py:615
+msgid "错误：未能从配置中获取订单网关 REP 或 PUB 地址。服务无法启动。"
+msgstr ""
+"Error: Failed to get Order Gateway REP or PUB address from configuration. "
+"Service failed to start."
+
+#: zmq_services/order_execution_gateway.py:624
+#, python-brace-format
+msgid "RPC 服务器已启动。 REP: {}, PUB: {}"
+msgstr "RPC server started. REP: {}, PUB: {}"
+
+#: zmq_services/order_execution_gateway.py:630
+#, python-brace-format
+msgid "为 MAIN PUB socket (_socket_pub) 设置了 ZMQ.SNDHWM 选项: {}"
+msgstr ""
+"The ZMQ.SNDHWM option is set for the MAIN PUB socket (_socket_pub): {}"
+
+#: zmq_services/order_execution_gateway.py:632
+#, python-brace-format
+msgid "为 MAIN PUB socket (_socket_pub) 设置 ZMQ 选项时出错: {}"
+msgstr "Error setting ZMQ options for MAIN PUB socket (_socket_pub): {}"
+
+#: zmq_services/order_execution_gateway.py:634
+msgid "无法设置 ZMQ 选项：RpcServer 未能成功创建 _socket_pub。"
+msgstr ""
+"Unable to set ZMQ options: RpcServer failed to successfully create "
+"_socket_pub."
+
+#: zmq_services/order_execution_gateway.py:636
+#, python-brace-format
+msgid "启动 RPC 服务器时失败: {}"
+msgstr "Failed to start RPC server: {}"
+
+#: zmq_services/order_execution_gateway.py:644
+msgid "发布线程已启动。"
+msgstr "The publishing thread has been started."
+
+#: zmq_services/order_execution_gateway.py:646
+msgid "发布线程似乎已在运行。"
+msgstr "The posting thread appears to already be running."
+
+#: zmq_services/order_execution_gateway.py:653
+msgid "心跳线程已启动。"
+msgstr "The heartbeat thread has been started."
+
+#: zmq_services/order_execution_gateway.py:655
+msgid "心跳线程似乎已在运行。"
+msgstr "The heartbeat thread appears to already be running."
+
+#: zmq_services/order_execution_gateway.py:668
+msgid "事件引擎已启动，并注册了事件处理器。"
+msgstr ""
+"The event engine has been started and event handlers have been registered."
+
+#: zmq_services/order_execution_gateway.py:670
+#, python-brace-format
+msgid "启动或注册事件引擎时出错: {}"
+msgstr "Error starting or registering event engine: {}"
+
+#: zmq_services/order_execution_gateway.py:684
+#, python-brace-format
+msgid "CTP 连接配置 (Env: {}): UserID={}, BrokerID={}, TD={}"
+msgstr "CTP connection configuration (Env: {}): UserID={}, BrokerID={}, TD={}"
+
+#: zmq_services/order_execution_gateway.py:691
+msgid "CTP 连接请求已发送。"
+msgstr "CTP connection request sent."
+
+#: zmq_services/order_execution_gateway.py:693
+#, python-brace-format
+msgid "连接 CTP 交易网关时发生严重错误 (Env: {}): {}"
+msgstr ""
+"A critical error occurred while connecting to the CTP Trading Gateway (Env: "
+"{}): {}"
+
+#: zmq_services/order_execution_gateway.py:697
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for [{}] 启动完成。"
+msgstr ""
+"Order execution gateway service (RPC mode) for [{}] started successfully."
+
+#: zmq_services/order_execution_gateway.py:708
+msgid "停止订单执行网关服务(RPC模式)..."
+msgstr "Stop order execution gateway service (RPC mode)..."
+
+#: zmq_services/order_execution_gateway.py:712
+msgid "正在停止心跳线程..."
+msgstr "Stopping heartbeat thread..."
+
+#: zmq_services/order_execution_gateway.py:716
+msgid "无法正常停止心跳线程。"
+msgstr "Unable to stop the heartbeat thread gracefully."
+
+#: zmq_services/order_execution_gateway.py:718
+msgid "心跳线程已停止。"
+msgstr "The heartbeat thread has stopped."
+
+#: zmq_services/order_execution_gateway.py:724
+msgid "正在停止发布线程..."
+msgstr "Stopping posting thread..."
+
+#: zmq_services/order_execution_gateway.py:728
+msgid "无法正常停止发布线程。"
+msgstr "Unable to stop publishing thread gracefully."
+
+#: zmq_services/order_execution_gateway.py:730
+msgid "发布线程已停止。"
+msgstr "The publishing thread has stopped."
+
+#: zmq_services/order_execution_gateway.py:740
+msgid "事件引擎已停止。"
+msgstr "The event engine has stopped."
+
+#: zmq_services/order_execution_gateway.py:750
+msgid "CTP 交易网关已关闭。"
+msgstr "The CTP Trading Gateway is down."
+
+#: zmq_services/order_execution_gateway.py:758
+msgid "RPC 服务器已停止。"
+msgstr "The RPC server is stopped."
+
+#: zmq_services/order_execution_gateway.py:760
+#, python-brace-format
+msgid "停止 RPC 服务器时出错: {}"
+msgstr "Error stopping RPC server: {}"
+
+#: zmq_services/order_execution_gateway.py:762
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for [{}] 已停止。"
+msgstr "The Order Execution Gateway Service (RPC Mode) for [{}] has stopped."
+
+#: zmq_services/run_market_gateway.py:75 zmq_services/run_order_gateway.py:57
+#: zmq_services/run_strategy_engine.py:50
+#, python-brace-format
+msgid "未指定 --ctp-env，使用默认 CTP 环境：{}"
+msgstr "No --ctp-env specified, using default CTP environment: {}"
+
+#: zmq_services/run_market_gateway.py:77 zmq_services/run_order_gateway.py:59
+#: zmq_services/run_strategy_engine.py:55
+#, python-brace-format
+msgid "使用配置环境：'{}'"
+msgstr "Using configuration environment: '{}'"
+
+#: zmq_services/run_market_gateway.py:79 zmq_services/run_order_gateway.py:61
+#: zmq_services/run_strategy_engine.py:59
+msgid "未指定 --config-env，仅使用基本 global_config.yaml。"
+msgstr "No --config-env specified, using base global_config.yaml only."
+
+#: zmq_services/run_market_gateway.py:82
+#, python-brace-format
+msgid "命令行覆盖的语言：{}"
+msgstr "Language overridden by command line: {}"
+
+#: zmq_services/run_market_gateway.py:84
+#, python-brace-format
+msgid "使用配置中的语言（或默认）：{}"
+msgstr "Using language from configuration (or default): {}"
+
+#: zmq_services/run_market_gateway.py:87
+#, python-brace-format
+msgid "正在为 CTP 环境初始化市场数据网关服务（RPC 模式）：[{}]..."
+msgstr ""
+"Initializing market data gateway service (RPC mode) for CTP environment: "
+"[{}]..."
+
+#: zmq_services/run_market_gateway.py:93
+#, python-brace-format
+msgid "尝试为 CTP 环境启动服务（RPC 模式）：[{}]..."
+msgstr "Attempting to start service (RPC mode) for CTP env: [{}]..."
+
+#: zmq_services/run_market_gateway.py:95
+#, python-brace-format
+msgid "CTP 环境 [{}] 的市场数据网关服务正在运行。按 Ctrl+C 停止。"
+msgstr ""
+"Market data gateway service for CTP env: [{}] is running. Press Ctrl+C to "
+"stop."
+
+#: zmq_services/run_market_gateway.py:100
+#, python-brace-format
+msgid "检测到 Ctrl+C，正在停止服务 (CTP 环境：[{}])..."
+msgstr "Ctrl+C detected, stopping service (CTP env: [{}])..."
+
+#: zmq_services/run_market_gateway.py:102
+#, python-brace-format
+msgid "服务运行时错误（CTP 环境：[{}]）：{}"
+msgstr "Service runtime error (CTP env: [{}]): {}"
+
+#: zmq_services/run_market_gateway.py:104
+#, python-brace-format
+msgid "开始停止 CTP 环境的服务（RPC 模式）：[{}]..."
+msgstr "Starting to stop service (RPC mode) for CTP env: [{}]..."
+
+#: zmq_services/run_market_gateway.py:107
+#, python-brace-format
+msgid "CTP 环境 [{}] 的市场数据网关服务 (RPC 模式) 已退出。"
+msgstr "Market data gateway service (RPC mode) for CTP env: [{}] has exited."
+
+#: zmq_services/run_order_gateway.py:52
+msgid ""
+"错误：未能从配置中获取 zmq_addresses.order_gateway_rep 或 "
+"zmq_addresses.order_gateway_pub。请检查配置。"
+msgstr ""
+"ERROR: Could not get zmq_addresses.order_gateway_rep or "
+"zmq_addresses.order_gateway_pub from config. Please check config."
+
+#: zmq_services/run_order_gateway.py:54
+#, python-brace-format
+msgid "订单网关 ZMQ 地址已加载: REP='{}', PUB='{}'"
+msgstr "Order gateway ZMQ address loaded: REP='{}', PUB='{}'"
+
+#: zmq_services/run_order_gateway.py:64
+#, python-brace-format
+msgid "正在初始化订单执行网关服务(RPC模式) for CTP environment: [{}]..."
+msgstr ""
+"Initializing order execution gateway service (RPC mode) for CTP environment:"
+" [{}]..."
+
+#: zmq_services/run_order_gateway.py:70
+#, python-brace-format
+msgid "尝试启动服务(RPC模式) for CTP env: [{}]..."
+msgstr "Try to start the service (RPC mode) for CTP env: [{}]..."
+
+#: zmq_services/run_order_gateway.py:72
+#, python-brace-format
+msgid "订单执行网关 for CTP env: [{}] 正在运行。按 Ctrl+C 停止。"
+msgstr ""
+"Order Execution Gateway for CTP env: [{}] is running. Press Ctrl+C to stop."
+
+#: zmq_services/run_order_gateway.py:77
+#, python-brace-format
+msgid "检测到 Ctrl+C，正在停止服务 (CTP env: [{}])..."
+msgstr "Ctrl+C detected, stopping service (CTP env: [{}])..."
+
+#: zmq_services/run_order_gateway.py:79
+#, python-brace-format
+msgid "服务运行时发生意外错误 (CTP env: [{}]): {}"
+msgstr ""
+"An unexpected error occurred while the service was running (CTP env: [{}]): "
+"{}"
+
+#: zmq_services/run_order_gateway.py:81
+#, python-brace-format
+msgid "开始停止服务(RPC模式) for CTP env: [{}]..."
+msgstr "Start and stop service (RPC mode) for CTP env: [{}]..."
+
+#: zmq_services/run_order_gateway.py:84
+#, python-brace-format
+msgid "订单执行网关服务(RPC模式) for CTP env: [{}] 已退出。"
+msgstr "Order Execution Gateway Service (RPC Mode) for CTP env: [{}] Exited."
+
+#: zmq_services/run_strategy_engine.py:52
+#, python-brace-format
+msgid "策略引擎 CTP 环境：{}"
+msgstr "Strategy Engine CTP environment: {}"
+
+#: zmq_services/run_strategy_engine.py:61
+msgid "正在初始化策略引擎..."
+msgstr "Initializing strategy engine..."
+
+#: zmq_services/run_strategy_engine.py:71
+msgid "错误：未能从 global_config.yaml 中获取必要的 ZMQ 地址。请检查配置。"
+msgstr ""
+"Error: Failed to get necessary ZMQ addresses from global_config.yaml. Please"
+" check configuration."
+
+#: zmq_services/run_strategy_engine.py:74
+msgid "错误：未能加载策略配置。请检查策略配置是否存在且格式正确。"
+msgstr ""
+"Error: Failed to load strategy configuration. Please check that the strategy"
+" configuration exists and is in the correct format."
+
+#: zmq_services/run_strategy_engine.py:82
+#, python-brace-format
+msgid "连接行情发布器地址: {}"
+msgstr "Connect to the market publisher address: {}"
+
+#: zmq_services/run_strategy_engine.py:83
+#, python-brace-format
+msgid "连接订单网关请求地址: {}"
+msgstr "Connection order gateway request address: {}"
+
+#: zmq_services/run_strategy_engine.py:84
+#, python-brace-format
+msgid "连接订单回报发布器地址: {}"
+msgstr "Connect to order return publisher address: {}"
+
+#: zmq_services/run_strategy_engine.py:85
+#, python-brace-format
+msgid "加载的策略配置: {}"
+msgstr "Loaded strategy configuration: {}"
+
+#: zmq_services/run_strategy_engine.py:98
+#, python-brace-format
+msgid "初始化策略引擎时发生严重错误: {}"
+msgstr "A fatal error occurred while initializing strategy engine: {}"
+
+#: zmq_services/run_strategy_engine.py:102
+msgid "未能成功加载任何策略。引擎将退出。"
+msgstr "Failed to load any Strategies successfully. The engine will exit."
+
+#: zmq_services/run_strategy_engine.py:105
+msgid "尝试启动策略引擎..."
+msgstr "Trying to start strategy engine..."
+
+#: zmq_services/run_strategy_engine.py:110
+msgid "主程序检测到 Ctrl+C，正在停止引擎..."
+msgstr "Main program detected Ctrl+C, stopping engine..."
+
+#: zmq_services/run_strategy_engine.py:118
+#, python-brace-format
+msgid "策略引擎运行时发生意外错误: {}"
+msgstr "An unexpected error occurred while running the strategy engine: {}"
+
+#: zmq_services/run_strategy_engine.py:127
+msgid "执行最终停止清理..."
+msgstr "Performing final stop cleanup..."
+
+#: zmq_services/run_strategy_engine.py:129
+msgid "策略引擎运行结束。"
+msgstr "The strategy engine has finished running."
+
+#: zmq_services/strategy_base.py:62
+msgid "正在应用策略设置..."
+msgstr "Applying strategy settings..."
+
+#: zmq_services/strategy_base.py:71
+#, python-brace-format
+msgid "[设置循环] 键：'{}'，值：'{}'（类型：{}），检测到的注释：{}"
+msgstr ""
+"[Setting Loop] Key: '{}', Value: '{}' (Type: {}), Detected Annotation: {}"
+
+#: zmq_services/strategy_base.py:110
+#, python-brace-format
+msgid "[设置循环] 将浮点设置'{}'值{}转换为整数。"
+msgstr "[Setting Loop] Converting float setting '{}' value {} to int."
+
+#: zmq_services/strategy_base.py:152
+#, python-brace-format
+msgid "[设置循环] 成功将“{}”设置为{}（类型：{}）"
+msgstr "[Setting Loop] Successfully set '{}' to {} (Type: {})"
+
+#: zmq_services/strategy_base.py:155
+#, python-brace-format
+msgid "[设置循环] 无法应用设置'{}'='{}'。错误：{}"
+msgstr "[Setting Loop] Failed to apply setting '{}'='{}'. Error: {}"
+
+#: zmq_services/strategy_base.py:156
+msgid "已完成应用策略设置。"
+msgstr "Finished applying strategy settings."
+
+#: zmq_services/strategy_base.py:317
+#, python-brace-format
+msgid "vt_symbol'{}'中的交易所'{}'无效。无法发送订单。"
+msgstr "Invalid exchange '{}' in vt_symbol '{}'. Cannot send order."
+
+#: zmq_services/strategy_base.py:328
+msgid "回测模式：准备通过PUSH直接发送订单元组。"
+msgstr "Backtest Mode: Preparing to send order tuple directly via PUSH."
+
+#: zmq_services/strategy_base.py:346
+#, python-brace-format
+msgid "[BaseLiveStrategy SendOrder 回测] 针对请求元组 {} 执行 PUSH 发送"
+msgstr ""
+"[BaseLiveStrategy SendOrder Backtest] PUSH send executed for request tuple: "
+"{}"
+
+#: zmq_services/strategy_base.py:351
+#, python-brace-format
+msgid "回测模式：pickle 订单请求失败：{}"
+msgstr "Backtest Mode: Failed to pickle order request: {}"
+
+#: zmq_services/strategy_base.py:353
+#, python-brace-format
+msgid "回测模式：无法发送订单请求消息：{}"
+msgstr "Backtest Mode: Failed to msgpack order request: {}"
+
+#: zmq_services/strategy_base.py:355
+#, python-brace-format
+msgid "回测模式：ZMQ发送订单请求时出错：{}"
+msgstr "Backtest Mode: ZMQ error sending order request: {}"
+
+#: zmq_services/strategy_base.py:359
+msgid "实时模式：通过 RPC 发送订单。"
+msgstr "Live Mode: Sending order via RPC."
+
+#: zmq_services/strategy_base.py:374
+#, python-brace-format
+msgid "已发送订单：{} {} {} {} @ {} -> {}（模式：实时）"
+msgstr "Sent Order: {} {} {} {} @ {} -> {} (Mode: Live)"
+
+#: zmq_services/strategy_base.py:377
+#, python-brace-format
+msgid "已发送订单请求：{} {} {} {} @ {}（模式：回测，ID 待定）"
+msgstr "Sent Order Request: {} {} {} {} @ {} (Mode: Backtest, ID Pending)"
+
+#: zmq_services/strategy_base.py:391
+#, python-brace-format
+msgid "策略未交易，无法取消订单{}。"
+msgstr "Strategy not trading, cannot cancel order {}."
+
+#: zmq_services/strategy_base.py:395
+#, python-brace-format
+msgid "订单 {} 不在策略 {} 的有效订单列表中。可能已经处于非活动状态？跳过取消请求。"
+msgstr ""
+"Order {} not in active orders list for strategy {}. Maybe already inactive? "
+"Skipping cancel request."
+
+#: zmq_services/strategy_base.py:403
+#, python-brace-format
+msgid "请求取消订单 {}（模式：{}）"
+msgstr "Requesting Cancel for order {} (Mode: {})"
+
+#: zmq_services/strategy_base.py:414
+#, python-brace-format
+msgid "回测模式：已发送 {} 的取消请求"
+msgstr "Backtest Mode: Sent cancel request for {}"
+
+#: zmq_services/strategy_base.py:416
+#, python-brace-format
+msgid "回测模式：无法发送 msgpack 取消请求：{}"
+msgstr "Backtest Mode: Failed to msgpack cancel request: {}"
+
+#: zmq_services/strategy_base.py:418
+#, python-brace-format
+msgid "回测模式：ZMQ 发送取消请求时出错：{}"
+msgstr "Backtest Mode: ZMQ error sending cancel request: {}"
+
+#: zmq_services/strategy_base.py:424
+msgid "策略引擎没有用于实时交易的'cancel_limit_order'方法。"
+msgstr ""
+"Strategy engine does not have 'cancel_limit_order' method for live trading."
+
+#: zmq_services/strategy_base.py:445
+#, python-brace-format
+msgid "正在取消所有 ({}) 个 {} 的有效订单..."
+msgstr "Cancelling all ({}) active orders for {}..."
+
+#: zmq_services/strategy_base.py:491
+#, python-brace-format
+msgid "_update_pos：无法将交易量'{}'转换为浮点数。忽略交易'{}'。"
+msgstr ""
+"_update_pos: Could not convert trade volume '{}' to float. Ignoring trade "
+"{}."
+
+#: zmq_services/strategy_base.py:496
+#, python-brace-format
+msgid "_update_pos：无法将交易量浮点数'{}'转换为十进制：{}。忽略交易{}。"
+msgstr ""
+"_update_pos: Could not convert trade volume float '{}' to Decimal: {}. "
+"Ignoring trade {}."
+
+#: zmq_services/strategy_base.py:505
+#, python-brace-format
+msgid "_update_pos：交易 {} 无价格。忽略入场价格更新。"
+msgstr "_update_pos: Trade {} has no price. Ignoring entry price update."
+
+#: zmq_services/strategy_base.py:511
+#, python-brace-format
+msgid "_update_pos：无法将交易价格浮点数'{}'转换为十进制：{}。忽略交易'{}'的入场价格更新。"
+msgstr ""
+"_update_pos: Could not convert trade price float '{}' to Decimal: {}. "
+"Ignoring entry price update for trade {}."
+
+#: zmq_services/strategy_base.py:528
+#, python-brace-format
+msgid "_update_pos：交易方向值未知或无效：{}"
+msgstr "_update_pos: Unknown or invalid direction value: {} for trade {}"
+
+#: zmq_services/strategy_base.py:536
+#, python-brace-format
+msgid "_update_pos：小数位置更新算法出错：{}。位置：{}，变化：{}"
+msgstr ""
+"_update_pos: Error during Decimal position update arithmetic: {}. Pos: {}, "
+"Change: {}"
+
+#: zmq_services/strategy_base.py:548
+#, python-brace-format
+msgid "_update_pos：已开仓位。EntryCost={:.4f}，EntryPrice={:.4f}"
+msgstr "_update_pos: Position opened. EntryCost={:.4f}, EntryPrice={:.4f}"
+
+#: zmq_services/strategy_base.py:557
+#, python-brace-format
+msgid "_update_pos: 位置增加。新的 EntryCost={:.4f}，新的 EntryPrice={:.4f}"
+msgstr ""
+"_update_pos: Position increased. New EntryCost={:.4f}, New EntryPrice={:.4f}"
+
+#: zmq_services/strategy_base.py:559
+msgid "_update_pos：添加后位置意外为零。重置入场成本/价格。"
+msgstr ""
+"_update_pos: Position zero unexpectedly after adding. Resetting entry "
+"cost/price."
+
+#: zmq_services/strategy_base.py:571
+#, python-brace-format
+msgid "_update_pos：仓位部分平仓。新的 EntryCost={:.4f}，EntryPrice 保持不变 {:.4f}"
+msgstr ""
+"_update_pos: Position partially closed. New EntryCost={:.4f}, EntryPrice "
+"remains {:.4f}"
+
+#: zmq_services/strategy_base.py:574
+#, python-brace-format
+msgid "_update_pos：无法降低成本 - 之前的入场价格缺失！成本仍为 {:.4f}，价格仍为 None。"
+msgstr ""
+"_update_pos: Cannot reduce cost - previous entry price is missing! Cost "
+"remains {:.4f}, Price remains None."
+
+#: zmq_services/strategy_base.py:584
+msgid "_update_pos：仓位已平仓。EntryCost 重置为 0，EntryPrice 重置为 None。"
+msgstr ""
+"_update_pos: Position closed. EntryCost reset to 0, EntryPrice reset to "
+"None."
+
+#: zmq_services/strategy_base.py:600
+#, python-brace-format
+msgid "_update_pos：位置已反转。新的 EntryCost={:.4f}，新的 EntryPrice={:.4f}"
+msgstr ""
+"_update_pos: Position flipped. New EntryCost={:.4f}, New EntryPrice={:.4f}"
+
+#: zmq_services/strategy_base.py:613
+#, python-brace-format
+msgid "_update_pos：计算入场成本/价格时出错：{}"
+msgstr "_update_pos: Error calculating entry cost/price: {}"
+
+#: zmq_services/strategy_base.py:622
+#, python-brace-format
+msgid ""
+"持仓更新：Symbol={}, TradeID={}, DirectionValue={}, OffsetValue={}, Price={}, "
+"Volume={}. PrevPos={}, Change={}, NewPos={}.{}"
+msgstr ""
+"Position Update: Symbol={}, TradeID={}, DirectionValue={}, OffsetValue={}, "
+"Price={}, Volume={}. PrevPos={}, Change={}, NewPos={}.{}"
+
+#: zmq_services/strategy_base.py:645
+#, python-brace-format
+msgid "订单 {} 已从活跃列表中移除（状态：{}）。活跃数量：{}。"
+msgstr "Order {} removed from active list (Status: {}). Active count: {}."
+
+#: zmq_services/strategy_base.py:655
+#, python-brace-format
+msgid "订单 {} 已添加到有效列表（状态：{}）。有效数量：{}。"
+msgstr "Order {} added to active list (Status: {}). Active count: {}."
+
+#: zmq_services/strategy_base.py:657
+#, python-brace-format
+msgid "已收到订单 {} 更新但状态为 {}，未添加到活动列表。"
+msgstr "Order {} update received but status is {}, not adding to active list."
+
+#: zmq_services/strategy_base.py:675
+msgid "策略初始化完成"
+msgstr "Strategy initialization completed"
+
+#: zmq_services/strategy_base.py:677
+#, python-brace-format
+msgid "on_init 期间出错：{}"
+msgstr "Error during on_init: {}"
+
+#: zmq_services/strategy_base.py:689
+msgid "由于初始化失败或被跳过，无法启动策略。"
+msgstr ""
+"Strategy cannot be started because initialization failed or was skipped."
+
+#: zmq_services/strategy_base.py:692
+msgid "策略已开始。"
+msgstr "Strategy already started."
+
+#: zmq_services/strategy_base.py:697
+msgid "策略启动"
+msgstr "Strategy launch"
+
+#: zmq_services/strategy_base.py:699
+#, python-brace-format
+msgid "on_start 期间出错：{}"
+msgstr "Error during on_start: {}"
+
+#: zmq_services/strategy_base.py:719
+msgid "策略停止"
+msgstr "Strategy Stop"
+
+#: zmq_services/strategy_base.py:721
+#, python-brace-format
+msgid "on_stop 或 cancellation_all 期间出错：{}"
+msgstr "Error during on_stop or cancel_all: {}"
+
+#: zmq_services/strategy_base.py:723
+msgid "策略停止 (未曾启动或启动失败)"
+msgstr "The policy is stopped (never started or failed to start)"
+
+#: zmq_services/strategy_engine.py:108
+#, python-brace-format
+msgid "策略引擎连接行情发布器: {}"
+msgstr "Strategy engine connects to market publisher: {}"
+
+#: zmq_services/strategy_engine.py:109
+#, python-brace-format
+msgid "策略引擎连接回报发布器: {}"
+msgstr "Strategy engine connection report publisher: {}"
+
+#: zmq_services/strategy_engine.py:114
+#, python-brace-format
+msgid "策略引擎连接订单网关 REQ Socket (RPC): {}"
+msgstr "Strategy engine connects to order gateway REQ Socket (RPC): {}"
+
+#: zmq_services/strategy_engine.py:126
+msgid "开始加载策略..."
+msgstr "Starting to load strategy..."
+
+#: zmq_services/strategy_engine.py:129
+#, python-brace-format
+msgid "策略名称 '{}' 重复，跳过加载。"
+msgstr "Strategy name '{}' is duplicated, skipping loading."
+
+#: zmq_services/strategy_engine.py:138
+#, python-brace-format
+msgid "策略 '{}' 的 vt_symbol '{}' 格式无效，应为 'symbol.exchange'。跳过加载。"
+msgstr ""
+"Invalid format for vt_symbol '{}' for Strategy '{}', expected "
+"'symbol.exchange'. Skipping loading."
+
+#: zmq_services/strategy_engine.py:149
+#, python-brace-format
+msgid "类 '{}' 不是 BaseLiveStrategy 的子类。跳过加载策略 '{}'。"
+msgstr ""
+"Class '{}' is not a subclass of BaseLiveStrategy. Skipping loading strategy "
+"'{}'."
+
+#: zmq_services/strategy_engine.py:167
+#, python-brace-format
+msgid "策略 '{}' (类: {}, 合约: {}) 加载成功。"
+msgstr "Strategy '{}' (class: {}, contract: {}) loaded successfully."
+
+#: zmq_services/strategy_engine.py:170
+#, python-brace-format
+msgid "导入策略类 '{}' 失败。跳过加载策略 '{}'。"
+msgstr "Importing Strategy class '{}' failed. Skipping loading Strategy '{}'."
+
+#: zmq_services/strategy_engine.py:172
+#, python-brace-format
+msgid "在模块 '{}' 中未找到策略类 '{}'。跳过加载策略 '{}'。"
+msgstr ""
+"Strategy class '{}' not found in module '{}'. Skipping loading Strategy "
+"'{}'."
+
+#: zmq_services/strategy_engine.py:174
+#, python-brace-format
+msgid "策略 '{}' 的配置缺少必要键: {}。跳过加载。"
+msgstr ""
+"Configuration for strategy '{}' is missing required key: {}. Skipping "
+"loading."
+
+#: zmq_services/strategy_engine.py:176
+#, python-brace-format
+msgid "加载策略 '{}' 时发生未知错误: {}"
+msgstr "An unknown error occurred while loading strategy '{}': {}"
+
+#: zmq_services/strategy_engine.py:177
+#, python-brace-format
+msgid "策略加载完成。共加载 {} 个策略实例，映射到 {} 个合约。"
+msgstr ""
+"Strategy loading completed. A total of {} strategy instances were loaded, "
+"mapped to {} contracts."
+
+#: zmq_services/strategy_engine.py:179
+msgid "错误：未成功加载任何策略。引擎无法运行。"
+msgstr "Error: No strategies were loaded successfully. The engine cannot run."
+
+#: zmq_services/strategy_engine.py:195
+msgid "没有加载任何策略或策略未指定合约，将不订阅任何特定合约数据！"
+msgstr ""
+"If no strategy is loaded or the strategy does not specify a contract, no "
+"specific contract data will be subscribed!"
+
+#: zmq_services/strategy_engine.py:203
+#, python-brace-format
+msgid "订阅特定合约主题: {}, {}"
+msgstr "Subscribe to a specific contract topic: {}, {}"
+
+#: zmq_services/strategy_engine.py:215
+#, python-brace-format
+msgid "订阅通用主题前缀: {}*, {}*, {}*, {}, {}"
+msgstr "Subscribe to common topic prefix: {}*, {}*, {}*, {}, {}"
+
+#: zmq_services/strategy_engine.py:219
+#, python-brace-format
+msgid "最终订阅 {} 个主题/前缀。"
+msgstr "Finally subscribed to {} topics/prefixes."
+
+#: zmq_services/strategy_engine.py:222
+#, python-brace-format
+msgid "最终 SUB 套接字订阅列表：{}"
+msgstr "Final SUB socket subscription list:{}"
+
+#: zmq_services/strategy_engine.py:245
+msgid "正在初始化所有已加载的策略..."
+msgstr "Initializing all loaded strategies..."
+
+#: zmq_services/strategy_engine.py:248
+msgid "所有策略初始化完成。"
+msgstr "All strategies are initialized."
+
+#: zmq_services/strategy_engine.py:256
+#, python-brace-format
+msgid "为 SUB socket 设置了 ZMQ.RCVHWM: {}"
+msgstr "Set ZMQ.RCVHWM for SUB socket: {}"
+
+#: zmq_services/strategy_engine.py:258
+#, python-brace-format
+msgid "为 SUB socket 设置 ZMQ.RCVHWM 时出错: {}"
+msgstr "Error setting ZMQ.RCVHWM for SUB socket: {}"
+
+#: zmq_services/strategy_engine.py:283
+msgid "_send_rpc_request 不应在回测模式下调用！"
+msgstr "_send_rpc_request should not be called in backtesting mode!"
+
+#: zmq_services/strategy_engine.py:287
+msgid "引擎未运行，无法发送 RPC 请求。"
+msgstr "The engine is not running and cannot send RPC requests."
+
+#: zmq_services/strategy_engine.py:291
+msgid "订单请求者 (REQ) 套接字对于 RPC 不可用或已关闭。"
+msgstr ""
+"The order requester (REQ) socket is unavailable for RPC or has been closed."
+
+#: zmq_services/strategy_engine.py:309
+#, python-brace-format
+msgid "{} 正在发送请求..."
+msgstr "{} Sending request..."
+
+#: zmq_services/strategy_engine.py:321
+#, python-brace-format
+msgid "{} 收到成功回复。"
+msgstr "{} Received a successful response."
+
+#: zmq_services/strategy_engine.py:324
+msgid "与订单执行网关的连接已恢复 (RPC Ping). 设置初始连接时间。"
+msgstr ""
+"Connection to the order execution gateway has been restored (RPC Ping). Set "
+"initial connection time."
+
+#: zmq_services/strategy_engine.py:331
+#, python-brace-format
+msgid "{} RPC 调用失败 (网关回复): {}"
+msgstr "{} RPC call failed (gateway reply): {}"
+
+#: zmq_services/strategy_engine.py:334
+#, python-brace-format
+msgid "{} 收到来自订单网关的意外回复格式: {}"
+msgstr "{} Received unexpected response format from Order Gateway: {}"
+
+#: zmq_services/strategy_engine.py:338
+#, python-brace-format
+msgid "{} 请求超时 ({}ms)."
+msgstr "{} Request timeout ({}ms)."
+
+#: zmq_services/strategy_engine.py:340
+#, python-brace-format
+msgid "与订单执行网关的连接丢失 (RPC Timeout after {} attempts)!"
+msgstr ""
+"Connection to order execution gateway lost (RPC Timeout after {} attempts)!"
+
+#: zmq_services/strategy_engine.py:346
+#, python-brace-format
+msgid "{} 发送或接收 RPC 时 ZMQ 错误: {}"
+msgstr "{} ZMQ error when sending or receiving RPC: {}"
+
+#: zmq_services/strategy_engine.py:349
+#, python-brace-format
+msgid "与订单执行网关的连接丢失 (ZMQ Error {})!"
+msgstr "Connection to the Order Execution Gateway lost (ZMQ Error {})!"
+
+#: zmq_services/strategy_engine.py:353
+#, python-brace-format
+msgid "{} Msgpack反序列化 RPC 回复时出错: {}"
+msgstr "{} Msgpack error while deserializing RPC reply: {}"
+
+#: zmq_services/strategy_engine.py:356
+#, python-brace-format
+msgid "{} 处理 RPC 时发生未知错误：{}"
+msgstr "{} An unknown error occurred while processing the RPC:{}"
+
+#: zmq_services/strategy_engine.py:359
+msgid "与订单执行网关的连接可能丢失 (未知 RPC 错误)!"
+msgstr ""
+"The connection to the order execution gateway may be lost (Unknown RPC "
+"Error)!"
+
+#: zmq_services/strategy_engine.py:410
+#, python-brace-format
+msgid "(Strategy) 检查交易时间时出错: {}"
+msgstr "(Strategy) Error checking transaction time: {}"
+
+#: zmq_services/strategy_engine.py:435
+msgid "已成功从 OrderGW 接收 PONG。"
+msgstr "Successfully received PONG from OrderGW."
+
+#: zmq_services/strategy_engine.py:443
+#, python-brace-format
+msgid "{} 收到 PING 的意外结果：{}"
+msgstr "{} Received unexpected result from PING:{}"
+
+#: zmq_services/strategy_engine.py:445
+msgid "与订单执行网关的连接可能存在问题 (Unexpected PING result)! "
+msgstr ""
+"There may be a problem with the connection to the order execution gateway "
+"(Unexpected PING result)!"
+
+#: zmq_services/strategy_engine.py:471
+msgid "在回测模式下不应直接调用 StrategyEngine.send_limit_order。"
+msgstr ""
+"StrategyEngine.send_limit_order should not be called directly in backtesting"
+" mode."
+
+#: zmq_services/strategy_engine.py:475
+#, python-brace-format
+msgid "无法发送订单 ({} {} {} @ {}): 与订单执行网关失去连接。"
+msgstr ""
+"Unable to send order ({} {} {} @ {}): Lost connection with order execution "
+"gateway."
+
+#: zmq_services/strategy_engine.py:482
+#, python-brace-format
+msgid "订单发送冷却中 ({}): 距离上次发送不足 {} 秒。"
+msgstr ""
+"Order sending is in cooldown ({}): Less than {} seconds have passed since "
+"the last sending."
+
+#: zmq_services/strategy_engine.py:485
+#, python-brace-format
+msgid "准备发送限价单: {}.{} {} {} @ {} Offset: {}"
+msgstr "Ready to send limit order: {}.{} {} {} @ {} Offset: {}"
+
+#: zmq_services/strategy_engine.py:504
+#, python-brace-format
+msgid "send_limit_order: Calling _send_rpc_request with tuple: {}"
+msgstr "send_limit_order: Calling _send_rpc_request with tuple: {}"
+
+#: zmq_services/strategy_engine.py:514
+#, python-brace-format
+msgid "从订单网关收到的 vt_orderid 不是字符串: {} (类型: {})。订单可能已发送但ID无效。"
+msgstr ""
+"The vt_orderid received from the order gateway is not a string: {} (type: "
+"{}). The order may have been sent but with an invalid ID."
+
+#: zmq_services/strategy_engine.py:517
+#, python-brace-format
+msgid "订单发送成功 (RPC确认): {}, VT_OrderID: {}"
+msgstr "Order sent successfully (RPC confirmation): {}, VT_OrderID: {}"
+
+#: zmq_services/strategy_engine.py:522
+#, python-brace-format
+msgid "订单发送失败 (RPC调用未成功或网关返回错误): {}"
+msgstr ""
+"Order sending failed (RPC call failed or gateway returned an error): {}"
+
+#: zmq_services/strategy_engine.py:535
+msgid "在回测模式下不应直接调用 StrategyEngine.cancel_limit_order。"
+msgstr ""
+"StrategyEngine.cancel_limit_order should not be called directly in backtest "
+"mode."
+
+#: zmq_services/strategy_engine.py:539
+#, python-brace-format
+msgid "无法发送撤单指令 ({}): 与订单执行网关失去连接。"
+msgstr ""
+"Unable to send order cancellation instruction ({}): Lost connection with "
+"order execution gateway."
+
+#: zmq_services/strategy_engine.py:543
+#, python-brace-format
+msgid "尝试发送无效 vt_orderid ({}) 的撤单请求。"
+msgstr ""
+"Attempted to send a cancellation request with an invalid vt_orderid ({})."
+
+#: zmq_services/strategy_engine.py:546
+#, python-brace-format
+msgid "准备发送撤单指令: {}"
+msgstr "Prepare to send order cancellation instruction: {}"
+
+#: zmq_services/strategy_engine.py:560
+#, python-brace-format
+msgid "撤单指令发送成功 (RPC确认): {}. 回复: {}"
+msgstr ""
+"The order cancellation instruction was sent successfully (RPC confirmation):"
+" {}. Reply: {}"
+
+#: zmq_services/strategy_engine.py:565
+#, python-brace-format
+msgid "撤单指令发送失败 (RPC调用未成功): {}"
+msgstr ""
+"Failed to send the order cancellation instruction (RPC call failed): {}"
+
+#: zmq_services/strategy_engine.py:567
+#, python-brace-format
+msgid "撤单指令发送失败 (网关回复错误或格式无效): {}. 回复: {}"
+msgstr ""
+"Failed to send the order cancellation instruction (gateway reply error or "
+"invalid format): {}. Reply: {}"
+
+#: zmq_services/strategy_engine.py:579
+msgid "策略引擎已在运行中。"
+msgstr "The strategy engine is already running."
+
+#: zmq_services/strategy_engine.py:582
+msgid "没有加载任何策略，引擎无法启动。"
+msgstr "No strategies are loaded and the engine cannot start."
+
+#: zmq_services/strategy_engine.py:585
+msgid "启动策略引擎服务..."
+msgstr "Starting strategy engine service..."
+
+#: zmq_services/strategy_engine.py:589
+msgid "正在启动所有已加载的策略..."
+msgstr "Starting all loaded strategies..."
+
+#: zmq_services/strategy_engine.py:592
+msgid "所有策略已启动。"
+msgstr "All strategies are activated."
+
+#: zmq_services/strategy_engine.py:601
+msgid "策略引擎服务已启动，开始监听消息..."
+msgstr ""
+"The strategy engine service has been started and started listening for "
+"messages..."
+
+#: zmq_services/strategy_engine.py:608
+msgid "启动后立即尝试 Ping 订单网关以建立初始连接状态..."
+msgstr ""
+"Immediately after startup, try to ping the order gateway to establish "
+"initial connection status..."
+
+#: zmq_services/strategy_engine.py:627
+#, python-brace-format
+msgid "StrategyEngine Recv 循环：已接收部分。主题字节数：{!r} (len={})，数据字节长度：{}"
+msgstr ""
+"StrategyEngine Recv Loop: Received parts. Topic Bytes: {!r} (len={}), Data "
+"Bytes Len: {}"
+
+#: zmq_services/strategy_engine.py:629
+#, python-brace-format
+msgid "StrategyEngine Recv 循环：收到意外的多部分计数：{}。部分：{}"
+msgstr ""
+"StrategyEngine Recv Loop: Received unexpected multipart count: {}. Parts: {}"
+
+#: zmq_services/strategy_engine.py:632
+msgid "StrategyEngine Recv 循环：zmq.Again 在 recv_multipart 上捕获（轮询后应该很少见）"
+msgstr ""
+"StrategyEngine Recv Loop: zmq.Again caught on recv_multipart (should be rare"
+" after poll)"
+
+#: zmq_services/strategy_engine.py:635
+#, python-brace-format
+msgid "StrategyEngine Recv Loop：recv_multipart 期间出错：{}"
+msgstr "StrategyEngine Recv Loop: Error during recv_multipart: {}"
+
+#: zmq_services/strategy_engine.py:644
+#, python-brace-format
+msgid "解码主题：'{}'"
+msgstr "Decoded topic: '{}'"
+
+#: zmq_services/strategy_engine.py:652
+#, python-brace-format
+msgid "Msgpack 解码：对象类型='{}'，模块='{}'"
+msgstr "Msgpack decoded: Object Type='{}', Module='{}'"
+
+#: zmq_services/strategy_engine.py:663
+#, python-brace-format
+msgid "主题 {} 上的 TickData 对象缺少'vt_symbol'属性。"
+msgstr "TickData object on topic {} is missing 'vt_symbol' attribute."
+
+#: zmq_services/strategy_engine.py:669
+#, python-brace-format
+msgid "已成功根据主题 {} 的字典构建 Tick 数据"
+msgstr "Successfully reconstructed TickData from dict for topic {}"
+
+#: zmq_services/strategy_engine.py:674
+#, python-brace-format
+msgid "从字典重建的 TickData 对象缺少'vt_symbol'。主题：{}"
+msgstr ""
+"Reconstructed TickData object from dict is missing 'vt_symbol'. Topic: {}"
+
+#: zmq_services/strategy_engine.py:676
+#, python-brace-format
+msgid "无法根据在 tick 主题 {} 上收到的字典重建 TickData。字典：{}"
+msgstr ""
+"Failed to reconstruct TickData from dict received on tick topic {}. Dict: {}"
+
+#: zmq_services/strategy_engine.py:680
+#, python-brace-format
+msgid "在 tick 主题 {} 上接收到非 TickData/非 dict 对象：Type='{}'，Module='{}'"
+msgstr ""
+"Received non-TickData/non-dict object on tick topic {}: Type='{}', "
+"Module='{}'"
+
+#: zmq_services/strategy_engine.py:688
+#, python-brace-format
+msgid "已成功根据主题 {} 的字典重建 OrderData"
+msgstr "Successfully reconstructed OrderData from dict for topic {}"
+
+#: zmq_services/strategy_engine.py:691
+#, python-brace-format
+msgid "无法根据订单主题 {} 收到的字典重建订单数据。字典：{}"
+msgstr ""
+"Failed to reconstruct OrderData from dict received on order topic {}. Dict: "
+"{}"
+
+#: zmq_services/strategy_engine.py:694
+#, python-brace-format
+msgid "在订单主题 {} 上收到非 OrderData/非 dict 对象：{type()}"
+msgstr "Received non-OrderData/non-dict object on order topic {}: {type()}"
+
+#: zmq_services/strategy_engine.py:702
+#, python-brace-format
+msgid "已成功根据主题 {} 的字典重建 TradeData"
+msgstr "Successfully reconstructed TradeData from dict for topic {}"
+
+#: zmq_services/strategy_engine.py:705
+#, python-brace-format
+msgid "无法根据交易主题 {} 收到的字典重建 TradeData。字典：{}"
+msgstr ""
+"Failed to reconstruct TradeData from dict received on trade topic {}. Dict: "
+"{}"
+
+#: zmq_services/strategy_engine.py:708
+#, python-brace-format
+msgid "收到有关贸易主题 {} 的非 TradeData/非 dict 对象：{}"
+msgstr "Received non-TradeData/non-dict object on trade topic {}: {}"
+
+#: zmq_services/strategy_engine.py:720
+#, python-brace-format
+msgid "收到非 AccountData/非 dict 数据，或帐户主题 {} 重建失败。原始类型：{}"
+msgstr ""
+"Received non-AccountData/non-dict or failed reconstruction on account topic "
+"{}. Original Type: {}"
+
+#: zmq_services/strategy_engine.py:732
+#, python-brace-format
+msgid "日志主题 {} 收到非日志数据/非字典，或重建失败。原始类型：{}"
+msgstr ""
+"Received non-LogData/non-dict or failed reconstruction on log topic {}. "
+"Original Type: {}"
+
+#: zmq_services/strategy_engine.py:748
+#, python-brace-format
+msgid "在心跳主题上接收到非字典对象：{}"
+msgstr "Received non-dict object on heartbeat topic: {}"
+
+#: zmq_services/strategy_engine.py:751
+#, python-brace-format
+msgid "未知的消息主题: {}"
+msgstr "Unknown message subject: {}"
+
+#: zmq_services/strategy_engine.py:755
+#, python-brace-format
+msgid "Msgpack 解码错误: {}. Topic: '{}', Data (first 100 bytes): {!r}"
+msgstr "Msgpack decoding error: {}. Topic: '{}', Data (first 100 bytes): {!r}"
+
+#: zmq_services/strategy_engine.py:758
+#, python-brace-format
+msgid "处理订阅消息时出错 (Topic: {}): {}"
+msgstr "Error processing subscription message (Topic: {}): {}"
+
+#: zmq_services/strategy_engine.py:768
+msgid "订单网关心跳超时 ..."
+msgstr "Order network concern jump timeout ..."
+
+#: zmq_services/strategy_engine.py:804
+#, python-brace-format
+msgid "[交易时段内] 行情数据可能中断或延迟! 超时合约: {}"
+msgstr ""
+"[During trading hours] Market data may be interrupted or delayed! Timeout "
+"contract: {}"
+
+#: zmq_services/strategy_engine.py:807
+msgid "所有监控合约的行情数据流已恢复。"
+msgstr "The market data flow of all monitored contracts has been restored."
+
+#: zmq_services/strategy_engine.py:815
+#, python-brace-format
+msgid "ZMQ 错误 ({}: {}) 发生在服务停止期间，正常退出。"
+msgstr "ZMQ error ({}: {}) occurred during service stop, exiting normally."
+
+#: zmq_services/strategy_engine.py:818
+#, python-brace-format
+msgid "主循环中意外的 ZMQ 错误: {}"
+msgstr "Unexpected ZMQ error in main loop: {}"
+
+#: zmq_services/strategy_engine.py:821
+msgid "策略引擎检测到中断信号，开始停止..."
+msgstr ""
+"The strategy engine detected an interrupt signal and started to stop..."
+
+#: zmq_services/strategy_engine.py:824
+#, python-brace-format
+msgid "策略引擎主循环发生未知错误：{}"
+msgstr "An unknown error occurred in the strategy engine main loop: {}"
+
+#: zmq_services/strategy_engine.py:827
+msgid "策略引擎主循环结束。"
+msgstr "The strategy engine main loop ends."
+
+#: zmq_services/strategy_engine.py:848
+#, python-brace-format
+msgid "process_tick：为 vt_symbol“{}”调用策略“{}”on_tick。"
+msgstr "process_tick: Calling strategy '{}' on_tick for vt_symbol '{}'."
+
+#: zmq_services/strategy_engine.py:851
+#, python-brace-format
+msgid "策略 {} 在 on_tick 处理 {} 时出错: {}"
+msgstr "Strategy {} encountered an error in on_tick processing {}: {}"
+
+#: zmq_services/strategy_engine.py:869
+#, python-brace-format
+msgid "process_order 更新：已收到订单 ID={} 状态={}"
+msgstr "process_order_update: Received OrderID={} Status={}"
+
+#: zmq_services/strategy_engine.py:877
+#, python-brace-format
+msgid "策略 {} 在 on_order 处理 {} 时出错: {}"
+msgstr "Strategy {} encountered an error while processing {} in on_order: {}"
+
+#: zmq_services/strategy_engine.py:895
+#, python-brace-format
+msgid "忽略重复交易事件：{}"
+msgstr "Ignoring duplicate trade event: {}"
+
+#: zmq_services/strategy_engine.py:900
+msgid "收到的交易更新没有 vt_tradeid，无法检查重复。"
+msgstr ""
+"Trade update received without vt_tradeid, cannot check for duplicates."
+
+#: zmq_services/strategy_engine.py:911
+#, python-brace-format
+msgid "收到成交回报: {} OrderID: {} TradeID: {} Offset: {} Price: {} Vol: {}"
+msgstr ""
+"Received transaction report: {} OrderID: {} TradeID: {} Offset: {} Price: {}"
+" Vol: {}"
+
+#: zmq_services/strategy_engine.py:921
+#, python-brace-format
+msgid "策略 {} 在 on_trade 处理 {} 时出错: {}"
+msgstr "Strategy {} encountered an error while processing {} in on_trade: {}"
+
+#: zmq_services/strategy_engine.py:933
+#, python-brace-format
+msgid "process_account_update：已收到 AccountID 的更新：'{}'"
+msgstr "process_account_update: Received update for AccountID: '{}'"
+
+#: zmq_services/strategy_engine.py:940
+#, python-brace-format
+msgid "策略 {} 在 on_account 处理时出错: {}"
+msgstr "Strategy {} had an error in on_account processing: {}"
+
+#: zmq_services/strategy_engine.py:961
+#, python-brace-format
+msgid "[GW LOG - {}] {}"
+msgstr "[GW LOG - {}] {}"
+
+#: zmq_services/strategy_engine.py:974
+#, python-brace-format
+msgid "收到的心跳格式无效：{}"
+msgstr "Received invalid format for heartbeat: {}"
+
+#: zmq_services/strategy_engine.py:982
+#, python-brace-format
+msgid "（调试 HB 接收）TS={}，NOW={}"
+msgstr "(DEBUG HB Recv) TS={}, NOW={}"
+
+#: zmq_services/strategy_engine.py:987
+msgid "接收到订单网关心跳，标记为已连接。设置初始连接时间。"
+msgstr ""
+"Receive order network connection jump, mark as connected. Set initial "
+"connection time."
+
+#: zmq_services/strategy_engine.py:997
+#, python-brace-format
+msgid "收到过期的 OrderGW 心跳 (Timestamp: {}, Now: {}) - 可能存在时钟不同步或延迟。"
+msgstr ""
+"Received expired OrderGW heartbeat (Timestamp: {}, Now: {}) - there may be "
+"clock desync or delay."
+
+#: zmq_services/strategy_engine.py:1000
+#, python-brace-format
+msgid "处理 OrderGW 心跳消息时出错: {}"
+msgstr "Error processing OrderGW heartbeat message: {}"
+
+#: zmq_services/strategy_engine.py:1010
+msgid "StrategyEngine.stop() 被调用，但引擎未在运行或已被停止。"
+msgstr ""
+"StrategyEngine.stop() was called, but the engine was not running or was "
+"already stopped."
+
+#: zmq_services/strategy_engine.py:1013
+msgid "开始停止策略引擎服务..."
+msgstr "Starting to stop strategy engine service..."
+
+#: zmq_services/strategy_engine.py:1017
+msgid "正在停止所有策略..."
+msgstr "Stopping all strategies..."
+
+#: zmq_services/strategy_engine.py:1022
+#, python-brace-format
+msgid "停止策略 {} 时出错: {}"
+msgstr "Error stopping strategy {}: {}"
+
+#: zmq_services/strategy_engine.py:1023
+msgid "所有策略已停止。"
+msgstr "All strategies are stopped."
+
+#: zmq_services/strategy_engine.py:1026
+msgid "正在关闭策略引擎 ZMQ Sockets..."
+msgstr "Shutting down strategy engine ZMQ Sockets..."
+
+#: zmq_services/strategy_engine.py:1038
+#, python-brace-format
+msgid "正在关闭 Socket: {}..."
+msgstr "Closing Socket: {}..."
+
+#: zmq_services/strategy_engine.py:1040
+#, python-brace-format
+msgid "Socket {} 已关闭。"
+msgstr "Socket {} is closed."
+
+#: zmq_services/strategy_engine.py:1042
+#, python-brace-format
+msgid "关闭策略引擎 Socket {} 时出错: {}"
+msgstr "Error closing Strategy Engine Socket {}: {}"
+
+#: zmq_services/strategy_engine.py:1043
+msgid "策略引擎 ZMQ Sockets 已关闭。"
+msgstr "Strategy Engine ZMQ Sockets closed."
+
+#: zmq_services/strategy_engine.py:1049
+msgid "正在终止策略引擎的 ZMQ Context (from stop method)..."
+msgstr "Terminating the Strategy Engine's ZMQ Context (from stop method)..."
+
+#: zmq_services/strategy_engine.py:1051
+msgid "策略引擎的 ZMQ Context 已成功终止 (from stop method)。"
+msgstr ""
+"The ZMQ Context of the strategy engine has been terminated successfully "
+"(from stop method)."
+
+#: zmq_services/strategy_engine.py:1053
+#, python-brace-format
+msgid "终止策略引擎的 ZMQ Context 时发生 ZMQ 错误: {}"
+msgstr ""
+"A ZMQ error occurred while terminating the ZMQ Context for the Strategy "
+"Engine: {}"
+
+#: zmq_services/strategy_engine.py:1055
+#, python-brace-format
+msgid "终止策略引擎的 ZMQ Context 时发生未知错误: {}"
+msgstr ""
+"An unknown error occurred while terminating the ZMQ Context for the strategy"
+" engine: {}"
+
+#: zmq_services/strategy_engine.py:1057
+msgid "策略引擎的 ZMQ Context 未找到或已关闭 (from stop method)，跳过终止。"
+msgstr ""
+"The ZMQ Context for the strategy engine was not found or has been closed "
+"(from stop method), skipping termination."
+
+#: zmq_services/zmq_base.py:50
+#, python-brace-format
+msgid "{} 已在运行中。"
+msgstr "{} is already running."
+
+#: zmq_services/zmq_base.py:53
+#, python-brace-format
+msgid "正在启动 {}..."
+msgstr "Starting {}..."
+
+#: zmq_services/zmq_base.py:66
+#, python-brace-format
+msgid "{} 已启动，PUB socket 绑定到 {}"
+msgstr "{} started, PUB socket bound to {}"
+
+#: zmq_services/zmq_base.py:69
+#, python-brace-format
+msgid "{} 启动失败 (绑定 PUB socket 到 {} 时出错): {}"
+msgstr "{} failed to start (error binding PUB socket to {}): {}"
+
+#: zmq_services/zmq_base.py:77 zmq_services/zmq_base.py:88
+#, python-brace-format
+msgid "关闭 ZMQ PUB socket 时: {}"
+msgstr "When closing a ZMQ PUB socket: {}"
+
+#: zmq_services/zmq_base.py:82
+#, python-brace-format
+msgid "{} 启动时发生未知错误: {}"
+msgstr "{} An unknown error occurred during startup: {}"
+
+#: zmq_services/zmq_base.py:97
+#, python-brace-format
+msgid "{} 未运行。"
+msgstr "{} is not running."
+
+#: zmq_services/zmq_base.py:100
+#, python-brace-format
+msgid "正在停止 {}..."
+msgstr "Stopping {}..."
+
+#: zmq_services/zmq_base.py:113
+msgid "ZMQ PUB socket 已关闭。"
+msgstr "The ZMQ PUB socket has been closed."
+
+#: zmq_services/zmq_base.py:115
+#, python-brace-format
+msgid "关闭 ZMQ PUB socket 时出错: {}"
+msgstr "Error closing ZMQ PUB socket: {}"
+
+#: zmq_services/zmq_base.py:124
+msgid "ZMQ Context 已终止。"
+msgstr "The ZMQ Context has terminated."
+
+#: zmq_services/zmq_base.py:126
+#, python-brace-format
+msgid "终止 ZMQ Context 时出错: {}"
+msgstr "Error terminating ZMQ Context: {}"
+
+#: zmq_services/zmq_base.py:128
+#, python-brace-format
+msgid "{} 已停止。"
+msgstr "{} has stopped."
+
+#: zmq_services/zmq_base.py:135
+#, python-brace-format
+msgid "发布失败：{} 未激活或 PUB socket 不可用。 Topic: {}"
+msgstr ""
+"Publishing failed: {} is not activated or the PUB socket is unavailable. "
+"Topic: {}"
+
+#: zmq_services/zmq_base.py:152
+#, python-brace-format
+msgid "发布取消：在获取锁后发现服务已停止。Topic: {}"
+msgstr ""
+"Post Canceled: Found the service stopped after acquiring the lock. Topic: {}"
+
+#: zmq_services/zmq_base.py:158
+#, python-brace-format
+msgid "[PUB Tick Send] Attempting send_multipart for Topic: {}"
+msgstr "[PUB Tick Send] Attempting send_multipart for Topic: {}"
+
+#: zmq_services/zmq_base.py:164
+#, python-brace-format
+msgid "[PUB Tick Send] send_multipart call completed for Topic: {}"
+msgstr "[PUB Tick Send] send_multipart call completed for Topic: {}"
+
+#: zmq_services/zmq_base.py:172
+#, python-brace-format
+msgid "Msgpack 序列化错误 (发布数据, 主题: {}): {}"
+msgstr "Msgpack serialization error (post data, subject: {}): {}"
+
+#: zmq_services/zmq_base.py:175
+#, python-brace-format
+msgid "原始对象类型: {}"
+msgstr "Original object type: {}"
+
+#: zmq_services/zmq_base.py:176
+#, python-brace-format
+msgid "转换后对象类型: {}"
+msgstr "Converted object type: {}"
+
+#: zmq_services/zmq_base.py:178
+#, python-brace-format
+msgid "记录对象细节时出错: {}"
+msgstr "Error logging object details: {}"
+
+#: zmq_services/zmq_base.py:183
+#, python-brace-format
+msgid "发布事件时 ZMQ 缓冲区可能已满 (EAGAIN). Topic: {}"
+msgstr "The ZMQ buffer may be full (EAGAIN) when publishing events. Topic: {}"
+
+#: zmq_services/zmq_base.py:185
+#, python-brace-format
+msgid "发布事件时 ZMQ 错误: {}. Topic: {}"
+msgstr "ZMQ error when publishing event: {}. Topic: {}"
+
+#: zmq_services/zmq_base.py:188
+#, python-brace-format
+msgid "发布事件时发生未知错误 (主题: {}): {}"
+msgstr "An unknown error occurred while publishing an event (subject: {}): {}"

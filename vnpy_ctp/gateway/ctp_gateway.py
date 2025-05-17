@@ -55,6 +55,22 @@ from ..api import (
     THOST_FTDC_PD_Short,
 )
 
+# +++ 新增国际化尝试 +++
+try:
+    # 尝试从项目特定路径导入 _ 函数
+    # 这假设 vnpy_ctp 目录与包含 utils 的项目根目录有某种已知的相对关系
+    # 或者 utils 包已安装或在 PYTHONPATH 中
+    # 根据你的项目结构，你可能需要调整这里的导入
+    # 例如: from ....utils.i18n import _ (如果 utils 和 vnpy_ctp 是兄弟目录下的包)
+    # 或者更通用的方式，如果你的项目根目录在 sys.path 中:
+    from utils.i18n import _
+except ImportError:
+    # 如果导入失败，定义一个回退的 _ 函数，它不进行任何翻译
+    def _(text: str) -> str:
+        return text
+    print("vnpy_ctp.gateway: Failed to import custom translator '_', using fallback (no translation).", file=sys.stderr)
+# +++ 结束国际化尝试 +++
+
 # 委托状态映射
 STATUS_CTP2VT: dict[str, Status] = {
     THOST_FTDC_OST_NoTradeQueueing: Status.NOTTRADED,
@@ -210,7 +226,7 @@ class CtpGateway(BaseGateway):
         error_id: int = error["ErrorID"]
         error_msg: str = error["ErrorMsg"]
 
-        log_msg: str = f"{msg}，代码：{error_id}，信息：{error_msg}"
+        log_msg: str = f"{_(msg)}，{_('代码')}：{error_id}，{_('信息')}：{error_msg}"
         self.write_log(log_msg)
 
     def process_timer_event(self, event: Event) -> None:
@@ -256,35 +272,35 @@ class CtpMdApi(MdApi):
 
     def onFrontConnected(self) -> None:
         """服务器连接成功回报"""
-        self.gateway.write_log("行情服务器连接成功")
+        self.gateway.write_log(_("行情服务器连接成功"))
         self.login()
 
     def onFrontDisconnected(self, reason: int) -> None:
         """服务器连接断开回报"""
         self.login_status = False
-        self.gateway.write_log(f"行情服务器连接断开，原因{reason}")
+        self.gateway.write_log(_("行情服务器连接断开，原因{}").format(reason))
 
     def onRspUserLogin(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """用户登录请求回报"""
         if not error["ErrorID"]:
             self.login_status = True
-            self.gateway.write_log("行情服务器登录成功")
+            self.gateway.write_log(_("行情服务器登录成功"))
 
             for symbol in self.subscribed:
                 self.subscribeMarketData(symbol)
         else:
-            self.gateway.write_error("行情服务器登录失败", error)
+            self.gateway.write_error(_("行情服务器登录失败"), error)
 
     def onRspError(self, error: dict, reqid: int, last: bool) -> None:
         """请求报错回报"""
-        self.gateway.write_error("行情接口报错", error)
+        self.gateway.write_error(_("行情接口报错"), error)
 
     def onRspSubMarketData(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """订阅行情回报"""
         if not error or not error["ErrorID"]:
             return
 
-        self.gateway.write_error("行情订阅失败", error)
+        self.gateway.write_error(_("行情订阅失败"), error)
 
     def onRtnDepthMarketData(self, data: dict) -> None:
         """行情数据推送"""
@@ -431,7 +447,7 @@ class CtpTdApi(TdApi):
 
     def onFrontConnected(self) -> None:
         """服务器连接成功回报"""
-        self.gateway.write_log("交易服务器连接成功")
+        self.gateway.write_log(_("交易服务器连接成功"))
         if self.auth_code:
             self.authenticate()
         else:
@@ -440,18 +456,18 @@ class CtpTdApi(TdApi):
     def onFrontDisconnected(self, reason: int) -> None:
         """服务器连接断开回报"""
         self.login_status = False
-        self.gateway.write_log(f"交易服务器连接断开，原因{reason}")
+        self.gateway.write_log(_("交易服务器连接断开，原因{}").format(reason))
 
     def onRspAuthenticate(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """用户授权验证回报"""
         if not error.get('ErrorID'):
             self.auth_status = True
-            self.gateway.write_log("交易服务器授权验证成功")
+            self.gateway.write_log(_("交易服务器授权验证成功"))
             self.login()
         else:
             if error.get('ErrorID') == 63:
                 self.auth_failed = True
-            self.gateway.write_error("交易服务器授权验证失败", error)
+            self.gateway.write_error(_("交易服务器授权验证失败"), error)
 
     def onRspUserLogin(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """用户登录请求回报"""
@@ -459,13 +475,13 @@ class CtpTdApi(TdApi):
             self.frontid = data["FrontID"]
             self.sessionid = data["SessionID"]
             self.login_status = True
-            self.gateway.write_log("交易服务器登录成功")
+            self.gateway.write_log(_("交易服务器登录成功"))
             ctp_req: dict = {"BrokerID": self.brokerid, "InvestorID": self.userid}
             self.reqid += 1
             self.reqSettlementInfoConfirm(ctp_req, self.reqid)
         else:
             self.login_failed = True
-            self.gateway.write_error("交易服务器登录失败", error)
+            self.gateway.write_error(_("交易服务器登录失败"), error)
 
     def onRspOrderInsert(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """委托下单失败回报"""
@@ -488,22 +504,22 @@ class CtpTdApi(TdApi):
         )
         self.gateway.on_order(order)
 
-        self.gateway.write_error("交易委托失败", error)
+        self.gateway.write_error(_("交易委托失败"), error)
 
     def onRspOrderAction(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """委托撤单失败回报"""
-        self.gateway.write_error("交易撤单失败", error)
+        self.gateway.write_error(_("交易撤单失败"), error)
 
     def onRspSettlementInfoConfirm(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """确认结算单回报"""
-        self.gateway.write_log("结算信息确认成功")
+        self.gateway.write_log(_("结算信息确认成功"))
         while True:
             self.reqid += 1
             n: int = self.reqQryInstrument({}, self.reqid)
             if not n:
                 break
             else:
-                self.gateway.write_log(f"CtpTdApi: reqQryInstrument failed with code {n}, retrying...")
+                self.gateway.write_log(_("CtpTdApi：reqQryInstrument 失败，代码为 {}，正在重试...").format(n))
                 sleep(1)
 
     def onRspQryInvestorPosition(self, data: dict, error: dict, reqid: int, last: bool) -> None:
@@ -580,7 +596,7 @@ class CtpTdApi(TdApi):
     def onRspQryInstrument(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """合约查询回报"""
         if last or error.get("ErrorID"):
-            self.gateway.write_log(f"CtpTdApi: onRspQryInstrument finished. Last: {last}, ErrorID: {error.get('ErrorID', 'N/A')}")
+            self.gateway.write_log(_("CtpTdApi：onRspQryInstrument 已完成。最后：{}，错误 ID：{}").format(last, error.get('ErrorID', 'N/A')))
         product: Product = PRODUCT_CTP2VT.get(data["ProductClass"], None)
         if product:
             contract: ContractData = ContractData(
@@ -616,7 +632,7 @@ class CtpTdApi(TdApi):
 
         if last:
             self.contract_inited = True
-            self.gateway.write_log("合约信息查询成功")
+            self.gateway.write_log(_("合约信息查询成功"))
 
             for data in self.order_data:
                 self.onRtnOrder(data)
@@ -642,7 +658,7 @@ class CtpTdApi(TdApi):
 
         status: Status = STATUS_CTP2VT.get(data["OrderStatus"], None)
         if not status:
-            self.gateway.write_log(f"收到不支持的委托状态，委托号：{orderid}")
+            self.gateway.write_log(_("收到不支持的委托状态，委托号：{}").format(orderid))
             return
 
         timestamp: str = f"{data['InsertDate']} {data['InsertTime']}"
@@ -652,7 +668,7 @@ class CtpTdApi(TdApi):
         tp: tuple = (data["OrderPriceType"], data["TimeCondition"], data["VolumeCondition"])
         order_type: OrderType = ORDERTYPE_CTP2VT.get(tp, None)
         if not order_type:
-            self.gateway.write_log(f"收到不支持的委托类型，委托号：{orderid}")
+            self.gateway.write_log(_("收到不支持的委托类型，委托号：{}").format(orderid))
             return
 
         order: OrderData = OrderData(
@@ -721,31 +737,31 @@ class CtpTdApi(TdApi):
         if not self.connect_status:
             path: Path = get_folder_path(self.gateway_name.lower())
             api_path_str = str(path) + "\\Td"
-            self.gateway.write_log(f"CtpTdApi: Attempting to create API with path: {api_path_str}")
+            self.gateway.write_log(_("CtpTdApi：尝试创建路径为 {} 的 API").format(api_path_str))
             try:
                 self.createFtdcTraderApi(api_path_str.encode("GBK").decode("utf-8"))
-                self.gateway.write_log("CtpTdApi: createFtdcTraderApi called successfully.")
+                self.gateway.write_log(_("CtpTdApi：createFtdcTraderApi调用成功。"))
             except Exception as e_create:
-                self.gateway.write_log(f"CtpTdApi: createFtdcTraderApi FAILED! Error: {e_create}")
-                self.gateway.write_log(f"CtpTdApi: createFtdcTraderApi Traceback:\n{traceback.format_exc()}")
+                self.gateway.write_log(_("CtpTdApi：createFtdcTraderApi 失败！错误：{}").format(e_create))
+                self.gateway.write_log(_("CtpTdApi：createFtdcTraderApi 回溯：{}").format(traceback.format_exc()))
                 return
 
             self.subscribePrivateTopic(0)
             self.subscribePublicTopic(0)
 
             self.registerFront(address)
-            self.gateway.write_log(f"CtpTdApi: Attempting to init API with address: {address}...")
+            self.gateway.write_log(_("CtpTdApi：尝试使用地址初始化 API：{}...").format(address))
             try:
                 self.init()
-                self.gateway.write_log("CtpTdApi: init called successfully.")
+                self.gateway.write_log(_("CtpTdApi：init 调用成功。"))
             except Exception as e_init:
-                self.gateway.write_log(f"CtpTdApi: init FAILED! Error: {e_init}")
-                self.gateway.write_log(f"CtpTdApi: init Traceback:\n{traceback.format_exc()}")
+                self.gateway.write_log(_("CtpTdApi：初始化失败！错误：{}").format(e_init))
+                self.gateway.write_log(_("CtpTdApi：初始化回溯：{}").format(traceback.format_exc()))
                 return
 
             self.connect_status = True
         else:
-            self.gateway.write_log("CtpTdApi: Already connected, attempting authentication.")
+            self.gateway.write_log(_("CtpTdApi：已连接，正在尝试身份验证。"))
             self.authenticate()
 
     def authenticate(self) -> None:
@@ -780,11 +796,11 @@ class CtpTdApi(TdApi):
     def send_order(self, req: OrderRequest) -> str:
         """委托下单"""
         if req.offset not in OFFSET_VT2CTP:
-            self.gateway.write_log("请选择开平方向")
+            self.gateway.write_log(_("请选择开平方向"))
             return ""
 
         if req.type not in ORDERTYPE_VT2CTP:
-            self.gateway.write_log(f"当前接口不支持该类型的委托{req.type.value}")
+            self.gateway.write_log(_("当前接口不支持该类型的委托{}").format(req.type.value))
             return ""
 
         self.order_ref += 1
@@ -816,7 +832,7 @@ class CtpTdApi(TdApi):
         self.reqid += 1
         n: int = self.reqOrderInsert(ctp_req, self.reqid)
         if n:
-            self.gateway.write_log(f"委托请求发送失败，错误代码：{n}")
+            self.gateway.write_log(_("委托请求发送失败，错误代码：{}").format(n))
             return ""
 
         orderid: str = f"{self.frontid}_{self.sessionid}_{self.order_ref}"

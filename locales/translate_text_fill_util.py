@@ -12,9 +12,9 @@ Text translation tool - automatically fills in msgstr fields in .po files, prese
 """
 import json
 import os
-import re
 import sys
 from pathlib import Path
+import polib # 导入 polib
 
 from utils.logger import logger, setup_logging
 
@@ -37,102 +37,41 @@ def load_json_file(file_path):
         return None
 
 
-def process_po_file(po_file_path, json_data):
+def process_po_file_with_polib(po_file_path, json_data):
     """
-    处理PO文件，填充msgstr字段，保留原有结构和 msgid
-
-    Process PO files, fill in msgstr fields, retain original structure and msgid
-    :param po_file_path: PO文件路径
-    :param json_data: JSON数据
+    使用 polib 处理PO文件，填充msgstr字段。
     """
     try:
-        with open(po_file_path, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
+        po = polib.pofile(po_file_path)
+        updated_count = 0
+        not_found_count = 0
 
-        new_lines = []
-        i = 0
-        current_msgid_content = None
-        is_header_msgid = False
-        header_block_has_been_fully_processed = False
-
-        while i < len(lines):
-            line = lines[i]
-            stripped_line = line.strip()
-
-            if stripped_line.startswith('msgid'):
-                current_msgid_lines = []
-                current_msgid_content = ""
-                
-                current_msgid_lines.append(line)
-                match = re.match(r'msgid\s+"(.*)"', stripped_line)
-                if match:
-                    current_msgid_content = match.group(1)
-                
-                if current_msgid_content == "" and not header_block_has_been_fully_processed:
-                    is_header_msgid = True
-                else:
-                    is_header_msgid = False
-
-                temp_i = i + 1
-                while temp_i < len(lines) and lines[temp_i].strip().startswith('"'):
-                    current_msgid_lines.append(lines[temp_i])
-                    inner_match = re.match(r'"((?:[^"\\]|\\.)*)"', lines[temp_i].strip())
-                    if inner_match:
-                        current_msgid_content += inner_match.group(1)
-                    temp_i += 1
-                
-                new_lines.extend(current_msgid_lines)
-                i = temp_i
+        for entry in po:
+            # 跳过头部条目 (msgid="") 和已翻译的条目 (除非需要强制覆盖)
+            if entry.msgid == "" or entry.obsolete: # 跳过头部和废弃条目
                 continue
 
-            elif stripped_line.startswith('msgstr'):
-                original_msgstr_first_line = line
-                original_msgstr_continuation_lines = []
-                
-                temp_i = i + 1
-                while temp_i < len(lines) and lines[temp_i].strip().startswith('"'):
-                    original_msgstr_continuation_lines.append(lines[temp_i])
-                    temp_i += 1
-                
-                if current_msgid_content is not None and not is_header_msgid:
-                    translation_from_json = json_data.get(current_msgid_content)
-                    
-                    if translation_from_json is not None:
-                        clean_translation = translation_from_json.rstrip()
-                        escaped_translation = clean_translation.replace('\\', '\\\\').replace('"', '\\"')
-                        
-                        new_lines.append(f'msgstr "{escaped_translation}"\n')
-                        logger.info(f"已填充 msgid '{current_msgid_content}' 的 msgstr: {clean_translation}")
-                    else:
-                        new_lines.append(original_msgstr_first_line)
-                        new_lines.extend(original_msgstr_continuation_lines)
-                        logger.warning(f"未找到 '{current_msgid_content}' 的翻译，保留原msgstr块")
-                
-                else:
-                    new_lines.append(original_msgstr_first_line)
-                    new_lines.extend(original_msgstr_continuation_lines)
-                    if is_header_msgid:
-                        logger.info("保留文件头部 msgstr 块")
-                        header_block_has_been_fully_processed = True
-                    else:
-                        logger.info("保留孤立的 msgstr 块 (无前序msgid)")
+            # entry.msgid 已经是正确解码和拼接的多行内容
+            translation_from_json = json_data.get(entry.msgid)
 
-                current_msgid_content = None
-                is_header_msgid = False
-                i = temp_i
-                continue
-
+            if translation_from_json is not None:
+                # 如果json中的翻译与现有的msgstr不同，或者msgstr为空
+                if entry.msgstr != translation_from_json or not entry.msgstr:
+                    entry.msgstr = translation_from_json
+                    logger.info(f"已更新 msgid '{entry.msgid}' 的 msgstr: {entry.msgstr}")
+                    updated_count += 1
             else:
-                new_lines.append(line)
-                i += 1
-        
-        with open(po_file_path, 'w', encoding='utf-8') as file:
-            file.writelines(new_lines)
+                if not entry.msgstr: # 只记录那些在JSON中找不到且本身也为空的
+                    logger.warning(f"未在JSON中找到 msgid '{entry.msgid}' 的翻译，且msgstr为空。")
+                    not_found_count +=1
+                # 如果JSON中没有，但.po文件本身有翻译，则保留 .po 文件中的翻译
 
-        logger.info("PO文件处理完成！")
+        po.save(po_file_path)
+        logger.info(f"PO文件处理完成！共更新 {updated_count} 个条目。有 {not_found_count} 个空条目未在JSON中找到翻译。")
 
     except Exception as e:
         logger.error(f"处理PO文件时出错：{e}")
+        logger.error(f"Traceback: {e.__traceback__}")
         raise
 
 
@@ -148,7 +87,7 @@ def main():
     if json_data is None:
         return
 
-    process_po_file(po_file_path, json_data)
+    process_po_file_with_polib(po_file_path, json_data)
 
 
 if __name__ == "__main__":
