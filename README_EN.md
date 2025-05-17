@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://nilotica.github.io/"><img src="https://nilotica.github.io/assets/newlogo.png" width="350" height="274"  alt="nilotica"></a>
+  <a href="https://nilotica.github.io/"><img src="assets/logo.png" width="350" height="274"  alt="nilotica"></a>
 </p>
 
 <div align="center">
