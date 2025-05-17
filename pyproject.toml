@@ -53,9 +53,6 @@ dependencies = [
     "polib>=1.2.0",
     "ta-lib==0.6.3",
     "wheel==0.46.1",
-    "selenium>=4.32.0",
-    "webdriver-manager==3.8.6",
-    "undetected-chromedriver>=3.5.5",
 ]
 
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
