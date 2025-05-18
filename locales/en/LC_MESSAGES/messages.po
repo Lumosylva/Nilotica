@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-17 23:40+0800\n"
+"POT-Creation-Date: 2025-05-19 00:26+0800\n"
 "PO-Revision-Date: 2025-05-17 23:40+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: en <LL@li.org>\n"
@@ -711,142 +711,142 @@ msgstr "Failed to publish Tick (subject: {})"
 msgid "检测到 CTP 行情登录成功信号！"
 msgstr "CTP market login success signal detected!"
 
-#: zmq_services/market_data_gateway.py:104
-#, python-brace-format
-msgid "[VNPY 日志 - MDGW 已处理] {} - {}"
+#: zmq_services/market_data_gateway.py:101
+#, fuzzy, python-brace-format
+msgid "[VNPY Logs - MDGW Processed] {} - {}"
 msgstr "[VNPY LOG - MDGW Processed] {} - {}"
 
-#: zmq_services/market_data_gateway.py:109
+#: zmq_services/market_data_gateway.py:106
 #, python-brace-format
 msgid "发布 Log 失败 (主题: {})"
 msgstr "Failed to publish log (topic: {})"
 
-#: zmq_services/market_data_gateway.py:116
+#: zmq_services/market_data_gateway.py:113
 #, python-brace-format
 msgid "发布 Contract 失败 (主题: {})"
 msgstr "Failed to publish Contract (Subject: {})"
 
-#: zmq_services/market_data_gateway.py:121
+#: zmq_services/market_data_gateway.py:118
 msgid "行情发布地址 'zmq_addresses.market_data_pub' 未在配置中找到，无法启动."
 msgstr ""
 "The market data publishing address 'zmq_addresses.market_data_pub' was not "
 "found in the configuration and could not be started."
 
-#: zmq_services/market_data_gateway.py:125
+#: zmq_services/market_data_gateway.py:122
 #, python-brace-format
 msgid "无法启动 ZmqPublisherBase (绑定到 {})，行情网关启动中止."
 msgstr ""
 "Unable to start ZmqPublisherBase (bound to {}), market gateway startup "
 "aborted."
 
-#: zmq_services/market_data_gateway.py:128
+#: zmq_services/market_data_gateway.py:125
 #, python-brace-format
 msgid "行情网关服务 for [{}] 正在启动..."
 msgstr "Market Gateway Service for [{}] is starting..."
 
-#: zmq_services/market_data_gateway.py:134
+#: zmq_services/market_data_gateway.py:131
 msgid "事件引擎已启动."
 msgstr "The event engine has been started."
 
-#: zmq_services/market_data_gateway.py:136
+#: zmq_services/market_data_gateway.py:133
 #, python-brace-format
 msgid "连接 CTP 网关 for [{}]..."
 msgstr "Connect CTP Gateway for [{}]..."
 
-#: zmq_services/market_data_gateway.py:138
+#: zmq_services/market_data_gateway.py:135
 #: zmq_services/order_execution_gateway.py:676
 msgid "CTP 设置未加载或环境无效，无法连接 CTP 网关。"
 msgstr ""
 "CTP settings not loaded or environment invalid, cannot connect CTP gateway."
 
-#: zmq_services/market_data_gateway.py:142
+#: zmq_services/market_data_gateway.py:139
 #, python-brace-format
 msgid "CTP 连接配置 (Env: {}): UserID={}, BrokerID={}, MD={}"
 msgstr "CTP connection configuration (Env: {}): UserID={}, BrokerID={}, MD={}"
 
-#: zmq_services/market_data_gateway.py:152
+#: zmq_services/market_data_gateway.py:149
 #, python-brace-format
 msgid "CTP 网关连接请求已发送。等待连接成功信号 (超时: {}s)..."
 msgstr ""
 "CTP gateway connection request has been sent. Waiting for connection success"
 " signal (timeout: {}s)..."
 
-#: zmq_services/market_data_gateway.py:157
+#: zmq_services/market_data_gateway.py:154
 #, python-brace-format
 msgid "CTP 行情连接超时 ({}s)！未收到登录成功信号."
 msgstr ""
 "CTP market connection timed out ({}s)! No login success signal received."
 
-#: zmq_services/market_data_gateway.py:161
+#: zmq_services/market_data_gateway.py:158
 msgid "CTP 行情网关连接成功."
 msgstr "CTP market gateway connection is successful."
 
-#: zmq_services/market_data_gateway.py:163
+#: zmq_services/market_data_gateway.py:160
 msgid "订阅行情..."
 msgstr "Subscribe to Quotes..."
 
-#: zmq_services/market_data_gateway.py:169
+#: zmq_services/market_data_gateway.py:166
 msgid "'default_subscribe_symbols' 未在配置中找到或为空，不订阅任何合约."
 msgstr "'default_subscribe_symbols' 未在配置中找到或为空，不订阅任何合约."
 
-#: zmq_services/market_data_gateway.py:179
+#: zmq_services/market_data_gateway.py:176
 #, python-brace-format
 msgid "发送订阅请求: {}"
 msgstr "Send subscription request: {}"
 
-#: zmq_services/market_data_gateway.py:182
+#: zmq_services/market_data_gateway.py:179
 #, python-brace-format
 msgid "错误的合约格式，跳过订阅: {} (应为 SYMBOL.EXCHANGE)"
 msgstr ""
 "Wrong contract format, skipping subscription: {} (should be SYMBOL.EXCHANGE)"
 
-#: zmq_services/market_data_gateway.py:185
+#: zmq_services/market_data_gateway.py:182
 #, python-brace-format
 msgid "订阅 {} 时出错: {}"
 msgstr "Error subscribing to {}: {}"
 
-#: zmq_services/market_data_gateway.py:187
+#: zmq_services/market_data_gateway.py:184
 #, python-brace-format
 msgid "共发送 {} 个合约的订阅请求."
 msgstr "A total of {} contracts' subscription requests were sent."
 
-#: zmq_services/market_data_gateway.py:189
+#: zmq_services/market_data_gateway.py:186
 #, python-brace-format
 msgid "以下合约订阅失败或跳过: {}"
 msgstr "The following contract subscriptions failed or were skipped: {}"
 
-#: zmq_services/market_data_gateway.py:192
+#: zmq_services/market_data_gateway.py:189
 #, python-brace-format
 msgid "连接或订阅 CTP 网关时发生严重错误 (Env: {}): {}"
 msgstr ""
 "A critical error occurred while connecting or subscribing to the CTP Gateway"
 " (Env: {}): {}"
 
-#: zmq_services/market_data_gateway.py:195
+#: zmq_services/market_data_gateway.py:192
 #, python-brace-format
 msgid "行情网关服务 for [{}] 启动流程完成."
 msgstr "The market gateway service for [{}] startup process is completed."
 
-#: zmq_services/market_data_gateway.py:201
+#: zmq_services/market_data_gateway.py:198
 #, python-brace-format
 msgid "停止行情网关服务 for [{}]..."
 msgstr "Stop the market gateway service for [{}]..."
 
-#: zmq_services/market_data_gateway.py:208
+#: zmq_services/market_data_gateway.py:205
 msgid "事件引擎已停止."
 msgstr "The event engine has stopped."
 
-#: zmq_services/market_data_gateway.py:210
+#: zmq_services/market_data_gateway.py:207
 #: zmq_services/order_execution_gateway.py:744
 #, python-brace-format
 msgid "停止事件引擎时出错: {}"
 msgstr "Error stopping event engine: {}"
 
-#: zmq_services/market_data_gateway.py:215
+#: zmq_services/market_data_gateway.py:212
 msgid "CTP 网关已关闭."
 msgstr "The CTP gateway is down."
 
-#: zmq_services/market_data_gateway.py:217
+#: zmq_services/market_data_gateway.py:214
 #: zmq_services/order_execution_gateway.py:752
 #, python-brace-format
 msgid "关闭 CTP 网关时出错: {}"
@@ -1276,20 +1276,482 @@ msgstr "Error stopping RPC server: {}"
 msgid "订单执行网关服务(RPC模式) for [{}] 已停止。"
 msgstr "The Order Execution Gateway Service (RPC Mode) for [{}] has stopped."
 
+#: zmq_services/risk_manager.py:108
+#, python-brace-format
+msgid "风险管理器配置：MD URL={}、报告 URL={}、命令 URL={}"
+msgstr "Risk Manager Config: MD URL={}, Report URL={}, Command URL={}"
+
+#: zmq_services/risk_manager.py:109
+#, python-brace-format
+msgid "风险管理器配置：警报 URL={}"
+msgstr "Risk Manager Config: Alert URL={}"
+
+#: zmq_services/risk_manager.py:110
+#, python-brace-format
+msgid "风险管理器配置：持仓限制={}"
+msgstr "Risk Manager Config: Position Limits={}"
+
+#: zmq_services/risk_manager.py:111
+#, python-brace-format
+msgid "风险管理器配置：最大待处理/合同={}，全局最大待处理={}"
+msgstr "Risk Manager Config: Max Pending/Contract={}, Global Max Pending={}"
+
+#: zmq_services/risk_manager.py:112
+#, python-brace-format
+msgid "风险管理器配置：保证金限额比率={}"
+msgstr "Risk Manager Config: Margin Limit Ratio={}"
+
+#: zmq_services/risk_manager.py:113
+#, python-brace-format
+msgid "风险管理器配置：要检查超时的符号={}"
+msgstr "Risk Manager Config: Symbols to Check Timeout={}"
+
+#: zmq_services/risk_manager.py:126 zmq_services/risk_manager.py:127
+#, python-brace-format
+msgid "数据订阅器连接到: {}"
+msgstr "Data subscribers connect to: {}"
+
+#: zmq_services/risk_manager.py:140
+#, fuzzy, python-brace-format
+msgid "订阅主题前缀: {}"
+msgstr "Subscribe to a specific contract topic: {}, {}"
+
+#: zmq_services/risk_manager.py:147
+#, python-brace-format
+msgid "加载持仓限制: {}"
+msgstr "Load position limits: {}"
+
+#: zmq_services/risk_manager.py:173
+msgid "风险管理器初始化完成。"
+msgstr "Risk Manager initialization is complete."
+
+#: zmq_services/risk_manager.py:188
+#, fuzzy
+msgid "尝试关闭旧的指令 Socket..."
+msgstr "Closing Socket: {}..."
+
+#: zmq_services/risk_manager.py:192
+#, fuzzy, python-brace-format
+msgid "关闭旧指令 Socket 时出错: {}"
+msgstr "Error closing Strategy Engine Socket {}: {}"
+
+#: zmq_services/risk_manager.py:194
+#, fuzzy, python-brace-format
+msgid "正在创建并连接指令 Socket 到: {}"
+msgstr "Closing Socket: {}..."
+
+#: zmq_services/risk_manager.py:201
+#, fuzzy, python-brace-format
+msgid "连接指令 Socket 时出错: {}"
+msgstr "Error closing Strategy Engine Socket {}: {}"
+
+#: zmq_services/risk_manager.py:204
+#, fuzzy
+msgid "与订单执行网关的连接丢失 (Connection Error)! "
+msgstr "Connection to the Order Execution Gateway lost (ZMQ Error {})!"
+
+#: zmq_services/risk_manager.py:218
+msgid "未找到 zoneinfo 包。交易时间检查可能不准确。"
+msgstr "zoneinfo package not found. Trading hours check might be inaccurate."
+
+#: zmq_services/risk_manager.py:262
+#, fuzzy, python-brace-format
+msgid "检查交易时间时出错: {}"
+msgstr "(Strategy) Error checking transaction time: {}"
+
+#: zmq_services/risk_manager.py:274
+#, python-brace-format
+msgid "错误：成交回报字典缺少关键字段 (vt_symbol, direction, volume, offset)。Trade Dict: {}"
+msgstr ""
+"Error: Trade return dictionary is missing key fields (vt_symbol, direction, "
+"volume, offset). Trade Dict: {}"
+
+#: zmq_services/risk_manager.py:284
+#, python-brace-format
+msgid "错误：成交回报字典中的 volume 不是有效数字。Trade Dict: {}"
+msgstr ""
+"Error: volume in trade return dictionary is not a valid number. Trade Dict: "
+"{}"
+
+#: zmq_services/risk_manager.py:298
+#, python-brace-format
+msgid "未知的成交方向: {}. Trade Dict: {}"
+msgstr "Unknown transaction direction: {}. Trade Dict: {}"
+
+#: zmq_services/risk_manager.py:305
+#, python-brace-format
+msgid ""
+"持仓更新: {} | Prev={:.4f} | Change={:.4f} | New={:.4f} | Trade(Dir={}, Off={}, "
+"Vol={})"
+msgstr ""
+"Position update: {} | Prev={:.4f} | Change={:.4f} | New={:.4f} | "
+"Trade(Dir={}, Off={}, Vol={})"
+
+#: zmq_services/risk_manager.py:313
+#, python-brace-format
+msgid "接收到缺少 vt_orderid 的订单更新，无法处理。 Order Dict: {}"
+msgstr ""
+"An order update was received with a missing vt_orderid and could not be "
+"processed. Order Dict: {}"
+
+#: zmq_services/risk_manager.py:332
+msgid "[Risk Check] 行情数据流异常，部分依赖市价的检查可能不准确或已跳过。"
+msgstr ""
+"[Risk Check] The market data flow is abnormal. Some checks that rely on "
+"market prices may be inaccurate or have been skipped."
+
+#: zmq_services/risk_manager.py:340
+#, python-brace-format
+msgid "[风险告警] 合约 {}: 持仓 {:.4f} 超出限制 {}! (Trigger: {})"
+msgstr ""
+"[Risk Warning] Contract {}: Position {:.4f} exceeds limit {}! (Trigger: {})"
+
+#: zmq_services/risk_manager.py:361
+#, python-brace-format
+msgid "[风险告警] 全局活动订单数 {} 超出限制 {}! (Trigger: {})"
+msgstr ""
+"[Risk Warning] The number of global active orders {} exceeds the limit {}! "
+"(Trigger: {})"
+
+#: zmq_services/risk_manager.py:374 zmq_services/risk_manager.py:405
+#, python-brace-format
+msgid "无法解析订单时间戳: {} for order {}"
+msgstr "Unable to parse order timestamp: {} for order {}"
+
+#: zmq_services/risk_manager.py:379
+#, python-brace-format
+msgid "尝试撤销最旧的全局挂单: {}"
+msgstr "Try to cancel the oldest global order: {}"
+
+#: zmq_services/risk_manager.py:382
+msgid "找到最旧订单但缺少 vt_orderid"
+msgstr "Oldest order found but vt_orderid missing"
+
+#: zmq_services/risk_manager.py:391
+#, python-brace-format
+msgid "[风险告警] 合约 {}: 活动订单数 {} 超出限制 {}! (Trigger: {})"
+msgstr ""
+"[Risk Warning] Contract {}: Number of active orders {} exceeds limit {}! "
+"(Trigger: {})"
+
+#: zmq_services/risk_manager.py:410
+#, python-brace-format
+msgid "尝试撤销合约 {} 最旧的挂单: {}"
+msgstr "Try to cancel contract {} Oldest pending order: {}"
+
+#: zmq_services/risk_manager.py:413
+#, python-brace-format
+msgid "找到合约 {} 最旧订单但缺少 vt_orderid"
+msgstr "Found oldest order for contract {} but vt_orderid is missing"
+
+#: zmq_services/risk_manager.py:430
+#, python-brace-format
+msgid ""
+"[风险告警] 保证金占用率 {:.2%} 超出限制 {:.2%}! (Balance={:.2f}, Available={:.2f}, "
+"Trigger={})"
+msgstr ""
+"[Risk Warning] Margin utilization rate {:.2%} exceeds the limit {:.2%}! "
+"(Balance={:.2f}, Available={:.2f}, Trigger={})"
+
+#: zmq_services/risk_manager.py:433
+#, python-brace-format
+msgid "保证金检查计算错误：无法将 balance/available 转换为数字。Account data: {}. Error: {}"
+msgstr ""
+"Margin check calculation error: Cannot convert balance/available to a "
+"number. Account data: {}. Error: {}"
+
+#: zmq_services/risk_manager.py:435
+#, fuzzy, python-brace-format
+msgid "保证金检查时发生意外错误: {}"
+msgstr "An unexpected error occurred while running the strategy engine: {}"
+
+#: zmq_services/risk_manager.py:440
+#, fuzzy
+msgid "尝试发送空 vt_orderid 的撤单请求。"
+msgstr ""
+"Attempted to send a cancellation request with an invalid vt_orderid ({})."
+
+#: zmq_services/risk_manager.py:445
+#, fuzzy, python-brace-format
+msgid "无法发送撤单指令 ({}):与订单执行网关失去连接。"
+msgstr ""
+"Unable to send order cancellation instruction ({}): Lost connection with "
+"order execution gateway."
+
+#: zmq_services/risk_manager.py:448
+#, fuzzy, python-brace-format
+msgid "发送撤单指令给网关: {}"
+msgstr "Prepare to send order cancellation instruction: {}"
+
+#: zmq_services/risk_manager.py:470
+#, python-brace-format
+msgid "收到撤单指令回复 ({}): {}"
+msgstr "Received order cancellation reply ({}): {}"
+
+#: zmq_services/risk_manager.py:472
+#, fuzzy, python-brace-format
+msgid "撤单指令 ({}) 请求超时 ({}ms)。"
+msgstr "{} Request timeout ({}ms)."
+
+#: zmq_services/risk_manager.py:480
+#, fuzzy, python-brace-format
+msgid "发送撤单指令 ({}) 时 ZMQ 错误: {}"
+msgstr "{} ZMQ error when sending or receiving RPC: {}"
+
+#: zmq_services/risk_manager.py:483
+#, python-brace-format
+msgid "发送或处理撤单指令 ({}) 回复时出错：{}"
+msgstr ""
+"An error occurred while sending or processing the order cancellation "
+"instruction ({}) reply: {}"
+
+#: zmq_services/risk_manager.py:489
+#, fuzzy, python-brace-format
+msgid "{} 正在发送..."
+msgstr "{} Sending..."
+
+#: zmq_services/risk_manager.py:513
+#, fuzzy
+msgid "成功接收 PONG。"
+msgstr "Received PONG successfully."
+
+#: zmq_services/risk_manager.py:515
+msgid "与订单执行网关的连接已恢复。"
+msgstr "The connection to the order execution gateway has been restored."
+
+#: zmq_services/risk_manager.py:518
+#, fuzzy, python-brace-format
+msgid "收到了对 PING 的意外回复：{}"
+msgstr "Received unexpected reply to PING: {}"
+
+#: zmq_services/risk_manager.py:520
+#, fuzzy
+msgid "与订单执行网关的连接可能存在问题 (Unexpected PING reply)! "
+msgstr ""
+"There may be a problem with the connection to the order execution gateway "
+"(Unexpected PING result)!"
+
+#: zmq_services/risk_manager.py:524
+#, python-brace-format
+msgid "{} PING 请求在 {} 毫秒后超时。"
+msgstr "{} PING request timed out after {}ms."
+
+#: zmq_services/risk_manager.py:527
+#, fuzzy
+msgid "与订单执行网关的连接丢失 (PING timeout)! "
+msgstr ""
+"Connection to order execution gateway lost (RPC Timeout after {} attempts)!"
+
+#: zmq_services/risk_manager.py:529
+msgid "尝试重置指令 Socket (因 PING 超时)..."
+msgstr "Trying to reset command socket (due to PING timeout)..."
+
+#: zmq_services/risk_manager.py:535
+#, fuzzy, python-brace-format
+msgid "{} 发送 PING 或接收 PONG 时 ZMQ 错误: {}"
+msgstr "{} ZMQ error when sending or receiving RPC: {}"
+
+#: zmq_services/risk_manager.py:538
+#, fuzzy, python-brace-format
+msgid "与订单执行网关的连接丢失 ({})! "
+msgstr "Connection to the Order Execution Gateway lost (ZMQ Error {})!"
+
+#: zmq_services/risk_manager.py:540
+msgid "尝试重置指令 Socket (因 ZMQ 错误)..."
+msgstr "Trying to reset command socket (due to ZMQ error)..."
+
+#: zmq_services/risk_manager.py:546
+#, fuzzy, python-brace-format
+msgid "{} 发送或处理 PING/PONG 时发生未知错误：{}"
+msgstr "{} An unknown error occurred while processing the RPC:{}"
+
+#: zmq_services/risk_manager.py:549
+#, fuzzy
+msgid "与订单执行网关的连接丢失 (Unknown Error)! "
+msgstr "Connection to the Order Execution Gateway lost (ZMQ Error {})!"
+
+#: zmq_services/risk_manager.py:556
+#, fuzzy
+msgid "风险管理器已在运行中。"
+msgstr "{} is already running."
+
+#: zmq_services/risk_manager.py:559
+#, fuzzy
+msgid "启动风险管理器服务..."
+msgstr "Starting strategy engine service..."
+
+#: zmq_services/risk_manager.py:566
+#, fuzzy
+msgid "风险管理器服务已启动，开始监听消息..."
+msgstr ""
+"The strategy engine service has been started and started listening for "
+"messages..."
+
+#: zmq_services/risk_manager.py:580
+#, python-brace-format
+msgid "已接收原始多部分：Count={}"
+msgstr "Received Raw multipart: Count={}"
+
+#: zmq_services/risk_manager.py:585
+#, python-brace-format
+msgid "收到包含意外部分数量 ({}) 的消息: {}"
+msgstr "Received message with unexpected partial quantity ({}): {}"
+
+#: zmq_services/risk_manager.py:605
+#, python-brace-format
+msgid "[RM] 收到正确：主题='{}'，类型='{}'"
+msgstr "[RM] Received Correct: Topic='{}', Type='{}'"
+
+#: zmq_services/risk_manager.py:622 zmq_services/strategy_engine.py:751
+#, python-brace-format
+msgid "未知的消息主题: {}"
+msgstr "Unknown message subject: {}"
+
+#: zmq_services/risk_manager.py:626
+#, python-brace-format
+msgid "Msgpack Unpacker 错误: 无法从数据中解包对象. Topic: {}"
+msgstr "Msgpack Unpacker Error: Unable to unpack object from data. Topic: {}"
+
+#: zmq_services/risk_manager.py:628
+#, fuzzy, python-brace-format
+msgid "Msgpack 解码错误: {}. Topic: {}"
+msgstr "ZMQ error when publishing event: {}. Topic: {}"
+
+#: zmq_services/risk_manager.py:630 zmq_services/strategy_engine.py:758
+#, python-brace-format
+msgid "处理订阅消息时出错 (Topic: {}): {}"
+msgstr "Error processing subscription message (Topic: {}): {}"
+
+#: zmq_services/risk_manager.py:659 zmq_services/strategy_engine.py:804
+#, python-brace-format
+msgid "[交易时段内] 行情数据可能中断或延迟! 超时合约: {}"
+msgstr ""
+"[During trading hours] Market data may be interrupted or delayed! Timeout "
+"contract: {}"
+
+#: zmq_services/risk_manager.py:663 zmq_services/strategy_engine.py:807
+msgid "所有监控合约的行情数据流已恢复。"
+msgstr "The market data flow of all monitored contracts has been restored."
+
+#: zmq_services/risk_manager.py:670
+#, fuzzy, python-brace-format
+msgid "ZMQ 错误 ({}) 发生在服务停止期间或Context终止，正常退出循环。"
+msgstr "ZMQ error ({}: {}) occurred during service stop, exiting normally."
+
+#: zmq_services/risk_manager.py:673
+#, fuzzy, python-brace-format
+msgid "意外的 ZMQ 错误: {}"
+msgstr "Unexpected ZMQ error in main loop: {}"
+
+#: zmq_services/risk_manager.py:676
+#, fuzzy
+msgid "检测到中断信号，开始停止..."
+msgstr ""
+"The strategy engine detected an interrupt signal and started to stop..."
+
+#: zmq_services/risk_manager.py:679
+#, fuzzy, python-brace-format
+msgid "主循环处理消息时发生未知错误：{}"
+msgstr "An unknown error occurred in the strategy engine main loop: {}"
+
+#: zmq_services/risk_manager.py:683
+msgid "风险管理器主循环结束。"
+msgstr "The risk manager main loop ends."
+
+#: zmq_services/risk_manager.py:689
+msgid "风险管理器未运行。"
+msgstr "Risk Manager is not running."
+
+#: zmq_services/risk_manager.py:696
+msgid "正在停止风险管理器服务..."
+msgstr "Stopping Risk Manager service..."
+
+#: zmq_services/risk_manager.py:700
+#, fuzzy
+msgid "关闭 ZMQ sockets 和 context..."
+msgstr "Shutting down strategy engine ZMQ Sockets..."
+
+#: zmq_services/risk_manager.py:703
+msgid "ZeroMQ 订阅器已关闭。"
+msgstr "The ZeroMQ subscriber is closed."
+
+#: zmq_services/risk_manager.py:706
+msgid "ZeroMQ 指令发送器已关闭。"
+msgstr "The ZeroMQ command sender is down."
+
+#: zmq_services/risk_manager.py:710
+#, fuzzy
+msgid "ZeroMQ Context 已终止。"
+msgstr "The ZMQ Context has terminated."
+
+#: zmq_services/risk_manager.py:712
+#, fuzzy, python-brace-format
+msgid "终止 ZeroMQ Context 时出错 (可能已终止): {}"
+msgstr "Error terminating ZMQ Context: {}"
+
+#: zmq_services/risk_manager.py:713
+msgid "风险管理器已停止。"
+msgstr "Risk Manager has stopped."
+
+#: zmq_services/risk_manager.py:730
+msgid "收到的订单更新没有 vt_symbol，跳过了特定符号的风险检查。"
+msgstr ""
+"Order update received without vt_symbol, skipping symbol-specific risk "
+"check."
+
+#: zmq_services/risk_manager.py:738 zmq_services/strategy_engine.py:895
+#, python-brace-format
+msgid "忽略重复交易事件：{}"
+msgstr "Ignoring duplicate trade event: {}"
+
+#: zmq_services/risk_manager.py:743 zmq_services/strategy_engine.py:900
+msgid "收到的交易更新没有 vt_tradeid，无法检查重复。"
+msgstr ""
+"Trade update received without vt_tradeid, cannot check for duplicates."
+
+#: zmq_services/risk_manager.py:780
+#, fuzzy, python-brace-format
+msgid "账户资金更新 (每5分钟): ID={}, Avail={:.2f}, Margin={:.2f}, Frozen={:.2f}"
+msgstr ""
+"Account funds update (every 5 minutes): AccountID={}, Balance={:.2f}, "
+"Available={:.2f}, Frozen={:.2f}"
+
+#: zmq_services/risk_manager.py:787
+#, python-brace-format
+msgid "处理账户更新日志时无法转换数值: {}. Account Dict: {}"
+msgstr ""
+"Unable to convert value when processing account update log: {}. Account "
+"Dict: {}"
+
+#: zmq_services/risk_manager.py:796
+#, fuzzy, python-brace-format
+msgid "[RM GW LOG - {}] {}"
+msgstr "[GW LOG - {}] {}"
+
+#: zmq_services/risk_manager.py:804
+#, python-brace-format
+msgid "已收到 {} 的合约数据字典"
+msgstr "Received contract data dict for {}"
+
+#: zmq_services/risk_manager.py:808
+#, python-brace-format
+msgid "收到不带 vt_symbol 的合约数据字典：{}"
+msgstr "Received contract data dict without vt_symbol: {}"
+
 #: zmq_services/run_market_gateway.py:75 zmq_services/run_order_gateway.py:57
-#: zmq_services/run_strategy_engine.py:50
+#: zmq_services/run_risk_manager.py:51 zmq_services/run_strategy_engine.py:50
 #, python-brace-format
 msgid "未指定 --ctp-env，使用默认 CTP 环境：{}"
 msgstr "No --ctp-env specified, using default CTP environment: {}"
 
 #: zmq_services/run_market_gateway.py:77 zmq_services/run_order_gateway.py:59
-#: zmq_services/run_strategy_engine.py:55
+#: zmq_services/run_risk_manager.py:56 zmq_services/run_strategy_engine.py:55
 #, python-brace-format
 msgid "使用配置环境：'{}'"
 msgstr "Using configuration environment: '{}'"
 
 #: zmq_services/run_market_gateway.py:79 zmq_services/run_order_gateway.py:61
-#: zmq_services/run_strategy_engine.py:59
+#: zmq_services/run_risk_manager.py:59 zmq_services/run_strategy_engine.py:59
 msgid "未指定 --config-env，仅使用基本 global_config.yaml。"
 msgstr "No --config-env specified, using base global_config.yaml only."
 
@@ -1395,6 +1857,39 @@ msgstr "Start and stop service (RPC mode) for CTP env: [{}]..."
 msgid "订单执行网关服务(RPC模式) for CTP env: [{}] 已退出。"
 msgstr "Order Execution Gateway Service (RPC Mode) for CTP env: [{}] Exited."
 
+#: zmq_services/run_risk_manager.py:53
+#, python-brace-format
+msgid "风险管理器 CTP 环境（信息性）：{}"
+msgstr "Risk Manager CTP Environment (Informational):{}"
+
+#: zmq_services/run_risk_manager.py:61
+#, fuzzy
+msgid "正在初始化风险管理器..."
+msgstr "Initializing strategy engine..."
+
+#: zmq_services/run_risk_manager.py:66
+#, fuzzy
+msgid "尝试启动风险管理器..."
+msgstr "Trying to start strategy engine..."
+
+#: zmq_services/run_risk_manager.py:70
+#, fuzzy
+msgid "主程序检测到 Ctrl+C，正在停止..."
+msgstr "Main program detected Ctrl+C, stopping engine..."
+
+#: zmq_services/run_risk_manager.py:74
+#, fuzzy, python-brace-format
+msgid "风险管理器运行时发生意外错误: {}"
+msgstr "An unexpected error occurred while running the strategy engine: {}"
+
+#: zmq_services/run_risk_manager.py:80 zmq_services/run_strategy_engine.py:127
+msgid "执行最终停止清理..."
+msgstr "Performing final stop cleanup..."
+
+#: zmq_services/run_risk_manager.py:82
+msgid "风险管理器运行结束。"
+msgstr "The Risk Manager operation is finished."
+
 #: zmq_services/run_strategy_engine.py:52
 #, python-brace-format
 msgid "策略引擎 CTP 环境：{}"
@@ -1457,10 +1952,6 @@ msgstr "Main program detected Ctrl+C, stopping engine..."
 #, python-brace-format
 msgid "策略引擎运行时发生意外错误: {}"
 msgstr "An unexpected error occurred while running the strategy engine: {}"
-
-#: zmq_services/run_strategy_engine.py:127
-msgid "执行最终停止清理..."
-msgstr "Performing final stop cleanup..."
 
 #: zmq_services/run_strategy_engine.py:129
 msgid "策略引擎运行结束。"
@@ -2190,35 +2681,14 @@ msgstr ""
 msgid "在心跳主题上接收到非字典对象：{}"
 msgstr "Received non-dict object on heartbeat topic: {}"
 
-#: zmq_services/strategy_engine.py:751
-#, python-brace-format
-msgid "未知的消息主题: {}"
-msgstr "Unknown message subject: {}"
-
 #: zmq_services/strategy_engine.py:755
 #, python-brace-format
 msgid "Msgpack 解码错误: {}. Topic: '{}', Data (first 100 bytes): {!r}"
 msgstr "Msgpack decoding error: {}. Topic: '{}', Data (first 100 bytes): {!r}"
 
-#: zmq_services/strategy_engine.py:758
-#, python-brace-format
-msgid "处理订阅消息时出错 (Topic: {}): {}"
-msgstr "Error processing subscription message (Topic: {}): {}"
-
 #: zmq_services/strategy_engine.py:768
 msgid "订单网关心跳超时 ..."
 msgstr "Order network concern jump timeout ..."
-
-#: zmq_services/strategy_engine.py:804
-#, python-brace-format
-msgid "[交易时段内] 行情数据可能中断或延迟! 超时合约: {}"
-msgstr ""
-"[During trading hours] Market data may be interrupted or delayed! Timeout "
-"contract: {}"
-
-#: zmq_services/strategy_engine.py:807
-msgid "所有监控合约的行情数据流已恢复。"
-msgstr "The market data flow of all monitored contracts has been restored."
 
 #: zmq_services/strategy_engine.py:815
 #, python-brace-format
@@ -2263,16 +2733,6 @@ msgstr "process_order_update: Received OrderID={} Status={}"
 #, python-brace-format
 msgid "策略 {} 在 on_order 处理 {} 时出错: {}"
 msgstr "Strategy {} encountered an error while processing {} in on_order: {}"
-
-#: zmq_services/strategy_engine.py:895
-#, python-brace-format
-msgid "忽略重复交易事件：{}"
-msgstr "Ignoring duplicate trade event: {}"
-
-#: zmq_services/strategy_engine.py:900
-msgid "收到的交易更新没有 vt_tradeid，无法检查重复。"
-msgstr ""
-"Trade update received without vt_tradeid, cannot check for duplicates."
 
 #: zmq_services/strategy_engine.py:911
 #, python-brace-format

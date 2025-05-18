@@ -1,33 +1,27 @@
 import os
-import pickle
 import sys
 import time
 from collections import defaultdict, deque
 from datetime import datetime
 from datetime import time as dt_time  # Add timedelta
 from datetime import timedelta
-from decimal import Decimal  # Add Decimal for potential future use
 from typing import Any, Dict
 
-import msgpack  # Add msgpack import
+import msgpack
 import zmq
 
-# Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# +++ Import ConfigManager +++
 from utils.config_manager import ConfigManager
 from utils.logger import logger
+from utils.i18n import _
 
-# --- Remove old config import --- 
-# from config import zmq_config as config
 
-# Import necessary vnpy constants and objects
 try:
     from vnpy.trader.constant import Direction, Exchange, Offset, OptionType, OrderType, Product, Status
-    from vnpy.trader.object import (  # Import ContractData
+    from vnpy.trader.object import (
         AccountData,
         ContractData,
         LogData,
@@ -82,11 +76,9 @@ def is_order_active_dict(order_dict: dict) -> bool:
         Status.PARTTRADED.value
     )
 
-# --- Risk Manager Service ---
 class RiskManagerService:
     def __init__(self, config_manager: ConfigManager):
         """Initializes the risk manager service."""
-        # +++ Use passed ConfigManager instance +++
         self.config_service = config_manager
 
         # +++ Load configuration using ConfigManager +++
@@ -113,12 +105,12 @@ class RiskManagerService:
         self.ping_timeout_ms = self.config_service.get_global_config("engine_communication.ping_timeout_ms", 2500)
 
         # Log fetched config
-        logger.info(f"Risk Manager Config: MD URL={self.market_data_url}, Report URL={self.order_report_url}, Command URL={self._command_connect_url}")
-        logger.info(f"Risk Manager Config: Alert URL={self.alert_pub_url}")
-        logger.info(f"Risk Manager Config: Position Limits={self.position_limits}")
-        logger.info(f"Risk Manager Config: Max Pending/Contract={self.max_pending_per_contract}, Global Max Pending={self.global_max_pending}")
-        logger.info(f"Risk Manager Config: Margin Limit Ratio={self.margin_limit_ratio}")
-        logger.info(f"Risk Manager Config: Symbols to Check Timeout={self.subscribed_symbols}")
+        logger.info(_("风险管理器配置：MD URL={}、报告 URL={}、命令 URL={}").format(self.market_data_url, self.order_report_url, self._command_connect_url))
+        logger.info(_("风险管理器配置：警报 URL={}").format(self.alert_pub_url))
+        logger.info(_("风险管理器配置：持仓限制={}").format(self.position_limits))
+        logger.info(_("风险管理器配置：最大待处理/合同={}，全局最大待处理={}").format(self.max_pending_per_contract, self.global_max_pending))
+        logger.info(_("风险管理器配置：保证金限额比率={}").format(self.margin_limit_ratio))
+        logger.info(_("风险管理器配置：要检查超时的符号={}").format(self.subscribed_symbols))
 
         # Initialize ZMQ components
         self.context = zmq.Context()
@@ -131,8 +123,8 @@ class RiskManagerService:
         # Connect to both publishers
         self.subscriber.connect(self.market_data_url)
         self.subscriber.connect(self.order_report_url)
-        logger.info(f"数据订阅器连接到: {self.market_data_url}")
-        logger.info(f"数据订阅器连接到: {self.order_report_url}")
+        logger.info(_("数据订阅器连接到: {}").format(self.market_data_url))
+        logger.info(_("数据订阅器连接到: {}").format(self.order_report_url))
 
         # Subscribe to relevant topics (lowercase prefixes)
         prefixes_to_subscribe = [
@@ -145,14 +137,14 @@ class RiskManagerService:
         ]
         for prefix in prefixes_to_subscribe:
             self.subscriber.subscribe(prefix.encode('utf-8'))
-            logger.info(f"订阅主题前缀: {prefix}")
+            logger.info(_("订阅主题前缀: {}").format(prefix))
 
         # --- State ---
         self.positions: Dict[str, float] = {} # vt_symbol -> net position (using float for now)
         self.account_data: Dict[str, Any] | None = None # Store latest account data as dict
         self.active_orders: Dict[str, Dict[str, Any]] = {} # vt_orderid -> Order Dictionary
         self.last_order_status: Dict[str, str] = {} # vt_orderid -> last logged status string
-        logger.info(f"加载持仓限制: {self.position_limits}")
+        logger.info(_("加载持仓限制: {}").format(self.position_limits))
 
         # Market Data Status
         self.last_tick_time: Dict[str, float] = {} # vt_symbol -> last reception timestamp
@@ -178,9 +170,10 @@ class RiskManagerService:
         self.processed_trade_ids: deque[str] = deque(maxlen=1000) # Store last 1000 trade IDs
         # --- End Add ---
 
-        logger.info("风险管理器初始化完成。")
+        logger.info(_("风险管理器初始化完成。"))
 
-    def _get_connect_url(self, base_url: str) -> str:
+    @staticmethod
+    def _get_connect_url(base_url: str) -> str:
         """Replaces wildcard address with localhost for connection."""
         if base_url.startswith("tcp://*"):
             return base_url.replace("tcp://*", "tcp://localhost", 1)
@@ -192,23 +185,23 @@ class RiskManagerService:
     def _setup_command_socket(self):
         """Sets up or resets the command REQ socket."""
         if hasattr(self, 'command_socket') and self.command_socket:
-            logger.info("尝试关闭旧的指令 Socket...")
+            logger.info(_("尝试关闭旧的指令 Socket..."))
             try:
                 self.command_socket.close(linger=0)
             except Exception as e_close:
-                 logger.warning(f"关闭旧指令 Socket 时出错: {e_close}")
+                 logger.warning(_("关闭旧指令 Socket 时出错: {}").format(e_close))
         
-        logger.info(f"正在创建并连接指令 Socket 到: {self._command_connect_url}")
+        logger.info(_("正在创建并连接指令 Socket 到: {}").format(self._command_connect_url))
         self.command_socket = self.context.socket(zmq.REQ)
         self.command_socket.setsockopt(zmq.LINGER, 0)
         try:
              self.command_socket.connect(self._command_connect_url)
              # Connection might not happen immediately, ping will verify
         except Exception as e_conn:
-             logger.error(f"连接指令 Socket 时出错: {e_conn}")
+             logger.error(_("连接指令 Socket 时出错: {}").format(e_conn))
              # Mark as disconnected immediately if connection fails
              if self.gateway_connected:
-                 logger.error("与订单执行网关的连接丢失 (Connection Error)! ")
+                 logger.error(_("与订单执行网关的连接丢失 (Connection Error)! "))
                  self.gateway_connected = False
 
     def _is_trading_hours(self) -> bool:
@@ -222,7 +215,7 @@ class RiskManagerService:
                 from zoneinfo import ZoneInfo
                 china_tz = ZoneInfo("Asia/Shanghai")
             except ImportError:
-                logger.error("zoneinfo package not found. Trading hours check might be inaccurate.")
+                logger.error(_("未找到 zoneinfo 包。交易时间检查可能不准确。"))
                 # Define a dummy TZ or return True (fail open)
                 class DummyTZ: 
                     def utcoffset(self, dt): return timedelta(hours=8)
@@ -266,7 +259,7 @@ class RiskManagerService:
             return False
 
         except Exception as e:
-            logger.error(f"检查交易时间时出错: {e}")
+            logger.error(_("检查交易时间时出错: {}").format(e))
             return True # Fail open: assume trading hours if config is wrong or time conversion fails
 
     def update_position(self, trade_dict: dict):
@@ -278,7 +271,7 @@ class RiskManagerService:
         offset_str = trade_dict.get('offset')           # Offset string (e.g., "开", "平")
 
         if not all([vt_symbol, direction_str is not None, volume is not None, offset_str is not None]):
-            logger.error(f"错误：成交回报字典缺少关键字段 (vt_symbol, direction, volume, offset)。Trade Dict: {trade_dict}")
+            logger.error(_("错误：成交回报字典缺少关键字段 (vt_symbol, direction, volume, offset)。Trade Dict: {}").format(trade_dict))
             return None, None
 
         # --- Position Update Logic using string comparisons --- 
@@ -288,7 +281,7 @@ class RiskManagerService:
         try:
             volume = float(volume)
         except (TypeError, ValueError):
-             logger.error(f"错误：成交回报字典中的 volume 不是有效数字。Trade Dict: {trade_dict}")
+             logger.error(_("错误：成交回报字典中的 volume 不是有效数字。Trade Dict: {}").format(trade_dict))
              return None, None
 
         if direction_str == Direction.LONG.value: # Buy
@@ -302,14 +295,14 @@ class RiskManagerService:
             else: # Sell to close long (Offset can be CLOSE, CLOSETODAY, CLOSEYESTERDAY)
                 pos_change = -volume
         else:
-             logger.warning(f"未知的成交方向: {direction_str}. Trade Dict: {trade_dict}")
+             logger.warning(_("未知的成交方向: {}. Trade Dict: {}").format(direction_str, trade_dict))
              return None, None
         # --- End Logic --- 
 
         # Update position map (using float)
         new_pos = previous_pos + pos_change
         self.positions[vt_symbol] = new_pos
-        logger.info(f"持仓更新: {vt_symbol} | Prev={previous_pos:.4f} | Change={pos_change:.4f} | New={new_pos:.4f} | Trade(Dir={direction_str}, Off={offset_str}, Vol={volume})")
+        logger.info(_("持仓更新: {} | Prev={:.4f} | Change={:.4f} | New={:.4f} | Trade(Dir={}, Off={}, Vol={})").format(vt_symbol, previous_pos, pos_change, new_pos, direction_str, offset_str, volume))
 
         return vt_symbol, new_pos
 
@@ -317,7 +310,7 @@ class RiskManagerService:
         """Updates the dictionary of active orders using order dictionary."""
         vt_orderid = order_dict.get('vt_orderid')
         if not vt_orderid:
-            logger.warning("接收到缺少 vt_orderid 的订单更新，无法处理。 Order Dict: {order_dict}")
+            logger.warning(_("接收到缺少 vt_orderid 的订单更新，无法处理。 Order Dict: {}").format(order_dict))
             return
 
         if is_order_active_dict(order_dict):
@@ -336,7 +329,7 @@ class RiskManagerService:
         """Checks various risk limits based on current state (uses dictionaries). Logs market data status."""
         # Log market data status
         if not self.market_data_ok:
-            logger.warning("[Risk Check] 行情数据流异常，部分依赖市价的检查可能不准确或已跳过。")
+            logger.warning(_("[Risk Check] 行情数据流异常，部分依赖市价的检查可能不准确或已跳过。"))
 
         # --- 1. Position Limit Check (Per Symbol) --- 
         if vt_symbol:
@@ -344,7 +337,7 @@ class RiskManagerService:
             position = self.positions.get(vt_symbol, 0.0)
             limit = self.position_limits.get(vt_symbol)
             if limit is not None and abs(position) > limit:
-                logger.warning(f"[风险告警] 合约 {vt_symbol}: 持仓 {position:.4f} 超出限制 {limit}! (Trigger: {trigger_event})")
+                logger.warning(_("[风险告警] 合约 {}: 持仓 {:.4f} 超出限制 {}! (Trigger: {})").format(vt_symbol, position, limit, trigger_event))
                 # Potential Action: Send closing orders
 
         # --- 2. Pending Order Limit Check --- 
@@ -365,7 +358,7 @@ class RiskManagerService:
 
         # --- 2a. Global Pending Order Limit --- 
         if global_pending_count > self.global_max_pending:
-            logger.warning(f"[风险告警] 全局活动订单数 {global_pending_count} 超出限制 {self.global_max_pending}! (Trigger: {trigger_event})")
+            logger.warning(_("[风险告警] 全局活动订单数 {} 超出限制 {}! (Trigger: {})").format(global_pending_count, self.global_max_pending, trigger_event))
             # Action: Cancel the oldest pending order globally
             oldest_order_dict = None
             min_datetime = None
@@ -378,15 +371,15 @@ class RiskManagerService:
                                min_datetime = current_dt
                                oldest_order_dict = o_dict
                       except ValueError:
-                           logger.warning(f"无法解析订单时间戳: {dt_str} for order {o_dict.get('vt_orderid')}")
+                           logger.warning(_("无法解析订单时间戳: {} for order {}").format(dt_str, o_dict.get('vt_orderid')))
            
             if oldest_order_dict:
                  oldest_vt_orderid = oldest_order_dict.get('vt_orderid')
                  if oldest_vt_orderid:
-                      logger.warning(f"尝试撤销最旧的全局挂单: {oldest_vt_orderid}")
+                      logger.warning(_("尝试撤销最旧的全局挂单: {}").format(oldest_vt_orderid))
                       self._send_cancel_request(oldest_vt_orderid)
                  else:
-                      logger.error("找到最旧订单但缺少 vt_orderid")
+                      logger.error(_("找到最旧订单但缺少 vt_orderid"))
 
         # --- 2b. Per-Contract Pending Order Limit --- 
         symbols_to_check = [vt_symbol] if vt_symbol else list(pending_per_contract.keys())
@@ -395,7 +388,7 @@ class RiskManagerService:
              count = pending_per_contract.get(symbol, 0)
              limit_per = self.max_pending_per_contract
              if count > limit_per:
-                 logger.warning(f"[风险告警] 合约 {symbol}: 活动订单数 {count} 超出限制 {limit_per}! (Trigger: {trigger_event})")
+                 logger.warning(_("[风险告警] 合约 {}: 活动订单数 {} 超出限制 {}! (Trigger: {})").format(symbol, count, limit_per, trigger_event))
                  # Action: Cancel the oldest active order for this specific symbol
                  symbol_orders = orders_to_potentially_cancel.get(symbol, [])
                  oldest_symbol_order_dict = None
@@ -409,15 +402,15 @@ class RiskManagerService:
                                 min_symbol_datetime = current_dt
                                 oldest_symbol_order_dict = o_dict
                         except ValueError:
-                            logger.warning(f"无法解析订单时间戳: {dt_str} for order {o_dict.get('vt_orderid')}")
+                            logger.warning(_("无法解析订单时间戳: {} for order {}").format(dt_str, o_dict.get('vt_orderid')))
                 
                  if oldest_symbol_order_dict:
                      order_to_cancel_id = oldest_symbol_order_dict.get('vt_orderid')
                      if order_to_cancel_id:
-                         logger.warning(f"尝试撤销合约 {symbol} 最旧的挂单: {order_to_cancel_id}")
+                         logger.warning(_("尝试撤销合约 {} 最旧的挂单: {}").format(symbol, order_to_cancel_id))
                          self._send_cancel_request(order_to_cancel_id)
                      else:
-                         logger.error(f"找到合约 {symbol} 最旧订单但缺少 vt_orderid")
+                         logger.error(_("找到合约 {} 最旧订单但缺少 vt_orderid").format(symbol))
 
         # --- 3. Margin Usage Check --- 
         if self.account_data: # Check if account dictionary exists
@@ -434,25 +427,25 @@ class RiskManagerService:
                 margin_ratio = required_margin / balance if balance > 0 else 0.0
                 if margin_ratio > self.margin_limit_ratio:
                     # Log using floats
-                    logger.warning(f"[风险告警] 保证金占用率 {margin_ratio:.2%} 超出限制 {self.margin_limit_ratio:.2%}! (Balance={balance:.2f}, Available={available:.2f}, Trigger={trigger_event})")
+                    logger.warning(_("[风险告警] 保证金占用率 {:.2%} 超出限制 {:.2%}! (Balance={:.2f}, Available={:.2f}, Trigger={})").format(margin_ratio, self.margin_limit_ratio, balance, available, trigger_event))
                     # Potential Action: Cancel orders or liquidate positions (complex)
             except (TypeError, ValueError) as e:
-                 logger.error(f"保证金检查计算错误：无法将 balance/available 转换为数字。Account data: {self.account_data}. Error: {e}")
+                 logger.error(_("保证金检查计算错误：无法将 balance/available 转换为数字。Account data: {}. Error: {}").format(self.account_data, e))
             except Exception as e_margin:
-                 logger.exception(f"保证金检查时发生意外错误: {e_margin}")
+                 logger.exception(_("保证金检查时发生意外错误: {}").format(e_margin))
 
     def _send_cancel_request(self, vt_orderid: str):
         """Sends a cancel order request to the Order Execution Gateway."""
         if not vt_orderid:
-            logger.error("尝试发送空 vt_orderid 的撤单请求。")
+            logger.error(_("尝试发送空 vt_orderid 的撤单请求。"))
             return # Don't proceed if no order ID
 
         # Check gateway connection status before sending
         if not self.gateway_connected:
-            logger.error(f"无法发送撤单指令 ({vt_orderid})：与订单执行网关失去连接。")
+            logger.error(_("无法发送撤单指令 ({}):与订单执行网关失去连接。").format(vt_orderid))
             return
 
-        logger.info(f"发送撤单指令给网关: {vt_orderid}")
+        logger.info(_("发送撤单指令给网关: {}").format(vt_orderid))
         # Format according to vnpy.rpc: (method_name, args_tuple, kwargs_dict)
         # cancel_order expects one positional argument: a dictionary
         req_data = {"vt_orderid": vt_orderid}
@@ -474,9 +467,9 @@ class RiskManagerService:
                 packed_reply = self.command_socket.recv()
                 # Use msgpack for REQ/REP communication
                 reply = msgpack.unpackb(packed_reply, raw=False)
-                logger.info(f"收到撤单指令回复 ({vt_orderid}): {reply}")
+                logger.info(_("收到撤单指令回复 ({}): {}").format(vt_orderid, reply))
             else:
-                logger.error(f"撤单指令 ({vt_orderid}) 请求超时 ({timeout_ms}ms)。")
+                logger.error(_("撤单指令 ({}) 请求超时 ({}ms)。").format(vt_orderid, timeout_ms))
                 # Handle timeout: maybe reconnect or log error persistently
                 # Recreating socket on timeout might be necessary
                 # self.command_socket.close()
@@ -484,16 +477,16 @@ class RiskManagerService:
                 # self.command_socket.connect(...) 
 
         except zmq.ZMQError as e:
-            logger.error(f"发送撤单指令 ({vt_orderid}) 时 ZMQ 错误: {e}")
+            logger.error(_("发送撤单指令 ({}) 时 ZMQ 错误: {}").format(vt_orderid, e))
             # Consider reconnecting or handling specific errors
         except Exception as e:
-            logger.exception(f"发送或处理撤单指令 ({vt_orderid}) 回复时出错：{e}")
+            logger.exception(_("发送或处理撤单指令 ({}) 回复时出错：{}").format(vt_orderid, e))
 
     def _send_ping(self):
         """Sends a PING request to the Order Gateway and handles the reply."""
         # Determine log prefix based on current assumed state
         log_prefix = "[Ping]" if self.gateway_connected else "[Ping - Attempting Reconnect]"
-        logger.debug(f"{log_prefix} Sending...")
+        logger.debug(_("{} 正在发送...").format(log_prefix))
 
         # Format according to vnpy.rpc: ("ping", (), {})
         req_tuple = ("ping", (), {})
@@ -517,60 +510,60 @@ class RiskManagerService:
                 reply = msgpack.unpackb(packed_reply, raw=False)
                 # Check for the RpcServer success format [True, "pong"]
                 if isinstance(reply, (list, tuple)) and len(reply) == 2 and reply[0] is True and reply[1] == "pong":
-                    logger.debug("Received PONG successfully.")
+                    logger.debug(_("成功接收 PONG。"))
                     if not self.gateway_connected:
-                         logger.info("与订单执行网关的连接已恢复。")
+                         logger.info(_("与订单执行网关的连接已恢复。"))
                          self.gateway_connected = True # Mark as connected
                 else:
-                    logger.warning(f"Received unexpected reply to PING: {reply}")
+                    logger.warning(_("收到了对 PING 的意外回复：{}").format(reply))
                     if self.gateway_connected:
-                         logger.error("与订单执行网关的连接可能存在问题 (Unexpected PING reply)! ")
+                         logger.error(_("与订单执行网关的连接可能存在问题 (Unexpected PING reply)! "))
                          self.gateway_connected = False
             else:
                 # Timeout waiting for reply
-                logger.warning(f"{log_prefix} PING request timed out after {self.ping_timeout_ms}ms.")
+                logger.warning(_("{} PING 请求在 {} 毫秒后超时。").format(log_prefix, self.ping_timeout_ms))
                 # Mark as disconnected (if not already) and trigger reconnection
                 if self.gateway_connected: # Log error only on first detection
-                    logger.error(f"与订单执行网关的连接丢失 (PING timeout)!")
+                    logger.error(_("与订单执行网关的连接丢失 (PING timeout)! "))
                 self.gateway_connected = False
-                logger.info("尝试重置指令 Socket (因 PING 超时)...")
+                logger.info(_("尝试重置指令 Socket (因 PING 超时)..."))
                 self._setup_command_socket()
                 return # Exit after attempting reconnect
 
         except zmq.ZMQError as e:
             # Handle errors during send or recv
-            logger.error(f"{log_prefix} 发送 PING 或接收 PONG 时 ZMQ 错误: {e}")
+            logger.error(_("{} 发送 PING 或接收 PONG 时 ZMQ 错误: {}").format(log_prefix, e))
             # Mark as disconnected (if not already) and trigger reconnection
             if self.gateway_connected: # Log error only on first detection
-                logger.error(f"与订单执行网关的连接丢失 ({e})! ")
+                logger.error(_("与订单执行网关的连接丢失 ({})! ").format(e))
             self.gateway_connected = False
-            logger.info("尝试重置指令 Socket (因 ZMQ 错误)...")
+            logger.info(_("尝试重置指令 Socket (因 ZMQ 错误)..."))
             self._setup_command_socket()
             return # Exit after attempting reconnect
 
         except Exception as e:
             # Handle other unexpected errors
-            logger.exception(f"{log_prefix} 发送或处理 PING/PONG 时发生未知错误：{e}")
+            logger.exception(_("{} 发送或处理 PING/PONG 时发生未知错误：{}").format(log_prefix, e))
             # Mark as disconnected (if not already)
             if self.gateway_connected: # Log error only on first detection
-                logger.error("与订单执行网关的连接丢失 (Unknown Error)!")
+                logger.error(_("与订单执行网关的连接丢失 (Unknown Error)! "))
                 self.gateway_connected = False
             # Optional: Trigger reconnection on unknown errors too?
 
     def start(self):
         """Starts the risk manager service loop."""
         if self.running:
-            logger.warning("风险管理器已在运行中。")
+            logger.warning(_("风险管理器已在运行中。"))
             return
 
-        logger.info("启动风险管理器服务...")
+        logger.info(_("启动风险管理器服务..."))
         self.running = True
         # Start processing thread if needed (example implementation)
         # self.processing_thread = threading.Thread(target=self._run_processing_loop)
         # self.processing_thread.daemon = True
         # self.processing_thread.start()
 
-        logger.info("风险管理器服务已启动，开始监听消息...")
+        logger.info(_("风险管理器服务已启动，开始监听消息..."))
 
         while self.running:
             # Poll subscriber socket with a timeout
@@ -584,12 +577,12 @@ class RiskManagerService:
                 if self.subscriber in socks and socks[self.subscriber] == zmq.POLLIN:
                     # Receive multipart message
                     parts = self.subscriber.recv_multipart(zmq.NOBLOCK)
-                    logger.debug(f"Received Raw multipart: Count={len(parts)}")
+                    logger.debug(_("已接收原始多部分：Count={}").format(len(parts)))
 
                     if len(parts) == 2:
                         topic_bytes, data_bytes = parts
                     else:
-                        logger.warning(f"收到包含意外部分数量 ({len(parts)}) 的消息: {parts}")
+                        logger.warning(_("收到包含意外部分数量 ({}) 的消息: {}").format(len(parts), parts))
                         continue # Skip processing
 
                     if not self.running: break
@@ -609,7 +602,7 @@ class RiskManagerService:
                         # except StopIteration:
                         #    pass # This is the expected case
                             
-                        logger.debug(f"[RM] Received Correct: Topic='{topic_str}', Type='{type(data_obj)}'")
+                        logger.debug(_("[RM] 收到正确：主题='{}'，类型='{}'").format(topic_str, type(data_obj)))
 
                         # Process based on topic (data_obj is now a dictionary)
                         if topic_str.startswith("tick."):
@@ -626,15 +619,15 @@ class RiskManagerService:
                         elif topic_str.startswith("contract."):
                             self.process_contract(data_obj)
                         else:
-                             logger.warning(f"未知的消息主题: {topic_str}")
+                             logger.warning(_("未知的消息主题: {}").format(topic_str))
 
                     # Update exception handling for msgpack errors
                     except StopIteration: # Add StopIteration catch for unpacker
-                         logger.error(f"Msgpack Unpacker 错误: 无法从数据中解包对象. Topic: {topic_str}")
+                         logger.error(_("Msgpack Unpacker 错误: 无法从数据中解包对象. Topic: {}").format(topic_str))
                     except (msgpack.UnpackException, msgpack.exceptions.ExtraData, TypeError, ValueError) as e_msgpack:
-                        logger.error(f"Msgpack 解码错误: {e_msgpack}. Topic: {topic_str}") # Use topic_str here
+                        logger.error(_("Msgpack 解码错误: {}. Topic: {}").format(e_msgpack, topic_str)) # Use topic_str here
                     except Exception as msg_proc_e:
-                        logger.exception(f"处理订阅消息时出错 (Topic: {topic_str}): {msg_proc_e}") # Use topic_str here
+                        logger.exception(_("处理订阅消息时出错 (Topic: {}): {}").format(topic_str, msg_proc_e)) # Use topic_str here
 
                 # --- Periodic Health Checks (moved from _run_processing_loop) ---
                 current_time = time.time()
@@ -663,61 +656,61 @@ class RiskManagerService:
 
                     if found_stale_symbol:
                         if self.market_data_ok: # Log only when status changes to False
-                            logger.warning(f"[交易时段内] 行情数据可能中断或延迟! 超时合约: {', '.join(stale_symbols)}")
+                            logger.warning(_("[交易时段内] 行情数据可能中断或延迟! 超时合约: {}").format(', '.join(stale_symbols)))
                             self.market_data_ok = False
                     elif not self.market_data_ok:
                         # If no symbols are stale now, but status was False, means it recovered
-                        logger.info("所有监控合约的行情数据流已恢复。")
+                        logger.info(_("所有监控合约的行情数据流已恢复。"))
                         self.market_data_ok = True
                 # --- End Market Data Timeout Check --- 
 
             except zmq.ZMQError as err:
                 # Check if the error occurred because we are stopping
                 if not self.running or err.errno == zmq.ETERM:
-                    logger.info(f"ZMQ 错误 ({err.errno}) 发生在服务停止期间或Context终止，正常退出循环。")
+                    logger.info(_("ZMQ 错误 ({}) 发生在服务停止期间或Context终止，正常退出循环。").format(err.errno))
                     break # Exit loop cleanly
                 else:
-                    logger.error(f"意外的 ZMQ 错误: {err}")
+                    logger.error(_("意外的 ZMQ 错误: {}").format(err))
                     self.running = False # Stop on other ZMQ errors
             except KeyboardInterrupt:
-                logger.info("检测到中断信号，开始停止...")
+                logger.info(_("检测到中断信号，开始停止..."))
                 self.running = False
             except Exception as err:
-                logger.exception(f"主循环处理消息时发生未知错误：{err}")
+                logger.exception(_("主循环处理消息时发生未知错误：{}").format(err))
                 # Avoid rapid looping on persistent errors
                 time.sleep(1) 
 
-        logger.info("风险管理器主循环结束。")
+        logger.info(_("风险管理器主循环结束。"))
         self.stop() # Call stop which closes sockets/context
 
     def stop(self):
         """Stops the service and cleans up resources."""
         if not self.running:
-            logger.warning("风险管理器未运行。")
+            logger.warning(_("风险管理器未运行。"))
             return
 
         # Prevent starting new processing if stop is called concurrently
         if not self.running:
             return 
 
-        logger.info("正在停止风险管理器服务...")
+        logger.info(_("正在停止风险管理器服务..."))
         self.running = False
 
         # Close sockets and context
-        logger.info("关闭 ZMQ sockets 和 context...")
+        logger.info(_("关闭 ZMQ sockets 和 context..."))
         if self.subscriber:
             self.subscriber.close()
-            logger.info("ZeroMQ 订阅器已关闭。")
+            logger.info(_("ZeroMQ 订阅器已关闭。"))
         if self.command_socket:
             self.command_socket.close()
-            logger.info("ZeroMQ 指令发送器已关闭。")
+            logger.info(_("ZeroMQ 指令发送器已关闭。"))
         if self.context:
             try:
                 self.context.term()
-                logger.info("ZeroMQ Context 已终止。")
+                logger.info(_("ZeroMQ Context 已终止。"))
             except zmq.ZMQError as e:
-                 logger.error(f"终止 ZeroMQ Context 时出错 (可能已终止): {e}")
-        logger.info("风险管理器已停止。")
+                 logger.error(_("终止 ZeroMQ Context 时出错 (可能已终止): {}").format(e))
+        logger.info(_("风险管理器已停止。"))
 
     def process_tick(self, vt_symbol, tick_dict: dict):
         """Processes tick dictionary."""
@@ -734,7 +727,7 @@ class RiskManagerService:
         if symbol:
              self.check_risk(vt_symbol=symbol, trigger_event="ORDER_UPDATE")
         else:
-             logger.warning("Order update received without vt_symbol, skipping symbol-specific risk check.")
+             logger.warning(_("收到的订单更新没有 vt_symbol，跳过了特定符号的风险检查。"))
 
     def process_trade_update(self, trade_dict: dict):
         """Processes trade dictionary."""
@@ -742,12 +735,12 @@ class RiskManagerService:
         vt_tradeid = trade_dict.get('vt_tradeid')
         if vt_tradeid:
             if vt_tradeid in self.processed_trade_ids:
-                logger.debug(f"Ignoring duplicate trade event: {vt_tradeid}")
+                logger.debug(_("忽略重复交易事件：{}").format(vt_tradeid))
                 return # Skip processing duplicate
             else:
                 self.processed_trade_ids.append(vt_tradeid)
         else:
-            logger.warning("Trade update received without vt_tradeid, cannot check for duplicates.")
+            logger.warning(_("收到的交易更新没有 vt_tradeid，无法检查重复。"))
             # Decide whether to process or skip trades without ID? Process for now.
         # --- End Check for duplicate --- 
 
@@ -784,31 +777,33 @@ class RiskManagerService:
             # --- Simplified Logging Logic: Check Time First --- 
             if current_time - self.last_account_log_time >= 300: # Log every 5 minutes
                 # Log using float formatting
-                logger.info(f"账户资金更新 (每5分钟): ID={accountid}, Avail={available:.2f}, Margin={margin:.2f}, Frozen={frozen:.2f}")
+                logger.info(_("账户资金更新 (每5分钟): ID={}, Avail={:.2f}, Margin={:.2f}, Frozen={:.2f}").format(accountid, available, margin, frozen))
                 self.last_account_log_time = current_time # Update log time
                 # Optionally update last logged info if change detection is needed later
                 # self.last_logged_account_key_info = current_key_info_float 
             # --- End Simplified Logging Logic --- 
 
         except (ValueError, TypeError) as e:
-             logger.error(f"处理账户更新日志时无法转换数值: {e}. Account Dict: {account_dict}")
+             logger.error(_("处理账户更新日志时无法转换数值: {}. Account Dict: {}").format(e, account_dict))
 
-    def process_log(self, log_dict: dict):
+    @staticmethod
+    def process_log(log_dict: dict):
         """Processes log dictionary."""
         # Access fields using .get()
         gateway_name = log_dict.get('gateway_name', 'UnknownGW')
         msg = log_dict.get('msg', '')
         # Optionally get level: level = log_dict.get('level', 'INFO')
-        logger.debug(f"[RM GW LOG - {gateway_name}] {msg}") # Log as debug for now
+        logger.debug(_("[RM GW LOG - {}] {}").format(gateway_name, msg)) # Log as debug for now
 
-    def process_contract(self, contract_dict: dict):
+    @staticmethod
+    def process_contract(contract_dict: dict):
         """Processes contract dictionary."""
         # Access vt_symbol using .get()
         vt_symbol = contract_dict.get('vt_symbol')
         if vt_symbol:
-            logger.debug(f"Received contract data dict for {vt_symbol}")
+            logger.debug(_("已收到 {} 的合约数据字典").format(vt_symbol))
             # Potentially update a local contract cache if needed
         else:
             # Keep warning if vt_symbol is missing, might indicate upstream issue
-            logger.warning(f"Received contract data dict without vt_symbol: {contract_dict}")
+            logger.warning(_("收到不带 vt_symbol 的合约数据字典：{}").format(contract_dict))
 
