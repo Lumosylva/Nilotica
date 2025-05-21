@@ -18,7 +18,7 @@
 
 # 系统语言配置 (System language Configuration)
 system:
-  language: "en" # 或 "en" 或 ""空代表默认原中文输出
+  language: "" # 或 "en" 或 ""空代表默认原中文输出
 
 logging:
   # 如果未被命令行参数覆盖，则服务的默认日志级别。

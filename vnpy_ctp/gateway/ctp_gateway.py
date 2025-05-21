@@ -1,9 +1,13 @@
+import configparser
+import re
 import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
 from time import sleep
 
+from config.constants.path import GlobalPath
+from utils.file_helper import load_json_file, write_json_file, read_ini_file
 from vnpy.event import Event, EventEngine
 from vnpy.trader.constant import Direction, Exchange, Offset, OptionType, OrderType, Product, Status
 from vnpy.trader.event import EVENT_TIMER
@@ -20,6 +24,7 @@ from vnpy.trader.object import (
     TradeData,
 )
 from vnpy.trader.utility import ZoneInfo, get_folder_path
+from .ctp_gateway_helper import build_contract
 
 from ..api import (
     THOST_FTDC_TC_GFD,
@@ -55,21 +60,8 @@ from ..api import (
     THOST_FTDC_PD_Short,
 )
 
-# +++ 新增国际化尝试 +++
-try:
-    # 尝试从项目特定路径导入 _ 函数
-    # 这假设 vnpy_ctp 目录与包含 utils 的项目根目录有某种已知的相对关系
-    # 或者 utils 包已安装或在 PYTHONPATH 中
-    # 根据你的项目结构，你可能需要调整这里的导入
-    # 例如: from ....utils.i18n import _ (如果 utils 和 vnpy_ctp 是兄弟目录下的包)
-    # 或者更通用的方式，如果你的项目根目录在 sys.path 中:
-    from utils.i18n import _
-except ImportError:
-    # 如果导入失败，定义一个回退的 _ 函数，它不进行任何翻译
-    def _(text: str) -> str:
-        return text
-    print("vnpy_ctp.gateway: Failed to import custom translator '_', using fallback (no translation).", file=sys.stderr)
-# +++ 结束国际化尝试 +++
+from utils.i18n import _
+
 
 # 委托状态映射
 STATUS_CTP2VT: dict[str, Status] = {
@@ -162,6 +154,7 @@ class CtpGateway(BaseGateway):
         """构造函数"""
         super().__init__(event_engine, gateway_name)
 
+        self.query_functions = None
         self.td_api: CtpTdApi = CtpTdApi(self)
         self.md_api: CtpMdApi = CtpMdApi(self)
 
@@ -171,7 +164,7 @@ class CtpGateway(BaseGateway):
         """连接交易接口"""
         userid: str = setting["userid"]  # 用户名
         password: str = setting["password"]  # 密码
-        brokerid: str = setting["broker_id"]  # 经纪商代码
+        broker_id: str = setting["broker_id"]  # 经纪商代码
         td_address: str = setting["td_address"]  # 交易服务器
         md_address: str = setting["md_address"]  # 行情服务器
         appid: str = setting["appid"]  # 产品名称
@@ -191,8 +184,8 @@ class CtpGateway(BaseGateway):
         ):
             md_address = "tcp://" + md_address
 
-        self.td_api.connect(td_address, userid, password, brokerid, auth_code, appid)
-        self.md_api.connect(md_address, userid, password, brokerid)
+        self.td_api.connect(td_address, userid, password, broker_id, auth_code, appid)
+        self.md_api.connect(md_address, userid, password, broker_id)
 
         self.init_query()
 
@@ -249,7 +242,7 @@ class CtpGateway(BaseGateway):
 
 
 class CtpMdApi(MdApi):
-    """"""
+    """CTP行情API"""
 
     def __init__(self, gateway: CtpGateway) -> None:
         """构造函数"""
@@ -258,7 +251,7 @@ class CtpMdApi(MdApi):
         self.gateway: CtpGateway = gateway
         self.gateway_name: str = gateway.gateway_name
 
-        self.reqid: int = 0
+        self.req_id: int = 0
 
         self.connect_status: bool = False
         self.login_status: bool = False
@@ -266,7 +259,7 @@ class CtpMdApi(MdApi):
 
         self.userid: str = ""
         self.password: str = ""
-        self.brokerid: str = ""
+        self.broker_id: str = ""
 
         self.current_date: str = datetime.now().strftime("%Y%m%d")
 
@@ -369,11 +362,22 @@ class CtpMdApi(MdApi):
 
         self.gateway.on_tick(tick)
 
+    def OnRspUserLogout(self, data: dict, error: dict, reqid: int, last: bool):
+        """
+        登出请求响应，当 ReqUserLogout 后，该方法被调用。
+        :param data: 用户登出请求
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
+        self.gateway.write_log(_("行情账户：{} 已登出").format(data['UserID']))
+
     def connect(self, address: str, userid: str, password: str, brokerid: str) -> None:
         """连接服务器"""
         self.userid = userid
         self.password = password
-        self.brokerid = brokerid
+        self.broker_id = brokerid
 
         # 禁止重复发起连接，会导致异常崩溃
         if not self.connect_status:
@@ -390,11 +394,11 @@ class CtpMdApi(MdApi):
         ctp_req: dict = {
             "UserID": self.userid,
             "Password": self.password,
-            "BrokerID": self.brokerid
+            "BrokerID": self.broker_id
         }
 
-        self.reqid += 1
-        self.reqUserLogin(ctp_req, self.reqid)
+        self.req_id += 1
+        self.reqUserLogin(ctp_req, self.req_id)
 
     def subscribe(self, req: SubscribeRequest) -> None:
         """订阅行情"""
@@ -413,7 +417,7 @@ class CtpMdApi(MdApi):
 
 
 class CtpTdApi(TdApi):
-    """"""
+    """CTP交易接口"""
 
     def __init__(self, gateway: CtpGateway) -> None:
         """构造函数"""
@@ -422,7 +426,7 @@ class CtpTdApi(TdApi):
         self.gateway: CtpGateway = gateway
         self.gateway_name: str = gateway.gateway_name
 
-        self.reqid: int = 0
+        self.req_id: int = 0
         self.order_ref: int = 0
 
         self.connect_status: bool = False
@@ -434,7 +438,7 @@ class CtpTdApi(TdApi):
 
         self.userid: str = ""
         self.password: str = ""
-        self.brokerid: str = ""
+        self.broker_id: str = ""
         self.auth_code: str = ""
         self.appid: str = ""
 
@@ -444,9 +448,17 @@ class CtpTdApi(TdApi):
         self.trade_data: list[dict] = []
         self.positions: dict[str, PositionData] = {}
         self.sysid_orderid_map: dict[str, str] = {}
+        self.product_info = configparser.ConfigParser()
+        self.parser = read_ini_file(GlobalPath.product_info_filepath)
+        self.exchange_id_map = load_json_file(GlobalPath.exchange_id_filepath)
 
     def onFrontConnected(self) -> None:
-        """服务器连接成功回报"""
+        """
+        服务器连接成功回报
+        当客户端与交易托管系统建立起通信连接时（还未登录前），该方法被调用。
+        本方法在完成初始化后调用，可以在其中完成用户登录任务。
+        :return: 无
+        """
         self.gateway.write_log(_("交易服务器连接成功"))
         if self.auth_code:
             self.authenticate()
@@ -454,12 +466,43 @@ class CtpTdApi(TdApi):
             self.login()
 
     def onFrontDisconnected(self, reason: int) -> None:
-        """服务器连接断开回报"""
+        """
+        服务器连接断开回报
+        当客户端与交易托管系统通信连接断开时，该方法被调用。
+        当发生这个情况后，API会自动重新连接，客户端可不做处理。
+        自动重连地址，可能是原来注册的地址，也可能是系统支持的其它可用的通信地址，它由程序自动选择。
+        注:重连之后需要重新认证、登录
+        :param reason: 错误代号，连接断开原因，为10进制值，因此需要转成16进制后再参照下列代码：
+                0x1001 网络读失败
+                0x1002 网络写失败
+                0x2001 接收心跳超时
+                0x2002 发送心跳失败
+                0x2003 收到错误报文
+        :return: 无
+        """
         self.login_status = False
-        self.gateway.write_log(_("交易服务器连接断开，原因{}").format(reason))
+        reason_text = ''
+        if reason == 0x1001:
+            reason_text = '网络读失败'
+        elif reason == 0x1002:
+            reason_text = '网络写失败'
+        elif reason == 0x2001:
+            reason_text = '接收心跳超时'
+        elif reason == 0x2002:
+            reason_text = '发送心跳失败'
+        elif reason == 0x2003:
+            reason_text = '收到错误报文'
+        self.gateway.write_log(_("交易服务器连接断开，原因{}").format(reason_text))
 
     def onRspAuthenticate(self, data: dict, error: dict, reqid: int, last: bool) -> None:
-        """用户授权验证回报"""
+        """
+        用户授权验证回报，当执行 ReqAuthenticate 后，该方法被调用
+        :param data: 客户端认证响应
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
         if not error.get('ErrorID'):
             self.auth_status = True
             self.gateway.write_log(_("交易服务器授权验证成功"))
@@ -470,18 +513,54 @@ class CtpTdApi(TdApi):
             self.gateway.write_error(_("交易服务器授权验证失败"), error)
 
     def onRspUserLogin(self, data: dict, error: dict, reqid: int, last: bool) -> None:
-        """用户登录请求回报"""
+        """
+        用户登录请求回报，当执行 ReqUserLogin 后，该方法被调用。
+        :param data: 用户登录应答
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
         if not error.get("ErrorID"):
             self.frontid = data["FrontID"]
             self.sessionid = data["SessionID"]
             self.login_status = True
             self.gateway.write_log(_("交易服务器登录成功"))
-            ctp_req: dict = {"BrokerID": self.brokerid, "InvestorID": self.userid}
-            self.reqid += 1
-            self.reqSettlementInfoConfirm(ctp_req, self.reqid)
+            ctp_req: dict = {"BrokerID": self.broker_id, "InvestorID": self.userid}
+            self.req_id += 1
+            self.reqSettlementInfoConfirm(ctp_req, self.req_id)
         else:
             self.login_failed = True
             self.gateway.write_error(_("交易服务器登录失败"), error)
+
+    def OnRspQryProduct(self, data: dict, error: dict, reqid: int, last: bool):
+        """
+        查询产品回报，当执行 ReqQryProduct 后，该方法被调用
+        :param data: 产品信息
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
+        if not error.get("ErrorID"):
+            sec = data['ProductID']
+            opt = '合约乘数'
+
+            # 需要判断section是否存在，如果不存在会报错，option不需要检查是否存在
+            if not self.parser.has_section(sec):
+                self.parser.add_section(sec)
+            self.parser.set(sec, opt, str(data['VolumeMultiple']))
+
+            opt = '最小变动价位'
+            self.parser.set(sec, opt, str(data['PriceTick']))
+
+            if last:
+                self.parser.write(open(GlobalPath.product_info_filepath, "w", encoding='utf-8'))
+                self.gateway.write_log(_("查询产品成功！"))
+        else:
+            self.gateway.write_error(_("查询产品失败"), error)
+
+
 
     def onRspOrderInsert(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """委托下单失败回报"""
@@ -511,11 +590,18 @@ class CtpTdApi(TdApi):
         self.gateway.write_error(_("交易撤单失败"), error)
 
     def onRspSettlementInfoConfirm(self, data: dict, error: dict, reqid: int, last: bool) -> None:
-        """确认结算单回报"""
+        """
+        确认结算单回报，当执行 ReqSettlementInfoConfirm 后，该方法被调用。
+        :param data: 投资者结算结果确认信息
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
         self.gateway.write_log(_("结算信息确认成功"))
         while True:
-            self.reqid += 1
-            n: int = self.reqQryInstrument({}, self.reqid)
+            self.req_id += 1
+            n: int = self.reqQryInstrument({}, self.req_id)
             if not n:
                 break
             else:
@@ -523,10 +609,20 @@ class CtpTdApi(TdApi):
                 sleep(1)
 
     def onRspQryInvestorPosition(self, data: dict, error: dict, reqid: int, last: bool) -> None:
-        """持仓查询回报"""
+        """
+        持仓查询回报，当执行 ReqQryInvestorPosition 后，该方法被调用
+        CTP 系统将持仓明细记录按合约，持仓方向，开仓日期（仅针对上期所，区分昨仓、今仓）进行汇总。
+        :param data: 投资者持仓
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return:
+        """
         if last or (error and 'ErrorID' in error and error['ErrorID']):
             if not data:
                 return
+            else:
+                self.gateway.write_log(_("查询持仓成功，所有查询已结束！"))
 
             # 必须已经收到了合约信息后才能处理
             symbol: str = data["InstrumentID"]
@@ -554,7 +650,7 @@ class CtpTdApi(TdApi):
                     position.yd_volume = data["Position"] - data["TodayPosition"]
 
                 # 获取合约的乘数信息
-                size: int = contract.size
+                size: float = contract.size
 
                 # 计算之前已有仓位的持仓总成本
                 cost: float = position.price * position.volume * size
@@ -580,6 +676,25 @@ class CtpTdApi(TdApi):
 
                 self.positions.clear()
 
+
+    def OnRspQryInvestorPositionDetail(self, data: dict, error: dict, reqid: int, last: bool):
+        """
+        请求查询投资者持仓明细响应，当执行 ReqQryInvestorPositionDetail 后，该方法被调用。
+        :param data: 投资者持仓明细
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
+        if not error.get("ErrorID"):
+            if last:
+                self.gateway.write_log(_("查询持仓明细完成"))
+            if data is None or data['Volume'] == 0:
+                return
+        else:
+            self.gateway.write_error(_("查询持仓明细失败"), error)
+
+
     def onRspQryTradingAccount(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """资金查询回报"""
         if "AccountID" not in data:
@@ -594,53 +709,46 @@ class CtpTdApi(TdApi):
         self.gateway.on_account(account)
 
     def onRspQryInstrument(self, data: dict, error: dict, reqid: int, last: bool) -> None:
-        """合约查询回报"""
-        if last or error.get("ErrorID"):
-            self.gateway.write_log(_("CtpTdApi：onRspQryInstrument 已完成。最后：{}，错误 ID：{}").format(last, error.get('ErrorID', 'N/A')))
-        product: Product = PRODUCT_CTP2VT.get(data["ProductClass"], None)
-        if product:
-            contract: ContractData = ContractData(
-                symbol=data["InstrumentID"],
-                exchange=EXCHANGE_CTP2VT[data["ExchangeID"]],
-                name=data["InstrumentName"],
-                product=product,
-                size=data["VolumeMultiple"],
-                pricetick=data["PriceTick"],
-                min_volume=data["MinLimitOrderVolume"],
-                max_volume=data["MaxLimitOrderVolume"],
-                gateway_name=self.gateway_name
-            )
+        """
+        合约查询回报，当执行 ReqQryInstrument 后，该方法被调用
+        :param data: 合约
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return:
+        """
+        try:
+            if last or error.get("ErrorID"):
+                self.gateway.write_log(_("CtpTdApi：onRspQryInstrument 已完成。最后：{}，错误 ID：{}").format(last, error.get('ErrorID', 'N/A')))
+             # 1. 合约对象构建
+            contract = build_contract(data)
+            if contract:
+                self.gateway.on_contract(contract)
+                symbol_contract_map[contract.symbol] = contract
 
-            # 期权相关
-            if contract.product == Product.OPTION:
-                # 移除郑商所期权产品名称带有的C/P后缀
-                if contract.exchange == Exchange.CZCE:
-                    contract.option_portfolio = data["ProductID"][:-1]
-                else:
-                    contract.option_portfolio = data["ProductID"]
+            # 2. 更新exchange_id_map
+            if len(self.exchange_id_map) == 0:
+                self.gateway.write_log(_("读取 {} 失败！已创建空白文件").format(GlobalPath.exchange_id_filepath))
+            self.exchange_id_map[data.get("InstrumentID", "")] = data.get("ExchangeID", "")
 
-                contract.option_underlying = data["UnderlyingInstrID"]
-                contract.option_type = OPTIONTYPE_CTP2VT.get(data["OptionsType"], None)
-                contract.option_strike = data["StrikePrice"]
-                contract.option_index = str(data["StrikePrice"])
-                contract.option_listed = datetime.strptime(data["OpenDate"], "%Y%m%d")
-                contract.option_expiry = datetime.strptime(data["ExpireDate"], "%Y%m%d")
+            # 3. 最后一次回报时写文件、处理缓存
+            if last:
+                self.contract_inited = True
+                self.gateway.write_log(_("合约信息查询成功"))
+                try:
+                    write_json_file(GlobalPath.exchange_id_filepath, self.exchange_id_map)
+                except Exception as e:
+                    self.gateway.write_error(_("写入 exchange_id.json 失败：{}".format(e)), error)
 
-            self.gateway.on_contract(contract)
+                for data in self.order_data:
+                    self.onRtnOrder(data)
+                self.order_data.clear()
 
-            symbol_contract_map[contract.symbol] = contract
-
-        if last:
-            self.contract_inited = True
-            self.gateway.write_log(_("合约信息查询成功"))
-
-            for data in self.order_data:
-                self.onRtnOrder(data)
-            self.order_data.clear()
-
-            for data in self.trade_data:
-                self.onRtnTrade(data)
-            self.trade_data.clear()
+                for data in self.trade_data:
+                    self.onRtnTrade(data)
+                self.trade_data.clear()
+        except Exception as e:
+            self.gateway.write_error(_("onRspQryInstrument 异常：{}".format(e)), error)
 
     def onRtnOrder(self, data: dict) -> None:
         """委托更新推送"""
@@ -690,7 +798,11 @@ class CtpTdApi(TdApi):
         self.sysid_orderid_map[data["OrderSysID"]] = orderid
 
     def onRtnTrade(self, data: dict) -> None:
-        """成交数据推送"""
+        """
+        成交数据推送，报单发出后有成交则通过此接口返回。私有流
+        :param data:
+        :return:
+        """
         if not self.contract_inited:
             self.trade_data.append(data)
             return
@@ -718,6 +830,85 @@ class CtpTdApi(TdApi):
         )
         self.gateway.on_trade(trade)
 
+    def OnRspQryInstrumentCommissionRate(self, data: dict, error: dict, reqid: int, last: bool):
+        """
+        请求查询合约手续费率响应，当执行 ReqQryInstrumentCommissionRate 后，该方法被调用。
+        :param data: 合约手续费率
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
+        if last or error.get("ErrorID"):
+            self.gateway.write_error(_("CtpTdApi：OnRspQryInstrumentCommissionRate 已完成。最后：{}，错误 ID：{}"
+                                       .format(last, error.get('ErrorID', 'N/A'))), error)
+            return
+        if data is None or data['InstrumentID'] == '':
+            return
+        # timePrintLog(f'合约名称：{data.InstrumentID}')
+        # timePrintLog(f'开仓手续费率：{data.OpenRatioByMoney}')
+        # timePrintLog(f'开仓手续费：{data.OpenRatioByVolume}')
+        # timePrintLog(f'平仓手续费率：{data.CloseRatioByMoney}')
+        # timePrintLog(f'平仓手续费：{data.CloseRatioByVolume}')
+        sec = re.sub(r'\d', '', data['InstrumentID'])
+
+        # 需要判断section是否存在，如果不存在会报错，option不需要检查是否存在
+        if not self.parser.has_section(sec):
+            self.parser.add_section(sec)
+
+        # 填写开仓手续费率
+        opt = 'open_fee_rate'
+        self.parser.set(sec, opt, str(data['OpenRatioByMoney']))
+
+        # 填写开仓手续费
+        opt = 'open_fee'
+        self.parser.set(sec, opt, str(data['OpenRatioByVolume']))
+
+        # 填写平仓手续费率
+        opt = 'close_fee_rate'
+        self.parser.set(sec, opt, str(data['CloseRatioByMoney']))
+
+        # 填写平仓手续费
+        opt = 'close_fee'
+        self.parser.set(sec, opt, str(data['CloseRatioByVolume']))
+
+        # 填写平今手续费率
+        opt = 'close_today_fee_rate'
+        self.parser.set(sec, opt, str(data['CloseTodayRatioByMoney']))
+
+        # 填写平今手续费
+        opt = 'close_today_fee'
+        self.parser.set(sec, opt, str(data['CloseTodayRatioByVolume']))
+
+        # 写入ini文件
+        self.parser.write(open(GlobalPath.product_info_filepath, "w", encoding='utf-8'))
+
+
+    def OnErrRtnOrderAction(self, data: dict, error: dict):
+        """
+        报单操作错误回报，当执行 ReqOrderAction 后有字段填写不对之类的CTP报错则通过此接口返回
+        :param data: 报单操作
+        :param error: 响应信息
+        :return: 无
+        """
+        if error['ErrorID'] != 0 and error is not None:
+            self.gateway.write_error(_("报单操作请求失败"), error)
+        else:
+            self.gateway.write_log(_('报单操作请求成功！'))
+
+
+    def OnRspUserLogout(self, data: dict, error: dict, reqid: int, last: bool):
+        """
+        登出请求响应，当执行ReqUserLogout后，该方法被调用。
+        :param data: 用户登出请求
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
+        self.gateway.write_log(_('交易账户：{} 已登出').format(data['UserID']))
+
+
     def connect(
         self,
         address: str,
@@ -730,7 +921,7 @@ class CtpTdApi(TdApi):
         """连接服务器"""
         self.userid = userid
         self.password = password
-        self.brokerid = brokerid
+        self.broker_id = brokerid
         self.auth_code = auth_code
         self.appid = appid
 
@@ -771,13 +962,13 @@ class CtpTdApi(TdApi):
 
         ctp_req: dict = {
             "UserID": self.userid,
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "AuthCode": self.auth_code,
             "AppID": self.appid
         }
 
-        self.reqid += 1
-        self.reqAuthenticate(ctp_req, self.reqid)
+        self.req_id += 1
+        self.reqAuthenticate(ctp_req, self.req_id)
 
     def login(self) -> None:
         """用户登录"""
@@ -787,11 +978,11 @@ class CtpTdApi(TdApi):
         ctp_req: dict = {
             "UserID": self.userid,
             "Password": self.password,
-            "BrokerID": self.brokerid
+            "BrokerID": self.broker_id
         }
 
-        self.reqid += 1
-        self.reqUserLogin(ctp_req, self.reqid)
+        self.req_id += 1
+        self.reqUserLogin(ctp_req, self.req_id)
 
     def send_order(self, req: OrderRequest) -> str:
         """委托下单"""
@@ -819,7 +1010,7 @@ class CtpTdApi(TdApi):
             "OrderRef": str(self.order_ref),
             "InvestorID": self.userid,
             "UserID": self.userid,
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "CombHedgeFlag": THOST_FTDC_HF_Speculation,
             "ContingentCondition": THOST_FTDC_CC_Immediately,
             "ForceCloseReason": THOST_FTDC_FCC_NotForceClose,
@@ -829,8 +1020,8 @@ class CtpTdApi(TdApi):
             "MinVolume": 1
         }
 
-        self.reqid += 1
-        n: int = self.reqOrderInsert(ctp_req, self.reqid)
+        self.req_id += 1
+        n: int = self.reqOrderInsert(ctp_req, self.req_id)
         if n:
             self.gateway.write_log(_("委托请求发送失败，错误代码：{}").format(n))
             return ""
@@ -843,26 +1034,26 @@ class CtpTdApi(TdApi):
 
     def cancel_order(self, req: CancelRequest) -> None:
         """委托撤单"""
-        frontid, sessionid, order_ref = req.orderid.split("_")
+        front_id, session_id, order_ref = req.orderid.split("_")
 
         ctp_req: dict = {
             "InstrumentID": req.symbol,
             "ExchangeID": req.exchange.value,
             "OrderRef": order_ref,
-            "FrontID": int(frontid),
-            "SessionID": int(sessionid),
+            "FrontID": int(front_id),
+            "SessionID": int(session_id),
             "ActionFlag": THOST_FTDC_AF_Delete,
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "InvestorID": self.userid
         }
 
-        self.reqid += 1
-        self.reqOrderAction(ctp_req, self.reqid)
+        self.req_id += 1
+        self.reqOrderAction(ctp_req, self.req_id)
 
     def query_account(self) -> None:
         """查询资金"""
-        self.reqid += 1
-        self.reqQryTradingAccount({}, self.reqid)
+        self.req_id += 1
+        self.reqQryTradingAccount({}, self.req_id)
 
     def query_position(self) -> None:
         """查询持仓"""
@@ -870,12 +1061,12 @@ class CtpTdApi(TdApi):
             return
 
         ctp_req: dict = {
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "InvestorID": self.userid
         }
 
-        self.reqid += 1
-        self.reqQryInvestorPosition(ctp_req, self.reqid)
+        self.req_id += 1
+        self.reqQryInvestorPosition(ctp_req, self.req_id)
 
     def close(self) -> None:
         """关闭连接"""

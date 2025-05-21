@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional, Tuple
 import msgpack
 import zmq
 
+from config.constants.path import GlobalPath
 from vnpy.trader.utility import load_json
 
 # Add project root to Python path
@@ -103,10 +104,8 @@ class OrderExecutionGatewayService(RpcServer):
         self.last_account_data: AccountData | None = None
 
         # Load product info for commission calculation
-        config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config'))
-        info_filepath = os.path.join(config_dir, 'project_files', 'product_info.ini')
-        logger.info(self._("尝试从 {} 加载产品信息...").format(info_filepath))
-        self.commission_rules, self.contract_multipliers = self.config_service.load_product_info(info_filepath)
+        logger.info(self._("尝试从 {} 加载产品信息...").format(GlobalPath.product_info_filepath))
+        self.commission_rules, self.contract_multipliers = self.config_service.load_product_info(GlobalPath.product_info_filepath)
         if not self.commission_rules or not self.contract_multipliers:
              logger.warning(self._("警告：未能成功加载手续费规则或合约乘数，手续费计算可能不准确！"))
 

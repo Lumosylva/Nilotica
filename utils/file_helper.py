@@ -9,6 +9,7 @@
 @Software   : PyCharm
 @Description: 配置文件加载工具
 """
+import configparser
 import json
 import os
 from typing import Dict, Any
@@ -60,3 +61,23 @@ def load_json_file(file_path: str) -> Dict[str, Any]:
     except IOError as e:
         logger.error(_("无法读取文件 {}: {}").format(file_path, e))
         return {}
+
+
+def write_json_file(file_path: str, data: Dict[str, Any]) -> None:
+    """
+    将数据写入 JSON 文件。
+
+    Writes the given data into a JSON file at the specified path.
+    """
+    try:
+        with open(file_path, 'w', newline='\n', encoding='utf-8') as f:
+            file_data = json.dumps(data, indent=4, ensure_ascii=False)
+            f.write(file_data)
+        logger.info(_("已成功将数据写入 JSON 文件 {}").format(file_path))
+    except IOError as e:
+        logger.error(_("无法写入文件 {}: {}").format(file_path, e))
+
+
+def read_ini_file(file_path: str):
+    parser = configparser.ConfigParser()
+    parser.read(file_path, encoding='utf-8')

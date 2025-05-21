@@ -1,16 +1,15 @@
 import configparser
 import copy
-import json
 import os
 from typing import Any, Dict, Optional, Tuple
 
-import yaml
 from pydantic import BaseModel, ValidationError, TypeAdapter
 
 from config.constants.params import Params
 from config.constants.path import GlobalPath
 from utils.config_models import AllStrategiesConfigModel, GlobalConfigStructure
 from utils.i18n import _, setup_language
+from utils.file_helper import load_yaml_file, load_json_file
 from utils.logger import logger, setup_logging, INFO
 from vnpy.trader.utility import load_json
 
@@ -78,49 +77,49 @@ class ConfigManager:
                 merged[key] = value
         return merged
 
-    @staticmethod
-    def _load_yaml(file_path: str) -> Dict[str, Any]:
-        """
-        加载 YAML 文件。
+    # @staticmethod
+    # def _load_yaml(file_path: str) -> Dict[str, Any]:
+    #     """
+    #     加载 YAML 文件。
+    #
+    #     Loads a YAML file.
+    #     """
+    #     if not os.path.exists(file_path):
+    #         logger.error("Configuration file not found: {}".format(file_path))
+    #         return {}
+    #     try:
+    #         with open(file_path, 'r', encoding='utf-8') as f:
+    #             data = yaml.safe_load(f)
+    #         logger.debug("Successfully loaded YAML configuration from {}".format(file_path))
+    #         return data if data else {}
+    #     except yaml.YAMLError as e:
+    #         logger.error("Unable to parse YAML file {}: {}".format(file_path, e))
+    #         return {}
+    #     except IOError as e:
+    #         logger.error("Unable to read file {}: {}".format(file_path, e))
+    #         return {}
 
-        Loads a YAML file.
-        """
-        if not os.path.exists(file_path):
-            logger.error("Configuration file not found: {}".format(file_path))
-            return {}
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = yaml.safe_load(f)
-            logger.debug("Successfully loaded YAML configuration from {}".format(file_path))
-            return data if data else {}
-        except yaml.YAMLError as e:
-            logger.error("Unable to parse YAML file {}: {}".format(file_path, e))
-            return {}
-        except IOError as e:
-            logger.error("Unable to read file {}: {}".format(file_path, e))
-            return {}
-
-    @staticmethod
-    def _load_json(file_path: str) -> Dict[str, Any]:
-        """
-        加载 JSON 文件。
-
-        Loads a JSON file.
-        """
-        if not os.path.exists(file_path):
-            logger.info(_("未找到可选的 JSON 配置文件：{}").format(file_path))
-            return {}
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            logger.info(_("已成功从 {} 加载 JSON 配置").format(file_path))
-            return data if data else {}
-        except json.JSONDecodeError as e:
-            logger.error(_("无法解析 JSON 文件 {}: {}").format(file_path, e))
-            return {}
-        except IOError as e:
-            logger.error(_("无法读取文件 {}: {}").format(file_path, e))
-            return {}
+    # @staticmethod
+    # def _load_json(file_path: str) -> Dict[str, Any]:
+    #     """
+    #     加载 JSON 文件。
+    #
+    #     Loads a JSON file.
+    #     """
+    #     if not os.path.exists(file_path):
+    #         logger.info(_("未找到可选的 JSON 配置文件：{}").format(file_path))
+    #         return {}
+    #     try:
+    #         with open(file_path, 'r', encoding='utf-8') as f:
+    #             data = json.load(f)
+    #         logger.info(_("已成功从 {} 加载 JSON 配置").format(file_path))
+    #         return data if data else {}
+    #     except json.JSONDecodeError as e:
+    #         logger.error(_("无法解析 JSON 文件 {}: {}").format(file_path, e))
+    #         return {}
+    #     except IOError as e:
+    #         logger.error(_("无法读取文件 {}: {}").format(file_path, e))
+    #         return {}
 
 
     def _load_configs(self):
@@ -132,7 +131,7 @@ class ConfigManager:
         Sets up language after configurations are loaded.
         """
         # 1. Load Base Global Config
-        base_config = self._load_yaml(self._global_config_path)
+        base_config = load_yaml_file(self._global_config_path)
         if not base_config:
              logger.warning("The base global configuration ({}) failed to load or is empty.".format(self._global_config_path))
 
@@ -152,7 +151,7 @@ class ConfigManager:
             env_filename = ENV_CONFIG_FILENAME_TEMPLATE.format(env=self._environment)
             self._env_config_path = os.path.join(PROJECT_ROOT, "config", env_filename)
             logger.info(_("尝试从以下位置加载环境 '{}' 的配置: {}").format(self._environment, self._env_config_path))
-            env_specific_config = self._load_yaml(self._env_config_path)
+            env_specific_config = load_yaml_file(self._env_config_path)
             if not env_specific_config:
                  logger.info(_("环境配置文件 ({}) 未找到或为空。如果有任何被覆盖的键，将使用基本配置值。").format(self._env_config_path))
         else:
@@ -223,7 +222,7 @@ class ConfigManager:
 
         if configured_strategies_path_abs:
             logger.info(_("尝试从配置的路径加载策略配置: {}").format(configured_strategies_path_abs))
-            raw_strategies_data = self._load_json(configured_strategies_path_abs) # Use internal _load_json for consistency
+            raw_strategies_data = load_json_file(configured_strategies_path_abs) # Use internal load_json_file for consistency
             if not raw_strategies_data:
                 logger.warning(_("在 '{}' 指定的策略配置文件未找到或为空。").format(configured_strategies_path_abs))
 
@@ -232,7 +231,7 @@ class ConfigManager:
             logger.info(_("未从特定配置路径加载策略，或路径未设置。尝试默认用户位置 '{}'...").format(DEFAULT_STRATEGIES_CONFIG_FILENAME))
             raw_strategies_data = load_json(DEFAULT_STRATEGIES_CONFIG_FILENAME)
         
-        if raw_strategies_data: # load_json returns {} if file not found or empty, _load_json also does
+        if raw_strategies_data: # load_json returns {} if file not found or empty, load_json_file also does
             try:
                 validated_strategies = TypeAdapter(AllStrategiesConfigModel).validate_python(raw_strategies_data)
                 self._strategies_data = {name: model.model_dump() for name, model in validated_strategies.items()}
@@ -402,3 +401,4 @@ class ConfigManager:
             _("从 {} 加载了 {} 个合约的乘数和 {} 个合约的手续费规则。").format(filepath, len(contract_multipliers),
                                                                               len(commission_rules)))
         return commission_rules, contract_multipliers
+
