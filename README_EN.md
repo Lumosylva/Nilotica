@@ -24,6 +24,8 @@ _✨ A futures quantitative trading system based on vnpy ✨_
 
 ------
 
+**This project is still under development, please do not use it in a real production environment. **
+
 ### **1. Introduction**
 
 This project is based on [vnpy](https://github.com/vnpy/vnpy) and [vnpy_ctp](https://github.com/vnpy/vnpy_ctp). As an open source quantitative trading platform development framework, vnpy provides all-round support for strategy design and transaction execution with rich components and flexible architecture; vnpy_ctp is deeply connected to the domestic futures market to ensure accurate transmission of trading signals and efficient and smooth transaction execution.
