@@ -1,4 +1,3 @@
-import configparser
 import copy
 import os
 from typing import Any, Dict, Optional, Tuple
@@ -76,50 +75,6 @@ class ConfigManager:
                 # Otherwise, override value in merged copy
                 merged[key] = value
         return merged
-
-    # @staticmethod
-    # def _load_yaml(file_path: str) -> Dict[str, Any]:
-    #     """
-    #     加载 YAML 文件。
-    #
-    #     Loads a YAML file.
-    #     """
-    #     if not os.path.exists(file_path):
-    #         logger.error("Configuration file not found: {}".format(file_path))
-    #         return {}
-    #     try:
-    #         with open(file_path, 'r', encoding='utf-8') as f:
-    #             data = yaml.safe_load(f)
-    #         logger.debug("Successfully loaded YAML configuration from {}".format(file_path))
-    #         return data if data else {}
-    #     except yaml.YAMLError as e:
-    #         logger.error("Unable to parse YAML file {}: {}".format(file_path, e))
-    #         return {}
-    #     except IOError as e:
-    #         logger.error("Unable to read file {}: {}".format(file_path, e))
-    #         return {}
-
-    # @staticmethod
-    # def _load_json(file_path: str) -> Dict[str, Any]:
-    #     """
-    #     加载 JSON 文件。
-    #
-    #     Loads a JSON file.
-    #     """
-    #     if not os.path.exists(file_path):
-    #         logger.info(_("未找到可选的 JSON 配置文件：{}").format(file_path))
-    #         return {}
-    #     try:
-    #         with open(file_path, 'r', encoding='utf-8') as f:
-    #             data = json.load(f)
-    #         logger.info(_("已成功从 {} 加载 JSON 配置").format(file_path))
-    #         return data if data else {}
-    #     except json.JSONDecodeError as e:
-    #         logger.error(_("无法解析 JSON 文件 {}: {}").format(file_path, e))
-    #         return {}
-    #     except IOError as e:
-    #         logger.error(_("无法读取文件 {}: {}").format(file_path, e))
-    #         return {}
 
 
     def _load_configs(self):
@@ -358,47 +313,3 @@ class ConfigManager:
         Convenience method to get the absolute product info INI path.
         """
         return self.get_global_config("paths.product_info_ini_abs")
-
-    @staticmethod
-    def load_product_info(filepath: str) -> Tuple[Dict, Dict]:
-        """
-        从 INI 文件加载佣金规则和乘数，订单执行网关调用。
-
-        Loads commission rules and multipliers from an INI file.
-        """
-        parser = configparser.ConfigParser()
-        if not os.path.exists(filepath):
-            logger.error(_("错误：产品信息文件未找到 {}").format(filepath))
-            return {}, {}
-        try:
-            parser.read(filepath, encoding='utf-8')
-        except Exception as err:
-            logger.exception(_("错误：读取产品信息文件 {} 时出错：{}").format(filepath, err))
-            return {}, {}
-        commission_rules = {}
-        contract_multipliers = {}
-        for symbol in parser.sections():
-            if not parser.has_option(symbol, 'multiplier'):
-                logger.warning(_("警告：文件 {} 中的 [{}] 缺少 'multiplier'，跳过此合约。").format(filepath, symbol))
-                continue
-            try:
-                multiplier = parser.getfloat(symbol, 'multiplier')
-                contract_multipliers[symbol] = multiplier
-                rule = {
-                    "open_rate": parser.getfloat(symbol, 'open_rate', fallback=0.0),
-                    "close_rate": parser.getfloat(symbol, 'close_rate', fallback=0.0),
-                    "open_fixed": parser.getfloat(symbol, 'open_fixed', fallback=0.0),
-                    "close_fixed": parser.getfloat(symbol, 'close_fixed', fallback=0.0),
-                    "min_commission": parser.getfloat(symbol, 'min_commission', fallback=0.0)
-                }
-                commission_rules[symbol] = rule
-            except ValueError as err:
-                logger.warning(_("警告：解析文件 {} 中 [{}] 的数值时出错: {}，跳过此合约。").format(filepath, symbol, err))
-            except Exception as err:
-                logger.warning(
-                    _("警告：处理文件 {} 中 [{}] 时发生未知错误: {}，跳过此合约。").format(filepath, symbol, err))
-        logger.info(
-            _("从 {} 加载了 {} 个合约的乘数和 {} 个合约的手续费规则。").format(filepath, len(contract_multipliers),
-                                                                              len(commission_rules)))
-        return commission_rules, contract_multipliers
-

@@ -1,47 +1,27 @@
-import argparse
 import os
 import sys
 import time
 
-# Add project root to Python path
+from utils.service_common import runner_args
+
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# +++ Import ConfigManager +++
 from utils.config_manager import ConfigManager
-from utils.i18n import get_translator
+from utils.i18n import _
 from utils.logger import logger, setup_logging
 from zmq_services.order_execution_gateway import OrderExecutionGatewayService
 
 
 def main():
     """
-    运行订单执行网关服务（RPC模式）。
+    运行交易网关服务（RPC模式）。
 
-    Runs the order execution gateway service (RPC Mode).
+    Run the transaction gateway service (RPC mode).
+    :return:
     """
-    parser = argparse.ArgumentParser(description="Run the Order Execution Gateway Service for a specific CTP environment.")
-    parser.add_argument(
-        "--ctp-env",
-        default="simnow", 
-        help="The CTP environment name (e.g., 'simnow', 'simnow7x24') defined in connect_ctp.json. Defaults to 'simnow'."
-    )
-    parser.add_argument(
-        "--config-env",
-        default=None,
-        type=str,
-        help="The configuration environment to load (e.g., 'dev', 'prod', 'backtest'). Overrides global_config.yaml."
-    )
-    parser.add_argument(
-        "--log-level",
-        default="INFO",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="Set the minimum logging level."
-    )
-    args = parser.parse_args()
-
-    _ = get_translator()
+    args = runner_args(arg_desc="Run the Order Execution Gateway Service for a specific CTP environment.")
 
     setup_logging(service_name=f"OrderGatewayRunner[{args.ctp_env}]", level=args.log_level.upper(), config_env=args.config_env)
 
@@ -53,35 +33,28 @@ def main():
         sys.exit(1)
     logger.info(_("订单网关 ZMQ 地址已加载: REP='{}', PUB='{}'").format(rep_addr, pub_addr))
     
-    if args.ctp_env == "simnow" and '--ctp-env' not in sys.argv and '--env' not in sys.argv:
-        logger.info(_("未指定 --ctp-env，使用默认 CTP 环境：{}").format(args.ctp_env))
-    if args.config_env:
-        logger.info(_("使用配置环境：'{}'").format(args.config_env))
-    else:
-        logger.info(_("未指定 --config-env，仅使用基本 global_config.yaml。"))
-
     gateway_service = None
-    logger.info(_("正在初始化订单执行网关服务(RPC模式) for CTP environment: [{}]...").format(args.ctp_env))
+    logger.info(_("正在初始化交易网关服务(RPC模式)..."))
     try:
         gateway_service = OrderExecutionGatewayService(
             config_manager=config_service, 
             environment_name=args.ctp_env
         )
-        logger.info(_("尝试启动服务(RPC模式) for CTP env: [{}]...").format(args.ctp_env))
+        logger.info(_("尝试启动交易网关服务(RPC模式)"))
         gateway_service.start()
-        logger.info(_("订单执行网关 for CTP env: [{}] 正在运行。按 Ctrl+C 停止。").format(args.ctp_env))
+        logger.info(_("交易网关正在运行。按 Ctrl+C 停止。"))
 
         while gateway_service.is_active():
-            time.sleep(1)
+            time.sleep(0.1)
     except KeyboardInterrupt:
-        logger.info(_("检测到 Ctrl+C，正在停止服务 (CTP env: [{}])...").format(args.ctp_env))
+        logger.info(_("检测到 Ctrl+C，正在停止服务..."))
     except Exception as err:
-        logger.exception(_("服务运行时发生意外错误 (CTP env: [{}]): {}").format(args.ctp_env, err))
+        logger.exception(_("服务运行时发生意外错误: {}").format(err))
     finally:
-        logger.info(_("开始停止服务(RPC模式) for CTP env: [{}]...").format(args.ctp_env))
+        logger.info(_("开始停止服务(RPC模式)..."))
         if gateway_service:
             gateway_service.stop()
-        logger.info(_("订单执行网关服务(RPC模式) for CTP env: [{}] 已退出。").format(args.ctp_env))
+        logger.info(_("交易网关服务(RPC模式)已退出。"))
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 @ProjectName: Nilotica
-@FileName   : i18n
+@FileName   : i18n.py
 @Date       : 2025/5/9 10:20
 @Author     : Donny
 @Email      : donnymoving@gmail.com

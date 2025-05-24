@@ -5,15 +5,12 @@ import re  # For vt_symbol validation
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import (
-    AnyHttpUrl,
     BaseModel,
     FieldValidationInfo,
     FilePath,
-    StrictFloat,
     StrictInt,
     constr,
     field_validator,
-    root_validator,
 )
 
 # Get project root, assuming this file is in utils/

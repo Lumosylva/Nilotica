@@ -1,8 +1,13 @@
 import sys
+import traceback
 from datetime import datetime
 from pathlib import Path
 from time import sleep
 
+from config import global_vars
+from config.constants.path import GlobalPath
+from config.global_vars import product_info, instrument_exchange_id_map
+from utils.i18n import _
 from vnpy.event.engine import EventEngine
 from vnpy.trader.constant import Direction, Exchange, Offset, OptionType, OrderType, Product, Status
 from vnpy.trader.event import EVENT_TIMER
@@ -19,114 +24,21 @@ from vnpy.trader.object import (
     TradeData,
 )
 from vnpy.trader.utility import ZoneInfo, get_folder_path
-
+from .tts_gateway_helper import del_num
+from .tts_mapping import STATUS_TTS2VT, DIRECTION_VT2TTS, DIRECTION_TTS2VT, ORDERTYPE_VT2TTS, ORDERTYPE_TTS2VT, \
+    OFFSET_VT2TTS, OFFSET_TTS2VT, EXCHANGE_TTS2VT, PRODUCT_TTS2VT, OPTIONTYPE_TTS2VT, EXCHANGE_VT2TTS
 from ..api import (
-    THOST_FTDC_TC_GFD,
-    THOST_FTDC_TC_IOC,
-    THOST_FTDC_VC_AV,
-    THOST_FTDC_VC_CV,
     MdApi,
     TdApi,
     THOST_FTDC_AF_Delete,
     THOST_FTDC_CC_Immediately,
-    THOST_FTDC_CP_CallOptions,
-    THOST_FTDC_CP_PutOptions,
-    THOST_FTDC_D_Buy,
-    THOST_FTDC_D_Sell,
     THOST_FTDC_FCC_NotForceClose,
-    THOST_FTDC_HF_Speculation,
-    THOST_FTDC_OAS_Accepted,
-    THOST_FTDC_OAS_Rejected,
-    THOST_FTDC_OAS_Submitted,
-    THOST_FTDC_OF_Open,
-    THOST_FTDC_OFEN_Close,
-    THOST_FTDC_OFEN_CloseToday,
-    THOST_FTDC_OFEN_CloseYesterday,
-    THOST_FTDC_OPT_AnyPrice,
-    THOST_FTDC_OPT_LimitPrice,
-    THOST_FTDC_OST_AllTraded,
-    THOST_FTDC_OST_Canceled,
-    THOST_FTDC_OST_NoTradeQueueing,
-    THOST_FTDC_OST_PartTradedQueueing,
-    THOST_FTDC_PC_Combination,
-    THOST_FTDC_PC_Futures,
-    THOST_FTDC_PC_Options,
-    THOST_FTDC_PC_SpotOption,
-    THOST_FTDC_PD_Long,
-    THOST_FTDC_PD_Short,
+    THOST_FTDC_HF_Speculation, THOST_FTDC_OPT_LimitPrice, THOST_FTDC_TC_IOC, THOST_FTDC_VC_AV, THOST_FTDC_VC_CV,
+    THOST_FTDC_TC_GFD,
 )
 
-# 委托状态映射
-STATUS_TTS2VT: dict[str, Status] = {
-    THOST_FTDC_OAS_Submitted: Status.SUBMITTING,
-    THOST_FTDC_OAS_Accepted: Status.SUBMITTING,
-    THOST_FTDC_OAS_Rejected: Status.REJECTED,
-    THOST_FTDC_OST_NoTradeQueueing: Status.NOTTRADED,
-    THOST_FTDC_OST_PartTradedQueueing: Status.PARTTRADED,
-    THOST_FTDC_OST_AllTraded: Status.ALLTRADED,
-    THOST_FTDC_OST_Canceled: Status.CANCELLED
-}
-
-# 多空方向映射
-DIRECTION_VT2TTS: dict[Direction, str] = {
-    Direction.LONG: THOST_FTDC_D_Buy,
-    Direction.SHORT: THOST_FTDC_D_Sell
-}
-DIRECTION_TTS2VT: dict[str, Direction] = {v: k for k, v in DIRECTION_VT2TTS.items()}
-DIRECTION_TTS2VT[THOST_FTDC_PD_Long] = Direction.LONG
-DIRECTION_TTS2VT[THOST_FTDC_PD_Short] = Direction.SHORT
-
-# 委托类型映射
-ORDERTYPE_VT2TTS: dict[OrderType, str] = {
-    OrderType.LIMIT: THOST_FTDC_OPT_LimitPrice,
-    OrderType.MARKET: THOST_FTDC_OPT_AnyPrice
-}
-ORDERTYPE_TTS2VT: dict[str, OrderType] = {v: k for k, v in ORDERTYPE_VT2TTS.items()}
-
-# 开平方向映射
-OFFSET_VT2TTS: dict[Offset, str] = {
-    Offset.OPEN: THOST_FTDC_OF_Open,
-    Offset.CLOSE: THOST_FTDC_OFEN_Close,
-    Offset.CLOSETODAY: THOST_FTDC_OFEN_CloseToday,
-    Offset.CLOSEYESTERDAY: THOST_FTDC_OFEN_CloseYesterday,
-}
-OFFSET_TTS2VT: dict[str, Offset] = {v: k for k, v in OFFSET_VT2TTS.items()}
-
-# 交易所映射
-EXCHANGE_TTS2VT: dict[str, Exchange] = {
-    "CFFEX": Exchange.CFFEX,
-    "SHFE": Exchange.SHFE,
-    "CZCE": Exchange.CZCE,
-    "DCE": Exchange.DCE,
-    "GFEX": Exchange.GFEX,
-    "INE": Exchange.INE,
-    "SSE": Exchange.SSE,
-    "SZSE": Exchange.SZSE,
-    "NASD": Exchange.NASDAQ,
-    "NYSE": Exchange.NYSE,
-    "HKEX": Exchange.SEHK,
-}
-EXCHANGE_VT2TTS: dict[Exchange, str] = {v: k for k, v in EXCHANGE_TTS2VT.items()}
-
-# 产品类型映射
-PRODUCT_TTS2VT: dict[str, Product] = {
-    THOST_FTDC_PC_Futures: Product.FUTURES,
-    THOST_FTDC_PC_Options: Product.OPTION,
-    THOST_FTDC_PC_SpotOption: Product.OPTION,
-    THOST_FTDC_PC_Combination: Product.SPREAD,
-    'E': Product.EQUITY,
-    'B': Product.BOND,
-    'D': Product.FUND
-}
-
-# 期权类型映射
-OPTIONTYPE_TTS2VT: dict[str, OptionType] = {
-    THOST_FTDC_CP_CallOptions: OptionType.CALL,
-    THOST_FTDC_CP_PutOptions: OptionType.PUT
-}
-
 # 其他常量
-MAX_FLOAT = sys.float_info.max                  # 浮点数极限值
+MAX_FLOAT = sys.float_info.max             # 浮点数极限值
 CHINA_TZ = ZoneInfo("Asia/Shanghai")       # 中国时区
 
 # 合约数据全局缓存字典
@@ -135,19 +47,19 @@ symbol_contract_map: dict[str, ContractData] = {}
 
 class TtsGateway(BaseGateway):
     """
-    VeighNa用于对接期货TTS柜台的交易接口。
+    用于对接期货TTS柜台的交易接口。
     """
 
     default_name: str = "TTS"
 
     default_setting: dict[str, str] = {
-        "用户名": "",
-        "密码": "",
-        "经纪商代码": "",
-        "交易服务器": "",
-        "行情服务器": "",
-        "产品名称": "",
-        "授权编码": ""
+        "userid": "",
+        "password": "",
+        "broker_id": "",
+        "td_address": "",
+        "md_address": "",
+        "appid": "",
+        "auth_code": ""
     }
 
     exchanges: list[str] = list(EXCHANGE_TTS2VT.values())
@@ -156,35 +68,53 @@ class TtsGateway(BaseGateway):
         """构造函数"""
         super().__init__(event_engine, gateway_name)
 
-        self.td_api: "TtsTdApi" = TtsTdApi(self)
-        self.md_api: "TtsMdApi" = TtsMdApi(self)
+        self.query_functions = None
+        self.td_api: TtsTdApi | None = None  # Will be initialized on demand
+        self.md_api: TtsMdApi | None = None  # Will be initialized on demand
+        self.count: int = 0
+
+    @staticmethod
+    def _prepare_address(address: str) -> str:
+        """Helper to prepend tcp:// if no scheme is present."""
+        if not any(address.startswith(scheme) for scheme in ["tcp://", "ssl://", "socks://"]):
+            return "tcp://" + address
+        return address
+
+    def connect_md(self, setting: dict) -> None:
+        """只连接行情接口"""
+        if not self.md_api:
+            self.md_api = TtsMdApi(self)
+
+        userid: str = setting["userid"]
+        password: str = setting["password"]
+        broker_id: str = setting["broker_id"]
+        md_address: str = self._prepare_address(setting["md_address"])
+
+        self.md_api.connect(md_address, userid, password, broker_id)
+
+    def connect_td(self, setting: dict) -> None:
+        """只连接交易接口"""
+        if not self.td_api:
+            self.td_api = TtsTdApi(self)
+
+        userid: str = setting["userid"]  # 用户名
+        password: str = setting["password"]  # 密码
+        broker_id: str = setting["broker_id"]  # 经纪商代码
+        td_address: str = setting["td_address"]  # 交易服务器
+        appid: str = setting["appid"]  # 产品名称
+        auth_code: str = setting["auth_code"]  # 授权编码
+
+        td_address = self._prepare_address(td_address)
+        self.td_api.connect(td_address, userid, password, broker_id, auth_code, appid)
 
     def connect(self, setting: dict) -> None:
-        """连接交易接口"""
-        userid: str = setting["用户名"]
-        password: str = setting["密码"]
-        brokerid: str = setting["经纪商代码"]
-        td_address: str = setting["交易服务器"]
-        md_address: str = setting["行情服务器"]
-        appid: str = setting["产品名称"]
-        auth_code: str = setting["授权编码"]
+        """连接行情和交易接口（保持兼容性，推荐分别调用connect_md和connect_td）"""
+        self.write_log(
+            _("注意：CtpGateway.connect() 同时连接行情和交易。推荐分别调用 connect_md() 和 connect_td() 以实现更清晰的职责分离。"))
+        self.connect_md(setting)
+        self.connect_td(setting)
 
-        if (
-            (not td_address.startswith("tcp://"))
-            and (not td_address.startswith("ssl://"))
-        ):
-            td_address = "tcp://" + td_address
-
-        if (
-            (not md_address.startswith("tcp://"))
-            and (not md_address.startswith("ssl://"))
-        ):
-            md_address = "tcp://" + md_address
-
-        self.td_api.connect(td_address, userid, password, brokerid, auth_code, appid)
-        self.md_api.connect(md_address, userid, password, brokerid)
-
-        self.init_query()
+        self.init_query()  # Querying account/positions is TD related
 
     def subscribe(self, req: SubscribeRequest) -> None:
         """订阅行情"""
@@ -262,30 +192,31 @@ class TtsMdApi(MdApi):
 
         self.userid: str = ""
         self.password: str = ""
-        self.brokerid: str = ""
+        self.broker_id: str = ""
 
         self.current_date: str = datetime.now().strftime("%Y%m%d")
 
     def onFrontConnected(self) -> None:
         """服务器连接成功回报"""
-        self.gateway.write_log("行情服务器连接成功")
+        self.gateway.write_log(_("行情服务器连接成功"))
         self.login()
 
     def onFrontDisconnected(self, reason: int) -> None:
         """服务器连接断开回报"""
         self.login_status = False
-        self.gateway.write_log(f"行情服务器连接断开，原因{reason}")
+        self.gateway.write_log(_("行情服务器连接断开，原因：{}").format(reason))
 
     def onRspUserLogin(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """用户登录请求回报"""
         if not error["ErrorID"]:
             self.login_status = True
-            self.gateway.write_log("行情服务器登录成功")
+            global_vars.md_login_success = True
+            self.gateway.write_log(_("行情服务器登录成功"))
 
             for symbol in self.subscribed:
                 self.subscribeMarketData(symbol)
         else:
-            self.gateway.write_error("行情服务器登录失败", error)
+            self.gateway.write_error(_("行情服务器登录失败"), error)
 
     def onRspError(self, error: dict, reqid: int, last: bool) -> None:
         """请求报错回报"""
@@ -358,30 +289,30 @@ class TtsMdApi(MdApi):
 
         self.gateway.on_tick(tick)
 
-    def connect(self, address: str, userid: str, password: str, brokerid: int) -> None:
+    def connect(self, address: str, userid: str, password: str, brokerid: str) -> None:
         """连接服务器"""
         self.userid = userid
         self.password = password
-        self.brokerid = brokerid
+        self.broker_id = brokerid
 
         # 禁止重复发起连接，会导致异常崩溃
         if not self.connect_status:
             path: Path = get_folder_path(self.gateway_name.lower())
-            self.createFtdcMdApi((str(path) + "\\Md").encode("GBK"))
+            self.createFtdcMdApi((str(path) + "\\Md").encode("GBK").decode("utf-8"))  # 加上utf-8编码，否则中文路径会乱码
 
             self.registerFront(address)
             self.init()
 
             self.connect_status = True
 
+
     def login(self) -> None:
         """用户登录"""
         tts_req: dict = {
             "UserID": self.userid,
             "Password": self.password,
-            "BrokerID": self.brokerid
+            "BrokerID": self.broker_id
         }
-
         self.reqid += 1
         self.reqUserLogin(tts_req, self.reqid)
 
@@ -428,17 +359,19 @@ class TtsTdApi(TdApi):
 
         self.userid: str = ""
         self.password: str = ""
-        self.brokerid: str = ""
+        self.broker_id: str = ""
         self.auth_code: str = ""
         self.appid: str = ""
 
-        self.frontid: int = 0
-        self.sessionid: int = 0
+        self.front_id: int = 0
+        self.session_id: int = 0
 
         self.order_data: list[dict] = []
         self.trade_data: list[dict] = []
         self.positions: dict[str, PositionData] = {}
         self.sysid_orderid_map: dict[str, str] = {}
+        self.parser = product_info
+        self.instrument_exchange_id_map = instrument_exchange_id_map
 
     def onFrontConnected(self) -> None:
         """服务器连接成功回报"""
@@ -466,27 +399,54 @@ class TtsTdApi(TdApi):
     def onRspUserLogin(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """用户登录请求回报"""
         if not error["ErrorID"]:
-            self.frontid = data["FrontID"]
-            self.sessionid = data["SessionID"]
+            self.front_id = data["FrontID"]
+            self.session_id = data["SessionID"]
             self.login_status = True
             self.gateway.write_log("交易服务器登录成功")
 
             # 自动确认结算单
             tts_req: dict = {
-                "BrokerID": self.brokerid,
+                "BrokerID": self.broker_id,
                 "InvestorID": self.userid
             }
             self.reqid += 1
             self.reqSettlementInfoConfirm(tts_req, self.reqid)
         else:
             self.login_failed = True
-
             self.gateway.write_error("交易服务器登录失败", error)
+
+    def onRspQryProduct(self, data: dict, error: dict, reqid: int, last: bool):
+        """
+        查询产品回报，当执行 ReqQryProduct 后，该方法被调用
+        :param data: 产品信息
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
+        if not error.get("ErrorID"):
+            sec = data['ProductID']
+            opt = 'contract_multiplier'
+
+            # 需要判断section是否存在，如果不存在会报错，option不需要检查是否存在
+            if not self.parser.has_section(sec):
+                self.parser.add_section(sec)
+
+            self.parser.set(sec, opt, str(data['VolumeMultiple']))
+
+            opt = 'minimum_price_change'
+            self.parser.set(sec, opt, str(data['PriceTick']))
+
+            if last:
+                self.parser.write(open(GlobalPath.product_info_filepath, "w", encoding='utf-8'))
+                self.gateway.write_log(_("查询产品成功！"))
+        else:
+            self.gateway.write_error(_("查询产品失败"), error)
 
     def onRspOrderInsert(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """委托下单失败回报"""
         order_ref: str = data["OrderRef"]
-        orderid: str = f"{self.frontid}_{self.sessionid}_{order_ref}"
+        orderid: str = f"{self.front_id}_{self.session_id}_{order_ref}"
 
         symbol: str = data["InstrumentID"]
         contract: ContractData = symbol_contract_map[symbol]
@@ -512,17 +472,29 @@ class TtsTdApi(TdApi):
 
     def onRspSettlementInfoConfirm(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """确认结算单回报"""
-        self.gateway.write_log("结算信息确认成功")
+        if error['ErrorID'] != 0 and error is not None:
+            self.gateway.write_error(_("结算单确认失败，错误信息为：{}，错误代码为：{}"
+                                       .format(error['ErrorMsg'], error['ErrorID'])), error)
+        else:
+            if last:
+                self.gateway.write_log(_("结算信息确认成功"))
+                # 当结算单确认成功后，将登录成功标志设置为True
+                global_vars.td_login_success = True
 
-        # 由于流控，单次查询可能失败，通过while循环持续尝试，直到成功发出请求
-        while True:
-            self.reqid += 1
-            n: int = self.reqQryInstrument({}, self.reqid)
-
-            if not n:
-                break
-            else:
-                sleep(1)
+                # 由于流控，单次查询可能失败，通过while循环持续尝试，直到成功发出请求
+                retries = 0
+                max_retries = 5
+                while retries < max_retries:
+                    self.reqid += 1
+                    n: int = self.reqQryInstrument({}, self.reqid)
+                    if not n:
+                        break
+                    else:
+                        self.gateway.write_log(f"reqQryInstrument failed with {n}, retrying in 1s ({retries+1}/{max_retries})")
+                        sleep(1)
+                        retries += 1
+                if retries == max_retries:
+                    self.gateway.write_log("reqQryInstrument failed after max retries.")
 
     def onRspQryInvestorPosition(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """持仓查询回报"""
@@ -656,10 +628,10 @@ class TtsTdApi(TdApi):
         symbol: str = data["InstrumentID"]
         contract: ContractData = symbol_contract_map[symbol]
 
-        frontid: int = data["FrontID"]
-        sessionid: int = data["SessionID"]
+        front_id: int = data["FrontID"]
+        session_id: int = data["SessionID"]
         order_ref: str = data["OrderRef"]
-        orderid: str = f"{frontid}_{sessionid}_{order_ref}"
+        orderid: str = f"{front_id}_{session_id}_{order_ref}"
 
         timestamp: str = f"{data['InsertDate']} {data['InsertTime']}"
         dt: datetime = datetime.strptime(timestamp, "%Y%m%d %H:%M:%S")
@@ -721,41 +693,116 @@ class TtsTdApi(TdApi):
         else:
             self.gateway.write_error("询价请求发送失败", error)
 
+    def onRspQryInstrumentCommissionRate(self, data: dict, error: dict, reqid: int, last: bool):
+        """
+        请求查询合约手续费率响应，当执行 ReqQryInstrumentCommissionRate 后，该方法被调用。
+        :param data: 合约手续费率
+        :param error: 响应信息
+        :param reqid: 返回用户操作请求的 ID，该 ID 由用户在操作请求时指定。
+        :param last: 指示该次返回是否为针对 reqid 的最后一次返回。
+        :return: 无
+        """
+        if error.get("ErrorID"):
+            self.gateway.write_error(
+                _("CtpTdApi：OnRspQryInstrumentCommissionRate 查询失败。错误 ID：{}").format(error.get('ErrorID', 'N/A')),
+                error)
+            return
+
+        # 增加对data 和 data['InstrumentID']的有效性检查
+        if data is None or not data.get("InstrumentID"):
+            # 如果是最后一条回报但数据无效，可能需要记录一下
+            if last:
+                self.gateway.write_log(
+                    _("CtpTdApi：OnRspQryInstrumentCommissionRate 收到无效或空的合约手续费数据（最后一条）。ReqID: {}").format(
+                        reqid))
+            return
+
+        # print(f'合约名称：{data.InstrumentID}')
+        sec = del_num(data['InstrumentID'])
+
+        # 需要判断section是否存在，如果不存在会报错，option不需要检查是否存在
+        if not self.parser.has_section(sec):
+            self.parser.add_section(sec)
+
+        # 填写开仓手续费率
+        opt = 'open_fee_rate'
+        self.parser.set(sec, opt, str(data['OpenRatioByMoney']))
+
+        # 填写开仓手续费
+        opt = 'open_fee'
+        self.parser.set(sec, opt, str(data['OpenRatioByVolume']))
+
+        # 填写平仓手续费率
+        opt = 'close_fee_rate'
+        self.parser.set(sec, opt, str(data['CloseRatioByMoney']))
+
+        # 填写平仓手续费
+        opt = 'close_fee'
+        self.parser.set(sec, opt, str(data['CloseRatioByVolume']))
+
+        # 填写平今手续费率
+        opt = 'close_today_fee_rate'
+        self.parser.set(sec, opt, str(data['CloseTodayRatioByMoney']))
+
+        # 填写平今手续费
+        opt = 'close_today_fee'
+        self.parser.set(sec, opt, str(data['CloseTodayRatioByVolume']))
+
+        # 写入ini文件
+        self.parser.write(open(GlobalPath.product_info_filepath, "w", encoding='utf-8'))
+
     def connect(
         self,
         address: str,
         userid: str,
         password: str,
-        brokerid: int,
+        brokerid: str,
         auth_code: str,
         appid: str
     ) -> None:
         """连接服务器"""
         self.userid = userid
         self.password = password
-        self.brokerid = brokerid
+        self.broker_id = brokerid
         self.auth_code = auth_code
         self.appid = appid
 
         if not self.connect_status:
             path: Path = get_folder_path(self.gateway_name.lower())
-            self.createFtdcTraderApi((str(path) + "\\Td").encode("GBK"))
+            api_path_str = str(path) + "\\Td"
+            self.gateway.write_log(_("TtsTdApi：尝试创建路径为 {} 的 API").format(api_path_str))
+            try:
+                self.createFtdcTraderApi(api_path_str.encode("GBK").decode("utf-8"))
+                self.gateway.write_log(_("TtsTdApi：createFtdcTraderApi调用成功。"))
+            except Exception as e_create:
+                self.gateway.write_log(_("TtsTdApi：createFtdcTraderApi 失败！错误：{}").format(e_create))
+                self.gateway.write_log(_("TtsTdApi：createFtdcTraderApi 回溯：{}").format(traceback.format_exc()))
+                return
 
             self.subscribePrivateTopic(0)
             self.subscribePublicTopic(0)
 
             self.registerFront(address)
-            self.init()
+
+            self.gateway.write_log(_("TtsTdApi：尝试使用地址初始化 API：{}...").format(address))
+            try:
+                self.init()
+                self.gateway.write_log(_("TtsTdApi：init 调用成功。"))
+            except Exception as e_init:
+                self.gateway.write_log(_("TtsTdApi：初始化失败！错误：{}").format(e_init))
+                self.gateway.write_log(_("TtsTdApi：初始化回溯：{}").format(traceback.format_exc()))
+                return
 
             self.connect_status = True
         else:
+            self.gateway.write_log(_("TtsTdApi：已连接，正在尝试身份验证。"))
             self.authenticate()
 
     def authenticate(self) -> None:
         """发起授权验证"""
         tts_req: dict = {
             "UserID": self.userid,
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "AuthCode": self.auth_code,
             "AppID": self.appid
         }
@@ -771,7 +818,7 @@ class TtsTdApi(TdApi):
         tts_req: dict = {
             "UserID": self.userid,
             "Password": self.password,
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "AppID": self.appid
         }
 
@@ -806,7 +853,7 @@ class TtsTdApi(TdApi):
             "OrderRef": str(self.order_ref),
             "InvestorID": self.userid,
             "UserID": self.userid,
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "CombHedgeFlag": THOST_FTDC_HF_Speculation,
             "ContingentCondition": THOST_FTDC_CC_Immediately,
             "ForceCloseReason": THOST_FTDC_FCC_NotForceClose,
@@ -828,7 +875,7 @@ class TtsTdApi(TdApi):
         self.reqid += 1
         self.reqOrderInsert(tts_req, self.reqid)
 
-        orderid: str = f"{self.frontid}_{self.sessionid}_{self.order_ref}"
+        orderid: str = f"{self.front_id}_{self.session_id}_{self.order_ref}"
         order: OrderData = req.create_order_data(orderid, self.gateway_name)
         self.gateway.on_order(order)
 
@@ -850,7 +897,7 @@ class TtsTdApi(TdApi):
             "FrontID": int(frontid),
             "SessionID": int(sessionid),
             "ActionFlag": THOST_FTDC_AF_Delete,
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "InvestorID": self.userid
         }
 
@@ -870,14 +917,14 @@ class TtsTdApi(TdApi):
             "InstrumentID": req.symbol,
             "ExchangeID": exchange,
             "ForQuoteRef": str(self.order_ref),
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "InvestorID": self.userid
         }
 
         self.reqid += 1
         self.reqForQuoteInsert(tts_req, self.reqid)
 
-        orderid: str = f"{self.frontid}_{self.sessionid}_{self.order_ref}"
+        orderid: str = f"{self.front_id}_{self.session_id}_{self.order_ref}"
         vt_orderid: str = f"{self.gateway_name}.{orderid}"
 
         return vt_orderid
@@ -893,7 +940,7 @@ class TtsTdApi(TdApi):
             return
 
         tts_req: dict = {
-            "BrokerID": self.brokerid,
+            "BrokerID": self.broker_id,
             "InvestorID": self.userid
         }
 

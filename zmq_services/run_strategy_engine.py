@@ -1,13 +1,14 @@
-import argparse
 import os
 import sys
+
+from utils.service_common import runner_args
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from utils.config_manager import ConfigManager
-from utils.i18n import get_translator
+from utils.i18n import _
 from utils.logger import logger, setup_logging
 from zmq_services.strategy_engine import StrategyEngine
 
@@ -19,44 +20,12 @@ def main():
     Runs the strategy engine service.
     :return:
     """
-    _ = get_translator()
-    parser = argparse.ArgumentParser(description="Run the Strategy Engine Service.")
-    parser.add_argument(
-        "--ctp-env",
-        default="simnow", 
-        help="The CTP environment name (e.g., 'simnow'). Currently informational for Strategy Engine."
-    )
-    parser.add_argument(
-        "--config-env",
-        default=None,
-        type=str,
-        help="The configuration environment to load (e.g., 'dev', 'prod', 'backtest'). Overrides global_config.yaml."
-    )
-    parser.add_argument(
-        "--log-level",
-        default="INFO",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="Set the minimum logging level."
-    )
-    args = parser.parse_args()
+    args = runner_args(arg_desc="Run the Strategy Engine Service.")
 
     setup_logging(service_name=f"StrategyEngineRunner[{args.ctp_env}]", level=args.log_level.upper(), config_env=args.config_env)
 
     # +++ 使用 config_env 初始化 ConfigManager(Initialize ConfigManager with config_env) +++
     config_service = ConfigManager(environment=args.config_env)
-
-    # 正在使用的日志环境(Log environments being used)
-    if args.ctp_env == "simnow" and '--ctp-env' not in sys.argv and '--env' not in sys.argv: # Check both old and new name for default message
-        logger.info(_("未指定 --ctp-env，使用默认 CTP 环境：{}").format(args.ctp_env))
-    else:
-        logger.info(_("策略引擎 CTP 环境：{}").format(args.ctp_env))
-    
-    if args.config_env:
-        logger.info(_("使用配置环境：'{}'").format(args.config_env))
-    else:
-        # 如果默认值为 dev，则不会发生这种情况
-        # This case should not happen if default is "dev"
-        logger.info(_("未指定 --config-env，仅使用基本 global_config.yaml。"))
 
     logger.info(_("正在初始化策略引擎..."))
 

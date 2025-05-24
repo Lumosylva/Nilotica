@@ -34,7 +34,8 @@ DEFAULT_LOG_RETENTION = "7 days" # 保留日志 7 天(Keep logs for 7 days)
 
 # --- 全局记录器对象(Global Logger Object) ---
 # 从 loguru 重新导出记录器对象(Re-export the logger object from loguru)
-__all__ = ["logger", "setup_logging", "INFO", "DEBUG", "WARNING", "WARN", "ERROR", "FATAL", "CRITICAL", "NOTSET"]
+__all__ = ["get_level_name", "logger", "setup_logging", "INFO", "DEBUG", "WARNING", "WARN", "ERROR", "FATAL",
+           "CRITICAL", "NOTSET"]
 
 # 从 vnpy 设置中读取日志级别(Read log level from vnpy settings)
 DEFAULT_LOG_LEVEL: str = SETTINGS.get("log.level", "INFO")
@@ -70,6 +71,18 @@ _nameToLevel = {
 }
 
 def get_level_name(level: int | str):
+    """
+    根据日志级别获取相应的名称。
+
+    Args:
+        level (int | str): 日志级别，可以是整数或字符串。
+
+    Returns:
+        str: 日志级别的名称。
+
+    Raises:
+        TypeError: 如果 level 不是整数或字符串类型，将引发 TypeError 异常。
+    """
     if level is not None:
         if isinstance(level, int):
             return _levelToName.get(level)

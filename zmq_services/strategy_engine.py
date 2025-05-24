@@ -845,7 +845,12 @@ class StrategyEngine:
             for strategy in strategies_for_symbol:
                 if strategy.trading: 
                     try:
-                        logger.debug(self._("process_tick：为 vt_symbol“{}”调用策略“{}”on_tick。").format(strategy.strategy_name, vt_symbol))
+                        # +++ 将Tick数据传递给策略的BarGenerator (如果存在) +++
+                        if strategy.bar_generator:
+                            strategy.bar_generator.update_tick(tick_object)
+                        # +++ 结束 +++
+                        
+                        logger.debug(self._("process_tick：为 vt_symbol'{}'调用策略'{}'on_tick。").format(strategy.strategy_name, vt_symbol))
                         strategy.on_tick(tick_object)
                     except Exception as e:
                          logger.exception(self._("策略 {} 在 on_tick 处理 {} 时出错: {}").format(strategy.strategy_name, vt_symbol, e))
