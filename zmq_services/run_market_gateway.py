@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import zmq
+from zmq.error import ZMQError
 # from pathlib import Path # Removed: FLOW_PATH no longer used
 
 # --- Print CWD and sys.path for diagnostics ---
@@ -39,13 +41,20 @@ from utils.logger import logger, setup_logging
 # --- Import the actual service ---
 from zmq_services.market_data_gateway import MarketDataGatewayService
 
-
-# --- REMOVED DIRECT TTS TEST IMPLEMENTATION ---
+# 添加备用端口列表
+FALLBACK_PORTS = [5556, 5565, 5575]
 
 def main():
-    args = runner_args(arg_desc="Run the Market Data Gateway Service for a specific CTP/TTS environment.")
+    """
+    运行行情网关服务。
+
+    Run the market data gateway service.
+    :return:
+    """
+    args = runner_args(arg_desc="Run the Market Data Gateway Service for a specific CTP environment.")
+
     setup_logging(service_name=f"MarketGatewayRunner[{args.ctp_env}]", level=args.log_level.upper(), config_env=args.config_env)
-    logger.info(f"--- Market Data Gateway Service Runner --- PID: {os.getpid()} ---")
+    logger.info(_("--- Market Data Gateway Service Runner --- PID: {} ---").format(os.getpid()))
 
     config_service = ConfigManager(environment=args.config_env)
     pub_addr = config_service.get_global_config("zmq_addresses.market_data_pub")
@@ -58,18 +67,47 @@ def main():
     logger.info(_("正在初始化行情网关服务..."))
     try:
         gateway_service = MarketDataGatewayService(
-            config_manager=config_service,
+            config_manager=config_service, 
             environment_name=args.ctp_env
         )
+        
+        # 尝试使用主端口启动
         logger.info(_("尝试启动行情网关服务..."))
-        # Pass the pub_address to the start method
-        gateway_service.start(pub_address=pub_addr)
-        logger.info(_("行情网关正在运行。按 Ctrl+C 停止。"))
-
-        # Keep alive loop
-        while gateway_service.is_active(): # Assuming is_active() reflects ZMQ and main loop state
-            time.sleep(0.1) # Keep main thread alive
-
+        
+        # 尝试主端口
+        try:
+            gateway_service.start(pub_address=pub_addr)
+            logger.info(_("行情网关正在运行。按 Ctrl+C 停止。"))
+        except ZMQError as zmq_err:
+            # 检查是否是端口被占用错误
+            if "Address in use" in str(zmq_err):
+                logger.warning(_("主端口 {} 被占用，尝试使用备用端口...").format(pub_addr))
+                
+                # 尝试备用端口
+                success = False
+                original_port = pub_addr.split(":")[-1]
+                
+                for fallback_port in FALLBACK_PORTS:
+                    fallback_addr = pub_addr.replace(f":{original_port}", f":{fallback_port}")
+                    logger.info(_("尝试使用备用端口: {}").format(fallback_addr))
+                    
+                    try:
+                        gateway_service.start(pub_address=fallback_addr)
+                        logger.info(_("使用备用端口 {} 成功启动行情网关。按 Ctrl+C 停止。").format(fallback_addr))
+                        success = True
+                        break
+                    except ZMQError as backup_err:
+                        logger.warning(_("备用端口 {} 也被占用: {}").format(fallback_addr, str(backup_err)))
+                
+                if not success:
+                    logger.critical(_("所有端口尝试均失败，无法启动行情网关。"))
+                    raise
+            else:
+                # 其他ZMQ错误
+                raise
+            
+        while gateway_service.is_active():
+            time.sleep(0.1)
     except KeyboardInterrupt:
         logger.info(_("检测到 Ctrl+C，正在停止服务..."))
     except Exception as err:

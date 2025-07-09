@@ -65,8 +65,8 @@ class BaseLiveStrategy(metaclass=ABCMeta):
 
         # +++ K线生成相关 +++
         self.bar_generator: Optional[BarGenerator] = None
-        bar_period = setting.get("bar_period", None)  # 例如 '1m', '5m', '1h', '1d'
-        bar_daily_end = setting.get("bar_daily_end", None)  # 例如 '15:00:00'
+        bar_period = setting.get("bar_period", '1m')  # 例如 '1m', '5m', '1h', '1d'
+        bar_daily_end = setting.get("bar_daily_end", '15:00:00')  # 例如 '15:00:00'
         if bar_period:
             # 解析周期
             if bar_period.endswith("m"):
@@ -86,7 +86,8 @@ class BaseLiveStrategy(metaclass=ABCMeta):
             if interval == Interval.DAILY and bar_daily_end:
                 try:
                     daily_end = dt_time.fromisoformat(bar_daily_end)
-                except Exception:
+                except Exception as e:
+                    logger.exception(_("无法解析 bar_daily_end 时间戳 {}").format(e))
                     daily_end = None
             # 1分钟K线直接on_bar，其它周期用on_window_bar
             if interval == Interval.MINUTE and window == 1:
@@ -297,49 +298,100 @@ class BaseLiveStrategy(metaclass=ABCMeta):
     # 标准交易方法（由基类提供）
     # Standard Trading Methods (Provided by Base Class)
     #----------------------------------------------------------------------
-    def buy(self, price: float, volume: float) -> Optional[str]:
+    def open_buy(self, price: float, volume: float) -> Optional[str]:
         """
-        发送买入未平仓订单。
+        开多单：发送买入开仓订单。
 
-        Send buy open order.
-        :param price:
-        :param volume:
-        :return:
+        Open long position: Send buy open order.
+        :param price: 价格
+        :param volume: 数量
+        :return: 订单ID
         """
         return self.send_order(Direction.LONG, Offset.OPEN, price, volume)
 
-    def sell(self, price: float, volume: float) -> Optional[str]:
+    def close_sell(self, price: float, volume: float) -> Optional[str]:
         """
-        发送卖出平仓订单。
+        平多单：发送卖出平仓订单。注意：平仓逻辑是平多单用 close_sell，而不是 close_buy
 
-        Send sell close order.
-        :param price:
-        :param volume:
-        :return:
+        Close long position: Send sell close order.
+        :param price: 价格
+        :param volume: 数量
+        :return: 订单ID
         """
         return self.send_order(Direction.SHORT, Offset.CLOSE, price, volume)
 
-    def short(self, price: float, volume: float) -> Optional[str]:
+    def open_sell(self, price: float, volume: float) -> Optional[str]:
         """
-        发送空仓订单。
+        开空单：发送卖出开仓订单。
 
-        Send short open order.
-        :param price:
-        :param volume:
-        :return:
+        Open short position: Send short open order.
+        :param price: 价格
+        :param volume: 数量
+        :return: 订单ID
         """
         return self.send_order(Direction.SHORT, Offset.OPEN, price, volume)
 
-    def cover(self, price: float, volume: float) -> Optional[str]:
+    def close_buy(self, price: float, volume: float) -> Optional[str]:
         """
-        发送买入平仓订单。
+        平空单：发送买入平仓订单。注意：平仓逻辑是平空单用 close_buy，而不是 close_sell
 
-        Send buy close order.
-        :param price:
-        :param volume:
-        :return:
+        Close short position: Send buy close order.
+        :param price: 价格
+        :param volume: 数量
+        :return: 订单ID
         """
         return self.send_order(Direction.LONG, Offset.CLOSE, price, volume)
+
+
+    # 兼容性方法，保留旧的命名以维持兼容性
+    # Compatibility methods to maintain backward compatibility
+    def buy(self, price: float, volume: float) -> Optional[str]:
+        """
+        发送买入开仓订单（兼容性方法，推荐使用open_buy）。
+
+        Send buy open order (compatibility method, recommend using open_buy).
+        :param price: 价格
+        :param volume: 数量
+        :return: 订单ID
+        """
+        logger.warning(_("使用了旧方法buy()，建议改用open_buy()"))
+        return self.open_buy(price, volume)
+
+    def sell(self, price: float, volume: float) -> Optional[str]:
+        """
+        发送卖出平仓订单（兼容性方法，推荐使用close_sell）。
+
+        Send sell close order (compatibility method, recommend using close_sell).
+        :param price: 价格
+        :param volume: 数量
+        :return: 订单ID
+        """
+        logger.warning(_("使用了旧方法sell()，建议改用close_sell()"))
+        return self.close_sell(price, volume)
+
+    def short(self, price: float, volume: float) -> Optional[str]:
+        """
+        发送卖出开仓订单（兼容性方法，推荐使用open_sell）。
+
+        Send short open order (compatibility method, recommend using open_sell).
+        :param price: 价格
+        :param volume: 数量
+        :return: 订单ID
+        """
+        logger.warning(_("使用了旧方法short()，建议改用open_sell()"))
+        return self.open_sell(price, volume)
+
+    def cover(self, price: float, volume: float) -> Optional[str]:
+        """
+        发送买入平仓订单（兼容性方法，推荐使用close_buy）。
+
+        Send buy close order (compatibility method, recommend using close_buy).
+        :param price: 价格
+        :param volume: 数量
+        :return: 订单ID
+        """
+        logger.warning(_("使用了旧方法cover()，建议改用close_buy()"))
+        return self.close_buy(price, volume)
 
     def send_order(
         self,

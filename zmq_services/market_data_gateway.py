@@ -85,13 +85,48 @@ class MarketDataGatewayService(ZmqPublisherBase):
 
     def process_event(self, event: Event):
         event_type = event.type
+        logger.info(f"MarketDataGatewayService received event_type: {event_type}, data_type: {type(event.data)}")
+        logger.debug(_("处理事件: {} - 数据类型: {}").format(event_type, type(event.data)))
+        
         if event_type == EVENT_TICK:
             tick: TickData = event.data
-            logger.debug(_("发布Tick: {} - Price: {}").format(tick.vt_symbol, tick.last_price))
+            # 打印完整的tick数据
+            logger.info(_("原始Tick数据: {} - 价格: {} - 时间: {} - 成交量: {}").format(
+                tick.vt_symbol, tick.last_price, 
+                tick.datetime, getattr(tick, 'volume', 'N/A')))
+                
+            # 发布tick数据，提升日志级别，记录更多信息
             topic = f"tick.{tick.vt_symbol}"
-            success = self.publish(topic, tick)
-            if not success:
-                logger.error(_("发布 Tick 失败 (主题: {})").format(topic))
+            logger.info(_("尝试发布Tick数据到主题: {}").format(topic))
+            
+            try:
+                # 尝试转换tick对象为可序列化的字典
+                from utils.converter import convert_vnpy_obj_to_dict
+                tick_dict = convert_vnpy_obj_to_dict(tick)
+                
+                # 确保字典包含所有必要字段
+                if 'vt_symbol' not in tick_dict:
+                    tick_dict['vt_symbol'] = tick.vt_symbol
+                if 'datetime' not in tick_dict and hasattr(tick, 'datetime'):
+                    tick_dict['datetime'] = tick.datetime.isoformat()
+                
+                logger.debug(_("Tick数据转换为字典: {}").format(tick_dict))
+                
+                # 发布数据前添加调试日志
+                logger.info(_("【调试】即将调用self.publish发布Tick数据，主题: {}").format(topic))
+                
+                # 发布数据 - 确保这里实际发布的是tick_dict而不是log对象
+                success = self.publish(topic, tick_dict)
+                
+                # 发布数据后添加调试日志
+                logger.info(_("【调试】self.publish调用结果: {}，主题: {}").format(success, topic))
+                
+                if success:
+                    logger.info(_("成功发布Tick数据: {} - 价格: {}").format(tick.vt_symbol, tick.last_price))
+                else:
+                    logger.error(_("发布Tick数据失败 (主题: {})").format(topic))
+            except Exception as e:
+                logger.exception(_("发布Tick数据时出错: {} - 异常: {}").format(topic, str(e)))
         elif event_type == EVENT_LOG:
             log: LogData = event.data
             # Use global_vars.md_login_success, which should be set by the gateway's onRspUserLogin
@@ -103,13 +138,13 @@ class MarketDataGatewayService(ZmqPublisherBase):
 
             log_level_value = getattr(log, 'level', logging.INFO)
             # Ensure log_level_value is an int, not an enum or other type before get_level_name
-            if hasattr(log_level_value, 'value'): # Handle cases where level might be an Enum
-                log_level_value = log_level_value.value
-            if not isinstance(log_level_value, int):
-                 try:
-                     log_level_value = int(log_level_value) # Try to convert if it's string like "20"
-                 except ValueError:
-                     log_level_value = logging.INFO # Default if conversion fails
+            # if hasattr(log_level_value, 'value'): # Handle cases where level might be an Enum
+            #     log_level_value = log_level_value.value
+            # if not isinstance(log_level_value, int):
+            #      try:
+            #          log_level_value = int(log_level_value) # Try to convert if it's string like "20"
+            #      except ValueError:
+            #          log_level_value = logging.INFO # Default if conversion fails
 
             logger_level_name = get_level_name(log_level_value) # get_level_name expects int
             event_msg = log.msg
@@ -173,7 +208,7 @@ class MarketDataGatewayService(ZmqPublisherBase):
                 if self._ctp_connected:
                     logger.info(_("行情网关连接并登录成功 (环境: {})!").format(self.environment_name))
                     # After successful connection, subscribe to any predefined symbols if needed
-                    # self._subscribe_instruments() # Example call if you have such a method
+                    self._subscribe_instruments() # Example call if you have such a method
                 else:
                     # This case should ideally not happen if event is set only on True connection
                     logger.error(_("行情网关连接事件触发但未成功连接 (环境: {}).").format(self.environment_name))
@@ -181,9 +216,9 @@ class MarketDataGatewayService(ZmqPublisherBase):
             else:
                 logger.error(_("行情网关连接超时 ({} 秒) (环境: {}). 请检查网络和配置.").format(CTP_CONNECTION_TIMEOUT_S, self.environment_name))
                 # Log current global_vars.md_login_success state for diagnostics
-                logger.info(f"Timeout diagnostic: global_vars.md_login_success = {global_vars.md_login_success}")
+                logger.info(f"超时诊断：global_vars.md_login_success = {global_vars.md_login_success}")
                 if hasattr(self.gateway, 'md_api') and self.gateway.md_api:
-                    logger.info(f"Timeout diagnostic: md_api.connect_status = {self.gateway.md_api.connect_status}, md_api.login_status = {self.gateway.md_api.login_status}")
+                    logger.info(f"超时诊断：md_api.connect_status = {self.gateway.md_api.connect_status}, md_api.login_status = {self.gateway.md_api.login_status}")
                 self.stop()
 
         except Exception as err:
@@ -191,42 +226,50 @@ class MarketDataGatewayService(ZmqPublisherBase):
             self.stop()
 
     # Example subscription method (if you want to manage subscriptions here)
-    # def _subscribe_instruments(self):
-    #     symbols_to_subscribe = self.config_service.get_global_config("market_data_subscriptions.symbols", [])
-    #     if not symbols_to_subscribe:
-    #         logger.info(_("没有在配置中找到要订阅的合约列表 (market_data_subscriptions.symbols)."))
-    #         return
-    #     for symbol_entry in symbols_to_subscribe:
-    #         try:
-    #             # Assuming symbol_entry can be a string or a dict like {"symbol": "IF2406", "exchange": "CFFEX"}
-    #             if isinstance(symbol_entry, str):
-    #                 vt_symbol = symbol_entry # Or parse if it's like IF2406.CFFEX
-    #                 # Attempt to find exchange if not part of vt_symbol
-    #                 parts = vt_symbol.split('.')
-    #                 symbol = parts[0]
-    #                 exchange_str = parts[1] if len(parts) > 1 else None
-    #                 if not exchange_str:
-    #                     # TODO: Need a robust way to get exchange for a symbol if not provided
-    #                     # This might involve querying contract details first, or having a map
-    #                     logger.warning(f"订阅 {symbol} 时缺少交易所信息，跳过。")
-    #                     continue
-    #                 exchange = Exchange(exchange_str)
-    #             elif isinstance(symbol_entry, dict):
-    #                 symbol = symbol_entry.get("symbol")
-    #                 exchange_str = symbol_entry.get("exchange")
-    #                 if not symbol or not exchange_str:
-    #                     logger.warning(f"无效的订阅条目: {symbol_entry}, 跳过")
-    #                     continue
-    #                 exchange = Exchange(exchange_str)
-    #             else:
-    #                 logger.warning(f"无法识别的订阅条目格式: {symbol_entry}, 跳过")
-    #                 continue
-    #
-    #             req = SubscribeRequest(symbol=symbol, exchange=exchange)
-    #             self.gateway.subscribe(req)
-    #             logger.info(_("已发送 {}@{} 的订阅请求.").format(symbol, exchange.value))
-    #         except Exception as e:
-    #             logger.exception(_("处理订阅请求 {} 时出错: {}").format(symbol_entry, e))
+    def _subscribe_instruments(self):
+        # 从全局配置获取订阅列表
+        symbols_to_subscribe = self.config_service.get_global_config("default_subscribe_symbols", [])
+        if not symbols_to_subscribe:
+            logger.warning(_("没有在配置中找到要订阅的合约列表 (default_subscribe_symbols)."))
+            return
+
+        logger.info(_("找到 {} 个需要订阅的合约: {}").format(len(symbols_to_subscribe), symbols_to_subscribe))
+
+        for symbol_entry in symbols_to_subscribe:
+            try:
+                # 解析vt_symbol (格式为symbol.exchange) Assuming symbol_entry can be a string or a dict like {"symbol": "IF2406", "exchange": "CFFEX"}
+                if isinstance(symbol_entry, str):
+                    vt_symbol = symbol_entry # Or parse if it's like IF2406.CFFEX
+                    # Attempt to find exchange if not part of vt_symbol
+                    parts = vt_symbol.split('.')
+                    symbol = parts[0]
+                    exchange_str = parts[1] if len(parts) > 1 else None
+                    if not exchange_str:
+                        # TODO: Need a robust way to get exchange for a symbol if not provided
+                        # This might involve querying contract details first, or having a map
+                        logger.warning(f"订阅 {symbol} 时缺少交易所信息，跳过。")
+                        continue
+                    try:
+                        exchange = Exchange(exchange_str)
+                    except ValueError:
+                        logger.warning(_("无效的交易所代码: {}, 跳过").format(exchange_str))
+                        continue
+                elif isinstance(symbol_entry, dict):
+                    symbol = symbol_entry.get("symbol")
+                    exchange_str = symbol_entry.get("exchange")
+                    if not symbol or not exchange_str:
+                        logger.warning(f"无效的订阅条目: {symbol_entry}, 跳过")
+                        continue
+                    exchange = Exchange(exchange_str)
+                else:
+                    logger.warning(f"无法识别的订阅条目格式: {symbol_entry}, 跳过")
+                    continue
+                # 创建订阅请求并发送
+                req = SubscribeRequest(symbol=symbol, exchange=exchange)
+                self.gateway.subscribe(req)
+                logger.info(_("已发送 {}@{} 的订阅请求.").format(symbol, exchange.value))
+            except Exception as e:
+                logger.exception(_("处理订阅请求 {} 时出错: {}").format(symbol_entry, e))
 
     def stop(self):
         logger.info(_("MarketDataGatewayService.stop() CALLED."))

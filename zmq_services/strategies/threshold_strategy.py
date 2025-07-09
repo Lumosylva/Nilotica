@@ -6,7 +6,7 @@ from vnpy.trader.constant import Offset, Status
 from vnpy.trader.object import OrderData, TickData, TradeData, BarData
 
 from utils.i18n import _
-from utils.logger import logger, setup_logging, INFO
+from utils.logger import logger, setup_logging, INFO, DEBUG
 
 # Import base class and vnpy types
 from zmq_services.strategy_base import BaseLiveStrategy
@@ -43,7 +43,8 @@ class ThresholdLiveStrategy(BaseLiveStrategy):
         # Initialize base class first - this applies settings from the dict
         super().__init__(strategy_engine, strategy_name, vt_symbol, setting)
 
-        setup_logging(service_name=__class__.__name__, level=INFO)
+        # 将日志级别修改为DEBUG
+        setup_logging(service_name=f"{__class__.__name__}[{strategy_name}]", level=DEBUG)
 
         # --- Verify required parameters are set (post-super().__init__) ---
         required_params = [
@@ -101,20 +102,49 @@ class ThresholdLiveStrategy(BaseLiveStrategy):
     # --- Event Callbacks --- 
     def on_tick(self, tick: TickData) -> None:
         """Process new tick data using Decimal."""
-        if tick.vt_symbol != self.vt_symbol or not self.trading:
+        # 首先检查是否是我们关注的合约
+        if tick.vt_symbol != self.vt_symbol:
+            logger.debug(f"忽略非目标合约的Tick数据: {tick.vt_symbol}，我们的目标合约是: {self.vt_symbol}")
+            return
+            
+        if not self.trading:
+            logger.debug(f"策略未处于交易状态，忽略Tick数据: {tick.vt_symbol}")
             return
 
+        # 详细记录收到的tick数据
         try:
-            log_last_price = Decimal(str(getattr(tick, 'last_price', 'NaN')))
+            log_last_price = getattr(tick, 'last_price', 'NaN')
+            ask_price1 = getattr(tick, 'ask_price_1', 'NaN')
+            bid_price1 = getattr(tick, 'bid_price_1', 'NaN')
+            tick_time = tick.datetime.strftime('%H:%M:%S.%f')[:-3] if hasattr(tick, 'datetime') and tick.datetime else "NoTime"
+            
             logger.info(
-                _("on_tick 轻量处理: 时间={} vt={} 最新价={}").format(
-                    tick.datetime.strftime('%H:%M:%S.%f')[:-3],
-                    tick.vt_symbol, 
-                    log_last_price
-                )
+                f"收到Tick数据: {self.vt_symbol} 最新价={log_last_price} "
+                f"卖一={ask_price1} 买一={bid_price1} 时间={tick_time}"
             )
-        except (InvalidOperation, TypeError):
-            logger.debug(_("on_tick 轻量处理 {} 时间 {},价格转换失败.").format(tick.vt_symbol, tick.datetime.strftime('%H:%M:%S.%f')[:-3]))
+            
+            # 转换为Decimal进行计算
+            last_price = Decimal(str(log_last_price))
+            
+            # 检查是否达到入场条件
+            if not self.long_entry_active and last_price < self.entry_threshold:
+                logger.info(f"价格 {last_price} 低于阈值 {self.entry_threshold}，触发做多信号")
+                self.long_entry_active = True
+                
+                # 计算开仓价格（可以是当前价格或者加上偏移）
+                entry_price = float(last_price + self.price_tick * self.order_price_offset_ticks)
+                
+                # 发送开仓订单
+                self.open_buy(price=entry_price, volume=float(self.order_volume))
+                logger.info(f"发送做多开仓订单: 价格={entry_price}, 数量={self.order_volume}")
+                
+                # 设置止盈止损目标
+                self._calculate_and_set_targets(entry_price, "开仓")
+                
+        except InvalidOperation as e:
+            logger.error(f"处理Tick数据时出现Decimal错误: {e}")
+        except Exception as e:
+            logger.exception(f"处理Tick数据时出现异常: {e}")
 
     def on_bar(self, bar: BarData) -> None:
         """Process new bar data using Decimal."""

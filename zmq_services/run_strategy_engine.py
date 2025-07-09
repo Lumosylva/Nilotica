@@ -1,5 +1,11 @@
 import os
 import sys
+import time
+import zmq
+from zmq.error import ZMQError
+
+# 添加与行情网关相同的备用端口列表
+FALLBACK_PORTS = [5556, 5565, 5575]
 
 from utils.service_common import runner_args
 
@@ -9,7 +15,7 @@ if project_root not in sys.path:
 
 from utils.config_manager import ConfigManager
 from utils.i18n import _
-from utils.logger import logger, setup_logging
+from utils.logger import logger, setup_logging, DEBUG
 from zmq_services.strategy_engine import StrategyEngine
 
 
@@ -20,9 +26,14 @@ def main():
     Runs the strategy engine service.
     :return:
     """
-    args = runner_args(arg_desc="Run the Strategy Engine Service.")
-
-    setup_logging(service_name=f"StrategyEngineRunner[{args.ctp_env}]", level=args.log_level.upper(), config_env=args.config_env)
+    args = runner_args(arg_desc="Run the Strategy Engine for backtesting or live trading")
+    
+    # 修改默认日志级别为DEBUG
+    if not args.log_level or args.log_level.upper() == "INFO":
+        args.log_level = "DEBUG"
+    
+    setup_logging(service_name=f"StrategyEngineRunner", level=args.log_level.upper(), config_env=args.config_env)
+    logger.info(_("--- Strategy Engine Runner --- PID: {} ---").format(os.getpid()))
 
     # +++ 使用 config_env 初始化 ConfigManager(Initialize ConfigManager with config_env) +++
     config_service = ConfigManager(environment=args.config_env)
@@ -30,27 +41,82 @@ def main():
     logger.info(_("正在初始化策略引擎..."))
 
     # +++ 从 ConfigManage 获取连接 URL 和策略配置(Get connection URLs and strategy config from ConfigManager) +++
-    md_pub_addr_raw = config_service.get_global_config("zmq_addresses.market_data_pub")
-    order_gw_rep_addr_raw = config_service.get_global_config("zmq_addresses.order_gateway_rep")
-    order_gw_pub_addr_raw = config_service.get_global_config("zmq_addresses.order_gateway_pub")
+    md_pub_addr = config_service.get_global_config("zmq_addresses.market_data_pub")
+    order_gw_rep = config_service.get_global_config("zmq_addresses.order_gateway_rep")
+    order_gw_pub = config_service.get_global_config("zmq_addresses.order_gateway_pub")
     strategies_config = config_service.get_strategies_config()
 
     # 检查是否已加载所需配置(Check if required configurations were loaded)
-    if not all([md_pub_addr_raw, order_gw_rep_addr_raw, order_gw_pub_addr_raw]):
+    if not all([md_pub_addr, order_gw_rep, order_gw_pub]):
         logger.critical(_("错误：未能从 global_config.yaml 中获取必要的 ZMQ 地址。请检查配置。"))
         sys.exit(1)
     if not strategies_config:
         logger.critical(_("错误：未能加载策略配置。请检查策略配置是否存在且格式正确。")) # 使用内部路径来显示错误消息(Use internal path for error message)
         sys.exit(1)
 
-    # 将通配符或 0.0.0.0 替换为 localhost 以进行本地连接(Replace wildcard or 0.0.0.0 with localhost for connecting locally)
-    md_pub_addr_connect = md_pub_addr_raw.replace("*", "localhost").replace("0.0.0.0", "localhost")
-    order_gw_rep_addr_connect = order_gw_rep_addr_raw.replace("*", "localhost").replace("0.0.0.0", "localhost")
-    order_gw_pub_addr_connect = order_gw_pub_addr_raw.replace("*", "localhost").replace("0.0.0.0", "localhost")
+    # 尝试连接行情网关，包括备用端口
+    md_pub_client_addr = None
+    
+    # 首先尝试默认端口
+    default_client_addr = md_pub_addr.replace("*", "localhost")
+    logger.info(_("尝试连接行情发布器地址: {}").format(default_client_addr))
+    
+    # 创建临时ZMQ上下文和套接字来测试连接
+    context = zmq.Context()
+    socket = context.socket(zmq.SUB)
+    socket.setsockopt(zmq.LINGER, 0)  # 不等待未发送的消息
+    
+    try:
+        socket.connect(default_client_addr)
+        socket.setsockopt_string(zmq.SUBSCRIBE, "")  # 订阅所有主题
+        socket.RCVTIMEO = 1000  # 设置1秒超时
+        try:
+            socket.recv()  # 尝试接收消息
+            md_pub_client_addr = default_client_addr
+            logger.info(_("成功连接到默认行情发布器地址"))
+        except zmq.Again:
+            # 超时但连接可能是有效的
+            md_pub_client_addr = default_client_addr
+            logger.info(_("连接到默认行情发布器地址，但未收到消息"))
+    except Exception as e:
+        logger.warning(_("连接默认行情发布器地址失败: {}").format(e))
+        
+        # 尝试备用端口
+        original_port = default_client_addr.split(":")[-1]
+        for fallback_port in FALLBACK_PORTS:
+            fallback_addr = default_client_addr.replace(f":{original_port}", f":{fallback_port}")
+            logger.info(_("尝试连接备用行情发布器地址: {}").format(fallback_addr))
+            
+            try:
+                socket.disconnect(default_client_addr)  # 断开之前的连接
+            except:
+                pass
+                
+            try:
+                socket.connect(fallback_addr)
+                socket.setsockopt_string(zmq.SUBSCRIBE, "")
+                try:
+                    socket.recv()  # 尝试接收消息
+                    md_pub_client_addr = fallback_addr
+                    logger.info(_("成功连接到备用行情发布器地址: {}").format(fallback_addr))
+                    break
+                except zmq.Again:
+                    # 超时但连接可能是有效的
+                    md_pub_client_addr = fallback_addr
+                    logger.info(_("连接到备用行情发布器地址，但未收到消息: {}").format(fallback_addr))
+                    break
+            except Exception as e:
+                logger.warning(_("连接备用行情发布器地址失败: {} - {}").format(fallback_addr, e))
+    
+    # 关闭临时套接字和上下文
+    socket.close()
+    context.term()
+    
+    # 检查是否找到可用的行情发布器地址
+    if not md_pub_client_addr:
+        logger.critical(_("错误：无法连接到任何行情发布器地址。请确保行情网关正在运行。"))
+        sys.exit(1)
 
-    logger.info(_("连接行情发布器地址: {}").format(md_pub_addr_connect))
-    logger.info(_("连接订单网关请求地址: {}").format(order_gw_rep_addr_connect))
-    logger.info(_("连接订单回报发布器地址: {}").format(order_gw_pub_addr_connect))
     logger.info(_("加载的策略配置: {}").format(strategies_config)) # Log loaded strategies
 
     # 创建 StrategyEngine 实例，传递获取的配置(Create the StrategyEngine instance, passing the fetched config)
@@ -58,10 +124,11 @@ def main():
     try:
         engine = StrategyEngine(
             config_manager=config_service, # 传递 config_service 实例(Pass config_service instance)
-            gateway_pub_url=md_pub_addr_connect,      # 使用连接地址(Use connect address)
-            order_gw_rep_url=order_gw_rep_addr_connect, # <-- CORRECT KEYWORD
-            order_report_url=order_gw_pub_addr_connect, # 使用连接地址(Use connect address)
-            strategies_config=strategies_config # 使用获取的策略配置(Use fetched strategies config)
+            gateway_pub_url=md_pub_client_addr,  # 使用找到的可用地址
+            order_gw_rep_url=order_gw_rep.replace("*", "localhost"),
+            order_report_url=order_gw_pub.replace("*", "localhost"),
+            strategies_config=strategies_config, # 使用获取的策略配置(Use fetched strategies config)
+            log_level_for_strat_engine=args.log_level.upper()
         )
     except Exception as init_err:
          logger.exception(_("初始化策略引擎时发生严重错误: {}").format(init_err))

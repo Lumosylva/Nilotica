@@ -3,6 +3,8 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 from time import sleep
+import json
+import os
 
 from config import global_vars
 from config.constants.path import GlobalPath
@@ -72,6 +74,37 @@ class CtpGateway(BaseGateway):
         self.td_api: CtpTdApi | None = None # Will be initialized on demand
         self.md_api: CtpMdApi | None = None # Will be initialized on demand
         self.count: int = 0
+
+        # +++ 加载合约交易所映射文件 +++
+        self.instrument_exchange_map: dict = {}
+        #  获取项目根目录的绝对路径 (Adjust if your file structure is different)
+        # current_file_path = os.path.abspath(__file__)
+        # gateway_dir = os.path.dirname(current_file_path) # vnpy_ctp/gateway/
+        # vnpy_ctp_dir = os.path.dirname(gateway_dir) # vnpy_ctp/
+        # project_root_dir = os.path.dirname(vnpy_ctp_dir) # Project Root /
+        # map_file_path = os.path.join(project_root_dir, "config", "project_files", "instrument_exchange_id.json")
+        
+        # --- 使用更可靠的相对路径定位方法 ---
+        #   假定 vnpy_ctp 文件夹与 config 文件夹在同一项目根目录下
+        try:
+            # 获取当前文件（ctp_gateway.py）的目录
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            # 构建到 instrument_exchange_id.json 的相对路径
+            # .. -> vnpy_ctp/
+            # .. -> Project Root/
+            # 然后进入 config/project_files/
+            map_file_path = os.path.join(current_dir, "..", "..", "config", "project_files", "instrument_exchange_id.json")
+            map_file_path = os.path.normpath(map_file_path) # 规范化路径
+
+            if os.path.exists(map_file_path):
+                with open(map_file_path, "r", encoding="utf-8") as f:
+                    self.instrument_exchange_map = json.load(f)
+                self.write_log(f"成功从 {map_file_path} 加载合约交易所映射。")
+            else:
+                self.write_log(f"警告：合约交易所映射文件未找到于 {map_file_path}。回退逻辑可能受限。")
+        except Exception as e:
+            self.write_log(f"加载合约交易所映射文件 {map_file_path} 时出错: {e}")
+        # +++ 结束加载 +++
 
     @staticmethod
     def _prepare_address(address: str) -> str:
@@ -267,14 +300,51 @@ class CtpMdApi(MdApi):
         if not data["UpdateTime"]:
             return
 
-        # 过滤还没有收到合约数据前的行情推送
-        symbol: str = data["InstrumentID"]
-        contract: ContractData = symbol_contract_map.get(symbol, None)
-        if not contract:
+        instrument_id: str = data["InstrumentID"]
+        contract_from_map: ContractData | None = symbol_contract_map.get(instrument_id, None)
+
+        exchange_enum: Exchange | None = None
+        contract_name: str = instrument_id  # Default name to InstrumentID
+
+        if contract_from_map:
+            exchange_enum = contract_from_map.exchange
+            contract_name = contract_from_map.name
+            self.gateway.write_log(f"CtpMdApi: Contract {instrument_id} FOUND in symbol_contract_map. Exchange: {exchange_enum}, Name: {contract_name}")
+        else:
+            self.gateway.write_log(f"CtpMdApi: Contract {instrument_id} NOT in symbol_contract_map. Trying fallback...")
+            ctp_exchange_id_value = data.get("ExchangeID")
+            self.gateway.write_log(f"CtpMdApi: For {instrument_id}, raw data.get(\\'ExchangeID\\') is: {repr(ctp_exchange_id_value)} (Type: {type(ctp_exchange_id_value)})")
+
+            if ctp_exchange_id_value and ctp_exchange_id_value != "": # If CTP provides a non-empty ExchangeID
+                exchange_str = str(ctp_exchange_id_value)
+                exchange_enum = EXCHANGE_CTP2VT.get(exchange_str)
+                if exchange_enum:
+                    self.gateway.write_log(f"CtpMdApi: Fallback 1: Used CTP ExchangeID '{exchange_str}' -> {exchange_enum} for {instrument_id}.")
+                else:
+                    self.gateway.write_log(f"CtpMdApi: Fallback 1: Unknown CTP ExchangeID '{exchange_str}' for {instrument_id}. Available CTP_IDs: {list(EXCHANGE_CTP2VT.keys())}")
+                    # Attempt JSON fallback even if CTP ID is present but unknown
+            
+            # Fallback 2: If no exchange from CTP ID (it was empty, None, or unknown)
+            if not exchange_enum: 
+                json_exchange_str = self.gateway.instrument_exchange_map.get(instrument_id)
+                if json_exchange_str:
+                    try:
+                        exchange_enum = Exchange[json_exchange_str] # Convert string like "CZCE" to Exchange.CZCE
+                        self.gateway.write_log(f"CtpMdApi: Fallback 2: Used JSON map for {instrument_id} -> Exchange '{json_exchange_str}' -> {exchange_enum}.")
+                    except KeyError:
+                        self.gateway.write_log(f"CtpMdApi: Fallback 2: Invalid exchange string '{json_exchange_str}' in JSON map for {instrument_id}.")
+                        # No return here, proceed to final check
+                else:
+                    self.gateway.write_log(f"CtpMdApi: Fallback 2: InstrumentID {instrument_id} not found in JSON map.")
+                    # No return here, proceed to final check
+
+        # Final check: If no exchange could be determined after all fallbacks, drop the tick.
+        if not exchange_enum:
+            self.gateway.write_log(f"CtpMdApi: CRITICAL: Unable to determine exchange for {instrument_id} after all fallbacks. Dropping tick. CTP_ID_was: '{data.get("ExchangeID")}', Mapped_JSON_Exchange: '{self.gateway.instrument_exchange_map.get(instrument_id)}'")
             return
 
         # 对大商所的交易日字段取本地日期
-        if not data["ActionDay"] or contract.exchange == Exchange.DCE:
+        if not data["ActionDay"] or (exchange_enum == Exchange.DCE if exchange_enum else False): # Check resolved exchange
             date_str: str = self.current_date
         else:
             date_str = data["ActionDay"]
@@ -284,10 +354,10 @@ class CtpMdApi(MdApi):
         dt = dt.replace(tzinfo=CHINA_TZ)
 
         tick: TickData = TickData(
-            symbol=symbol,
-            exchange=contract.exchange,
+            symbol=instrument_id,
+            exchange=exchange_enum,         # Use determined/fallback exchange
             datetime=dt,
-            name=contract.name,
+            name=contract_name,             # Use determined/fallback name
             volume=data["Volume"],
             turnover=data["Turnover"],
             open_interest=data["OpenInterest"],
@@ -479,6 +549,7 @@ class CtpTdApi(TdApi):
             self.front_id = data["FrontID"]
             self.session_id = data["SessionID"]
             self.login_status = True
+            global_vars.td_login_success = True
             self.gateway.write_log(_("交易服务器登录成功"))
             ctp_req: dict = {"BrokerID": self.broker_id, "InvestorID": self.userid}
             self.req_id += 1
@@ -528,7 +599,7 @@ class CtpTdApi(TdApi):
             exchange=contract.exchange,
             orderid=orderid,
             direction=DIRECTION_CTP2VT[data["Direction"]],
-            offset=OFFSET_CTP2VT.get(data["CombOffsetFlag"], Offset.NONE),
+            offset=OFFSET_CTP2VT[data["CombOffsetFlag"]],
             price=data["LimitPrice"],
             volume=data["VolumeTotalOriginal"],
             status=Status.REJECTED,
@@ -552,38 +623,12 @@ class CtpTdApi(TdApi):
         :return: 无
         """
         if error['ErrorID'] != 0 and error is not None:
-            self.gateway.write_error(_("结算单确认失败，错误信息为：{}，错误代码为：{}"
-                                       .format(error['ErrorMsg'], error['ErrorID'])), error)
+            error_message = _("结算单确认失败，错误信息为：{}，错误代码为：{}").format(error['ErrorMsg'], error['ErrorID'])
+            self.gateway.write_error(error_message, error)
         else:
             if last:
                 self.gateway.write_log(_("结算信息确认成功"))
-                # 当结算单确认成功后，将登录成功标志设置为True
-                global_vars.td_login_success = True
-
-                # self.gateway.write_log(_("开始查询产品信息"))
-                # # 1. 开始查询产品信息，和更新product_info.ini文件有关
-                # while True:
-                #     self.req_id += 1
-                #     n: int = self.reqQryProduct({}, self.req_id)
-                #     if not n:
-                #         break
-                #     else:
-                #         self.gateway.write_log(_("CtpTdApi：reqQryProduct，代码为 {}，正在重试...").format(n))
-                #         sleep(1)
-                #
                 # self.gateway.write_log(_("开始查询合约信息"))
-                # # 2. 开始查询合约信息，和更新instrument_exchange_id.json有关
-                # while True:
-                #     self.req_id += 1
-                #     n: int = self.reqQryInstrument({}, self.req_id)  # 获取合约信息
-                #     if not n:
-                #         break
-                #     else:
-                #         self.gateway.write_log(_("CtpTdApi：reqQryInstrument，代码为 {}，正在重试...").format(n))
-                #         sleep(1)
-                # # 3. 更新手续费，和更新product_info.ini文件有关
-                # self.gateway.write_log(_("开始更新手续费"))
-                # self.update_commission_rate()
 
     def onRspQryInvestorPosition(self, data: dict, error: dict, reqid: int, last: bool) -> None:
         """
@@ -700,6 +745,7 @@ class CtpTdApi(TdApi):
             if contract:
                 self.gateway.on_contract(contract)
                 symbol_contract_map[contract.symbol] = contract
+                self.gateway.write_log(f"CtpTdApi: 合约 {contract.symbol} 已成功加载到 symbol_contract_map.")
 
             # 2. 更新exchange_id_map，只取非纯数字的合约和6位以内的合约，即只取期货合约
             if not data.get("InstrumentID", "").isdigit() and len(data.get("InstrumentID", "")) <= 6:

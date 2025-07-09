@@ -82,7 +82,7 @@ class StrategyEngine:
         final_service_name = f"{service_name_base}[{strategy_context_name}]" if strategy_context_name else service_name_base
         # Use the passed log_level and config_env from its own config_manager
         setup_logging(service_name=final_service_name, level=log_level_for_strat_engine,
-                      config_env=self.config_service._environment)
+                      config_env=self.config_service.get_environment())
 
         self.is_backtest_mode: bool = False # Default to False for live/normal mode
 
@@ -655,20 +655,26 @@ class StrategyEngine:
                         # --- Event Dispatching (using data_obj and topic_map) ---
                         # +++ Use topic_map for checking prefixes +++
                         if topic_str.startswith(self.topic_map["tick"]): # Check against 'TICK.'
+                            # 添加调试日志，显示接收到的tick主题
+                            logger.info(self._("【调试】接收到tick主题消息: {}").format(topic_str))
+                            
                             if isinstance(data_obj, TickData): 
                                 vt_symbol = getattr(data_obj, 'vt_symbol', None)
                                 if vt_symbol:
+                                    logger.info(self._("【调试】处理TickData对象，vt_symbol={}").format(vt_symbol))
                                     self.process_tick(vt_symbol, data_obj)
                                 else:
                                     logger.warning(self._("主题 {} 上的 TickData 对象缺少'vt_symbol'属性。").format(topic_str))
                             # +++ FIX: Pass dict to reconstruction helper +++
                             elif isinstance(data_obj, dict): # Check if it's a dict
                                  # --- Try to reconstruct TickData from dict ---
+                                 logger.info(self._("【调试】接收到tick字典数据，尝试重建TickData对象"))
                                  tick_object_from_dict = create_tick_from_dict(data_obj)
                                  if tick_object_from_dict:
                                      logger.debug(self._("已成功根据主题 {} 的字典构建 Tick 数据").format(topic_str))
                                      vt_symbol = getattr(tick_object_from_dict, 'vt_symbol', None)
                                      if vt_symbol:
+                                         logger.info(self._("【调试】成功重建TickData对象，vt_symbol={}").format(vt_symbol))
                                          self.process_tick(vt_symbol, tick_object_from_dict)
                                      else:
                                          logger.warning(self._("从字典重建的 TickData 对象缺少'vt_symbol'。主题：{}").format(topic_str))
@@ -840,20 +846,41 @@ class StrategyEngine:
         """
         self.last_tick_time[vt_symbol] = time.time() # Update timeout tracker
         
+        # 添加详细的日志，记录收到的tick数据
+        logger.info(self._("收到 Tick 数据: vt_symbol={}, price={}, time={}").format(
+            vt_symbol, 
+            getattr(tick_object, 'last_price', 'N/A'),
+            getattr(tick_object, 'datetime', 'N/A')
+        ))
+        
         strategies_for_symbol = self.symbol_strategy_map.get(vt_symbol, [])
         if strategies_for_symbol:
+            logger.info(self._("找到 {} 个需要处理此tick的策略: {}").format(
+                len(strategies_for_symbol),
+                [s.strategy_name for s in strategies_for_symbol]
+            ))
             for strategy in strategies_for_symbol:
                 if strategy.trading: 
                     try:
                         # +++ 将Tick数据传递给策略的BarGenerator (如果存在) +++
                         if strategy.bar_generator:
                             strategy.bar_generator.update_tick(tick_object)
+                            logger.debug(self._("已将Tick数据传递给策略'{}'的BarGenerator").format(strategy.strategy_name))
                         # +++ 结束 +++
                         
-                        logger.debug(self._("process_tick：为 vt_symbol'{}'调用策略'{}'on_tick。").format(strategy.strategy_name, vt_symbol))
+                        logger.info(self._("为策略'{}'传递 vt_symbol='{}' 的Tick数据").format(strategy.strategy_name, vt_symbol))
+                        # 添加调试日志，记录调用on_tick前的信息
+                        logger.info(self._("【调试】即将调用策略'{}'的on_tick方法，tick价格={}").format(
+                            strategy.strategy_name, getattr(tick_object, 'last_price', 'N/A')))
+                        
                         strategy.on_tick(tick_object)
+                        
+                        # 添加调试日志，记录on_tick调用后的信息
+                        logger.info(self._("【调试】已完成调用策略'{}'的on_tick方法").format(strategy.strategy_name))
                     except Exception as e:
                          logger.exception(self._("策略 {} 在 on_tick 处理 {} 时出错: {}").format(strategy.strategy_name, vt_symbol, e))
+        else:
+            logger.warning(self._("没有找到处理合约{}的策略").format(vt_symbol))
 
     def process_order_update(self, order_object: OrderData):
         """

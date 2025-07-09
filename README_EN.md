@@ -24,7 +24,7 @@ _✨ A futures quantitative trading system based on vnpy ✨_
 
 ------
 
-**This project is still under development, please do not use it in a real production environment. **
+**This project has been suspended. This project is experimental in nature. Please do not use it in a real production environment. Please pay attention to the new project https://github.com/Homalos/Homalos **
 
 ### **1. Introduction**
 

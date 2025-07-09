@@ -57,6 +57,15 @@ class ConfigManager:
         setup_logging(service_name=self.__class__.__name__)
         self._load_configs()
 
+
+    def get_environment(self) -> str:
+        """
+        返回当前设置的环境名称。
+
+        Returns the currently set environment name.
+        """
+        return self._environment
+
     @staticmethod
     def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """
