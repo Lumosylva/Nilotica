@@ -2,140 +2,136 @@
   <a href="https://nilotica.github.io/"><img src="assets/logo.png" width="350" height="274"  alt="nilotica"></a>
 </p>
 
-<div align="center">
+<h1 align="center">Nilotica</h1>
 
-# Nilotica
+<p align="center">
+_✨ A futures quantitative trading system based on vnpy ✨_
+</p>
 
-中文 | [ENGLISH](README_EN.md)
-
-_✨ 基于 vnpy 的期货量化交易系统 ✨_
-
-</div>
+<p align="center">
+  English |
+  <a href="README_CN.md">简体中文</a>
+</p>
 
 ![GitHub License](https://img.shields.io/github/license/Lumosylva/Nilotica)&ensp;![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FLumosylva%2FNilotica%2Fmain%2Fpyproject.toml)&ensp;![GitHub Release](https://img.shields.io/github/v/release/Lumosylva/Nilotica)&ensp;![GitHub Release Date](https://img.shields.io/github/release-date/Lumosylva/Nilotica)&ensp;[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lumosylva/Nilotica)&ensp;[![QQ Group#1](https://img.shields.io/badge/QQ%20Group%231-Join-blue)](https://qun.qq.com/universal-share/share?ac=1&authKey=dzGDk%2F%2Bpy%2FwpVyR%2BTrt9%2B5cxLZrEHL793cZlFWvOXuV5I8szMnOU4Wf3ylap7Ph0&busi_data=eyJncm91cENvZGUiOiI0NDYwNDI3NzciLCJ0b2tlbiI6IlFrM0ZhZmRLd0xIaFdsZE9FWjlPcHFwSWxBRFFLY2xZbFhaTUh4K2RldisvcXlBckZ4NVIrQzVTdDNKUFpCNi8iLCJ1aW4iOiI4MjEzMDAwNzkifQ%3D%3D&data=O1Bf7_yhnvrrLsJxc3g5-p-ga6TWx6EExnG0S1kDNJTyK4sV_Nd9m4p-bkG4rhj_5TdtS5lMjVZRBv4amHyvEA&svctype=4&tempid=h5_group_info) 
 
 <p align="center">
-  <a href="https://nilotica.github.io/">文档1</a>
-  ·
-  <a href="https://deepwiki.com/Lumosylva/Nilotica">文档2</a>
-  ·
-  <a href="https://nilotica.github.io/guide/quick-start">快速上手</a>
+    <a href="https://nilotica.github.io/">Document 1</a>
+    ·
+    <a href="https://deepwiki.com/Lumosylva/Nilotica">Document 2</a>
+    ·
+    <a href="https://nilotica.github.io/guide/quick-start">Getting started quickly</a>
 </p>
 
 ------
 
-**本项目已暂停开发，此项目为实验性质，请勿在实盘生产环境使用。请关注新项目https://github.com/Homalos/Homalos**
+**This project has been suspended. This project is experimental in nature. Please do not use it in a real production environment. Please pay attention to the new project https://github.com/Homalos/Homalos **
 
-### **1. 前言**
+### **1. Introduction**
 
-本项目以 [vnpy](https://github.com/vnpy/vnpy) 与 [vnpy_ctp](https://github.com/vnpy/vnpy_ctp) 为基石，vnpy 作为开源量化交易平台开发框架，凭借丰富组件、灵活架构，为策略设计、交易执行全方位支撑；vnpy_ctp 则深度对接国内期货市场，确保交易信号精准传递、交易执行高效顺畅。
+This project is based on [vnpy](https://github.com/vnpy/vnpy) and [vnpy_ctp](https://github.com/vnpy/vnpy_ctp). As an open source quantitative trading platform development framework, vnpy provides all-round support for strategy design and transaction execution with rich components and flexible architecture; vnpy_ctp is deeply connected to the domestic futures market to ensure accurate transmission of trading signals and efficient and smooth transaction execution.
 
-项目致力于降低国内期货量化交易准入门槛，助力手动交易者轻松跨越至量化交易领域，使其摆脱繁琐技术束缚，心无旁骛投身策略创意构思与优化打磨，尽情探索量化交易无限可能，畅享技术赋能交易升级新体验。
+The project is committed to lowering the entry threshold for domestic futures quantitative trading, helping manual traders to easily cross over to the field of quantitative trading, freeing them from the constraints of cumbersome technology, and focusing on strategy creative conception and optimization, exploring the infinite possibilities of quantitative trading, and enjoying the new experience of technology-enabled trading upgrades.
 
-目前系统已实现的功能：
+The functions currently implemented by the system are:
 
-- 行情网关
-- 订单执行网关
-- 策略引擎
-- 风控管理
-- 数据记录
-- 策略回测
-- 行情回放
+- Market Gateway
+- Order Execution Gateway
+- Strategy Engine
+- Risk control management
+- Data Recording
+- Strategy backtesting
+- Market playback
 
-### **2. 基础环境**
+### **2. Basic Environment**
 
-- **Python** ：`3.12.9`版本
+- **Python** : `3.12.9` version
+- **Toolchain**: uv + hatch + setuptools
+- **vnpy** : version `4.0.0`
+- **vnpy_ctp**: `6.7.7.1` version (developed based on the `6.7.7` interface package of CTP futures version, the interface comes with the dll file of [penetrating real disk environment])
+- If you need to compile other versions of CTP C++, you need to make sure you have installed `Visual Studio` (`Windows`), `GCC` (`Linux`) before executing the following command
 
-- **工具链**：uv + hatch + setuptools
+- If you use the CTP version of this system directly, you do not need to perform the build process in step 4 below. You can directly download the `whl` file in the [Releases](https://github.com/Lumosylva/Nilotica/releases) package, and then install it with `uv pip install`
 
-- **vnpy** ：`4.0.0`版本
+- **Note**: Currently all codes are only tested in Windows environment, and have not been tested under Linux
 
-- **vnpy_ctp**： `6.7.7.1`版本（基于CTP期货版的`6.7.7`接口封装开发，接口中自带的是【穿透式实盘环境】的dll文件）
+### **3. Description**
 
-- 若需要其他版本CTP C++ 编译，需要在执行下述命令之前请确保已经安装了`Visual Studio`（`Windows`）、`GCC`（`Linux`）
+This project modified some source code files in the vnpy library and used some key third-party libraries:
 
-- 若直接使用本系统的CTP版本，则不需要进行下方第4步的构建流程，直接下载 [Releases](https://github.com/Lumosylva/Nilotica/releases) 包中 `whl`文件，然后 `uv pip install` 安装即可
+* Python project management tool: uv
+* Python project building tool: hatch
+* Internationalization (i18n): Babel
+* C++ and Python binding: pybind11
+* Stub generation: pybind11-stubgen
 
-- **注意**：目前所有代码仅在 Windows 环境下进行测试，Linux 下并未做测试
+### **4. Environment Configuration**
 
-### **3. 说明**
+This project uses `uv` to manage Python virtual environments and dependent packages, and `hatch` as a build tool
 
-本项目修改了 vnpy 库中部分源代码文件，使用到的一些关键的第三方库：
-* Python项目管理工具：uv
-* Python项目构建工具：hatch
-* 国际化（i18n）：Babel
-* C++ 与 Python 绑定：pybind11
-* 存根生成：pybind11-stubgen
+- Install uv
 
+On Windows
 
-### **4. 环境配置**
+```bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
 
-本项目使用`uv`管理Python虚拟环境及依赖的软件包，`hatch`作为构建工具
+On Linux
 
-- 安装uv
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-   On Windows
+- Install the specified version of Python
 
-   ```bash
-   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
+```bash
+uv python install 3.12.9
+```
 
-   On Linux
+- Use the `uv sync` command to let `uv` automatically create a Python virtual environment and download dependent packages according to the configuration in `pyproject.toml`
 
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+```bash
+uv sync
+```
 
-- 安装指定版本 Python
+Or manually create a virtual environment without using the `uv sync` command
 
-   ```bash
-   uv python install 3.12.9
-   ```
+```bash
+uv venv --python 3.12.9 .venv
+```
 
-- 使用 `uv sync`命令让`uv`根据`pyproject.toml`中的配置，自动进行Python虚拟环境的创建和依赖包的下载
+Activate the virtual environment
 
-   ```bash
-   uv sync
-   ```
+```bash
+.venv\Scripts\activate
+```
 
-   或不使用`uv sync`命令，手动创建虚拟环境
+- Install ta_lib library
 
-   ```bash
-   uv venv --python 3.12.9 .venv
-   ```
+  On Windows
 
-   激活虚拟环境
+```bash
+install_ta_lib.bat
+```
 
-   ```bash
-   .venv\Scripts\activate
-   ```
+​        On Linux
 
-- 安装ta_lib库
+```bash
+install_ta_lib.bat
+```
 
-   On Windows
+### **5. Compile VNPY_CTP**
 
-   ```bash
-   install_ta_lib.bat
-   ```
+When `vnpy_ctp` needs to be compiled, executing the `hatch build` command will use the `hatch_build.py` build script under the project vnpy_ctp\api\ to compile the vnctpmd and vnctptd modules into .pyd files (on Windows) or .so files (on Linux), and generate the corresponding Python interface stub files (.pyi). The script uses the pybind11 library to simplify the binding process between C++ and Python, and performs the build operation through setuptools and hatchling.
 
-   On Linux
+When `vnpy_tts` needs to be compiled, please modify the `path` of the `[tool.hatch.build.hooks.custom]` build script in `pyproject.toml` to `hatch_build_tts.py`, and then execute `hatch build` to compile a similar process as above.
 
-   ```bash
-   install_ta_lib.sh
-   ```
+#### **(1) Clean up old builds**
 
+Open the terminal and enter the project root directory, delete the `dist` and `build` directories
 
-### **5. 编译VNPY_CTP**
-
-需要对 vnpy_ctp 编译时，执行 hatch build 命令将会在项目 vnpy_ctp\api\ 下利用 hatch_build.py 构建脚本，编译 vnctpmd 和 vnctptd 模块为 .pyd 文件（在Windows上）或.so文件（在Linux上），并生成对应的 Python 接口存根文件（.pyi）。该脚本使用了 pybind11 库来简化 C++ 与 Python 之间的绑定过程，并通过 setuptools 和 hatchling 来执行构建操作。
-
-需要对 vnpy_tts 编译时，请修改 pyproject.toml 中 [tool.hatch.build.hooks.custom] 构建脚本的 `path` 为 hatch_build_tts.py ，再执行 hatch build 可编译同上述类似的过程。
-
-#### **(1) 清理旧的构建**
-
-打开终端进入项目根目录，删除`dist`、`build`目录
-
-PowerShell 
+PowerShell
 
 ```bash
 Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
@@ -154,30 +150,30 @@ Bash
 rm -rf dist build
 ```
 
-#### **(2) 执行构建**
+#### **(2) Execute the build**
 
-方式一：
+Method 1:
 
 ```bash
 build.bat
 ```
 
-或者
+or
 
 ```bash
 build.sh
 ```
 
-方式二：
+Method 2:
 
-进入项目根目录，将ta-lib源文件目录加入临时环境变量（设置为你自己的实际路径），再执行hatch build
+Enter the project root directory, add the ta-lib source file directory to the temporary environment variable (set it to your actual path), and then execute hatch build
 
 ```bash
 set TA_INCLUDE_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\include
 set TA_LIBRARY_PATH=D:\Project\PycharmProjects\Nilotica_dev\ta-lib\lib
 ```
 
-或
+or
 
 ```bash
 export TA_INCLUDE_PATH="$PATH:/ta-lib/include"
@@ -188,244 +184,244 @@ export TA_LIBRARY_PATH="$PATH:/ta-lib/lib"
 hatch build
 ```
 
-构建效果如下：
+The build effect is as follows:
 
 <img src="assets/hatch_build1.png" style="zoom:67%;" />
 
 <img src="assets/hatch_build2.png" style="zoom:67%;" />
 
-### **6. 项目结构**
+### **6. Project Structure**
 
 ```reStructuredText
 .
-├── assets - 图片资源文件
-├── bat - Windows BAT服务启动脚本
-│   ├── 1_run_market_gateway.bat - 行情网关启动脚本
-│   ├── 2_run_order_gateway.bat - 订单执行网关启动脚本
-│   ├── 3_run_strategy_engine.bat - 策略引擎启动脚本
-│   ├── 4_run_risk_manager.bat - 风控管理启动脚本
-│   ├── 5_run_data_recorder.bat - 数据记录启动脚本
-│   └── 6_run_backtest.bat - 策略回测demo脚本
-├── config - 项目配置目录
-│   ├── constants - 常量目录
-│   │   ├── params.py - 常量
-│   │   └── path.py - 路径常量
-│   └── project_files - 存放节假日、合约乘数和费率、合约和交易所映射等文件目录。
-│   │   ├── backtest_config.yaml - 回测参数配置
-│   │   ├── backtest_strategies_setting.json - 回测策略参数配置
-│   │   ├── dev_config.yaml - 开发模式配置
-│   │   ├── global_config.yaml - 全局配置
-│   │   └── prod_config.yaml - 生产模式配置
-├── locales - 国际化相关文件
-│   ├── en/LC_MESSAGES - 英文翻译文件
-│   ├── compile_translations_util.py - 国际化编译脚本
-│   ├── language.json - 中英映射文件
-│   ├── messages.pot - 国际化相关文件
-│   └── translate_text_fill_util.py - 帮助填充翻译文本的脚本
-├── ta-lib - ta-lib库源文件
-├── utils - 工具类包，包含日志、路径等
-│   ├── logger - 日志记录工具
-│   ├── path - 路径工具
-│   ├── config_manager.py - 配置管理
-│   ├── config_models.py - 含PathsConfig、ZmqAddressesConfig、LoggingConfig、GlobalConfigStructure Pydantic 模型。
-│   ├── converter.py - 对象转换为 msgpack 可序列化的工具。
-│   └── i18n.py - 国际化相关工具
-├── vnpy - vnpy官方的核心库，主要功能是事件驱动引擎。
-├── vnpy_ctp - vnpy官方的ctp库，主要功能是提供底层与simnow和实盘行情和交易服务器交互的接口。
-├── vnpy_tts - vnpy官方的tts库，主要功能是提供底层与tts和实盘行情和交易服务器交互的接口。
-├── zmq_services - 系统核心，包括行情网关、订单执行网关、策略订阅器、风控管理、数据记录、策略回测、行情回放。
-│   ├── backtester - 回测目录
-│   │   ├── data_player.py - 数据回放
-│   │   ├── performance.py - 计算性能指标，回测性能报告
-│   │   ├── run_backtest.py - 运行回测脚本
-│   │   ├── run_data_player.py - 运行数据回放脚本
-│   │   └── simulation_engine.py - 模拟引擎
-│   ├── strategies - 策略存放位置
-│   ├── recorded_data - accounts、tick、order、trader数据本地存储目录
-│   ├── dev_recorded_data - 开发模式数据存放目录
-│   ├── data_recorder.py - 数据记录器
-│   ├── market_data_gateway.py - 行情网关
-│   ├── order_execution_gateway.py - 订单执行网关
-│   ├── risk_manager.py - 风控管理器
-│   ├── rpc_client_test.py - 下单测试脚本
-│   ├── run_data_recorder.py - 数据记录器启动脚本
-│   ├── run_market_gateway.py - 行情网关启动脚本
-│   ├── run_order_gateway.py - 订单执行网关启动脚本
-│   ├── run_risk_manager.py - 风控管理器启动脚本
-│   ├── run_strategy_engine.py - 策略引擎启动脚本
-│   ├── strategy_base.py - 策略基类
-│   ├── zmq_base.py - 用于管理 ZMQ Context 和 PUB Socket的基类
-│   └── strategy_engine.py - 策略引擎
-├── .python-version - 项目使用的Python版本号，由uv自动生成不用手动编辑。
-├── CHANGELOG.md - 系统版本更新日志
-├── CODE_OF_CONDUCT.md - 行为守则
-├── LICENSE.txt - license文件
-├── README.md - 项目中文说明
-├── README_EN.md - 项目英文说明
-├── __init__.py - 项目的版本号
-├── babel.cfg - babel翻译的配置文件
-├── build.bat - Windows项目自动构建脚本
-├── build.sh - Linux项目自动构建脚本
-├── hatch_build.py - vnpy_ctp构建脚本负责编译 C++ 扩展
-├── hatch_build_tts.py - vnpy_tts构建脚本负责编译 C++ 扩展
-├── install_ta_lib.bat - Windows安装ta-lib 0.6.3的脚本
-├── install_ta_lib.sh - Linux安装ta-lib 0.6.3的脚本
-├── locales.bat - 辅助国际化的脚本
-├── locales.sh - 辅助国际化的脚本
-├── main.py - 项目主文件，暂时无定义
-├── pyproject.toml - 项目配置文件，由uv自动生成，用于定义项目的主要依赖、元数据、构建系统等信息。
-├── run.bat - Windows脚本，一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
-├── run.sh - Linux脚本，一键启动行情网关、订单执行网关、策略订阅器、风控管理、数据记录脚本
-└── uv.lock - 记录项目的所有依赖，由uv自动管理，不用手动编辑。
+├── assets - Image resource files
+├── bat - Windows BAT service startup script
+│ ├── 1_run_market_gateway.bat - market gateway startup script
+│ ├── 2_run_order_gateway.bat - order execution gateway startup script
+│ ├── 3_run_strategy_engine.bat - strategy engine startup script
+│ ├── 4_run_risk_manager.bat - risk control management startup script
+│ ├── 5_run_data_recorder.bat - data recording startup script
+│ └── 6_run_backtest.bat - strategy backtesting demo script
+├── config - project configuration directory
+│ ├── constants - constant directory
+│ │ ├── params.py - constants
+│ │ └── path.py - path constants
+│ └── project_files - File directories for storing holidays, contract multipliers and rates, contract and exchange mapping, etc.
+│ │ ├── backtest_config.yaml - Backtest parameter configuration
+│ │ ├── backtest_strategies_setting.json - Backtest strategy parameter configuration
+│ │ ├── dev_config.yaml - Development mode configuration
+│ │ ├── global_config.yaml - Global configuration
+│ │ └── prod_config.yaml - Production mode configuration
+├── locales - internationalization related files
+│ ├── en/LC_MESSAGES - English translation file
+│ ├── compile_translations_util.py - Internationalization compilation script
+│ ├── language.json - Chinese-English mapping file
+│ ├── messages.pot - Internationalization related files
+│ └── translate_text_fill_util.py - Script to help fill in translation text
+├── ta-lib - ta-lib library source file
+├── utils - Tool package, including logs, paths, etc.
+│ ├── logger - Logging tool
+│ ├── path - Path tool
+│ ├── config_manager.py - Configuration management
+│ ├── config_models.py - Contains PathsConfig, ZmqAddressesConfig, LoggingConfig, GlobalConfigStructure Pydantic models.
+│ ├── converter.py - Tools for converting objects to msgpack serializable.
+│ └── i18n.py - internationalization related tools
+├── vnpy - vnpy's official core library, the main function is the event-driven engine.
+├── vnpy_ctp - vnpy's official ctp library, the main function is to provide the underlying interface for interaction with simnow and real market quotation and trading server.
+├── vnpy_tts - vnpy's official tts library, the main function is to provide the underlying interface for interaction with tts and real market quotation and trading server.
+├── zmq_services - the core of the system, including market gateway, order execution gateway, strategy subscriber, risk control management, data recording, strategy backtesting, market playback.
+│ ├── backtester - backtest directory
+│ │ ├── data_player.py - data playback
+│ │ ├── performance.py - calculate performance indicators, backtest performance report
+│ │ ├── run_backtest.py - run backtest script
+│ │ ├── run_data_player.py - run data playback script
+│ │ └── simulation_engine.py - simulation engine
+│ ├── strategies - strategy storage location
+│ ├── recorded_data - accounts, tick, order, trader data local storage directory
+│ ├── dev_recorded_data - development mode data storage directory
+│ ├── data_recorder.py - data recorder
+│ ├── market_data_gateway.py - market gateway
+│ ├── order_execution_gateway.py - order execution gateway
+│ ├── risk_manager.py - Risk Control Manager
+│ ├── rpc_client_test.py - Order test script
+│ ├── run_data_recorder.py - Data recorder startup script
+│ ├── run_market_gateway.py - Market gateway startup script
+│ ├── run_order_gateway.py - Order execution gateway startup script
+│ ├── run_risk_manager.py - Risk Control Manager startup script
+│ ├── run_strategy_engine.py - Strategy engine startup script
+│ ├── strategy_base.py - Strategy base class
+│ ├── zmq_base.py - Base class for managing ZMQ Context and PUB Socket
+│ └── strategy_engine.py - Strategy engine
+├── .python-version - Python version number used by the project, automatically generated by uv and does not need to be manually edited.
+├── CHANGELOG.md - System version update log
+├── CODE_OF_CONDUCT.md - Code of Conduct
+├── LICENSE.txt - License file
+├── README.md - Project description in Chinese
+├── README_EN.md - Project description in English
+├── __init__.py - Project version number
+├── babel.cfg - configuration file for babel translation
+├── build.bat - Windows project automatic build script
+├── build.sh - Linux project automatic build script
+├── hatch_build.py - The vnpy_ctp build script is responsible for compiling the C++ extension
+├── hatch_build_tts.py - The vnpy_tts build script is responsible for compiling the C++ extension
+├── install_ta_lib.bat - Windows installation script for ta-lib 0.6.3
+├── install_ta_lib.sh - Linux installation script for ta-lib 0.6.3
+├── locales.bat - script to assist internationalization
+├── locales.sh - script to assist internationalization
+├── main.py - Main project file, no definition for now
+├── pyproject.toml - Project configuration file, automatically generated by uv, used to define the main dependencies, metadata, build system and other information of the project.
+├── run.bat - Windows script, one-click start of the market gateway, order execution gateway, strategy subscriber, risk control management, data recording script
+├── run.sh - Linux script, one-click start of the market gateway, order execution gateway, strategy subscriber, risk control management, data recording script
+└── uv.lock - Records all dependencies of the project, automatically managed by uv, no manual editing required.
 ```
 
-### **7. 服务运行展示**
+### **7. Service operation display**
 
-1. 运行行情网关：
+1. Run the market gateway:
 
-   <img src="assets/01_run_market_gateway.png" style="zoom:67%;" />
+<img src="assets/01_run_market_gateway.png" style="zoom:67%;" />
 
-2. 运行订单执行网关：
+2. Run the order execution gateway:
 
-   <img src="assets/02_run_order_gateway1.png" style="zoom:67%;" />
+<img src="assets/02_run_order_gateway1.png" style="zoom:67%;" />
 
-   <img src="assets/03_run_order_gateway2.png" style="zoom:67%;" />
+<img src="assets/03_run_order_gateway2.png" style="zoom:67%;" />
 
-3. 运行策略引擎：
+3. Run the strategy engine:
 
-   <img src="assets/04_run_strategy_engine1.png" style="zoom:67%;" />
+<img src="assets/04_run_strategy_engine1.png" style="zoom:67%;" />
 
-   <img src="assets/05_run_strategy_engine2.png" style="zoom:67%;" />
+<img src="assets/05_run_strategy_engine2.png" style="zoom:67%;" />
 
-4. 运行风控管理：
+4. Operational risk control management:
 
-   <img src="assets/06_run_risk_manager1.png" style="zoom:67%;" />
+<img src="assets/06_run_risk_manager1.png" style="zoom:67%;" />
 
-   <img src="assets/07_run_risk_manager2.png" style="zoom:67%;" />
+<img src="assets/07_run_risk_manager2.png" style="zoom:67%;" />
 
-5. 运行数据记录：
+5. Operation data recording:
 
-   <img src="assets/08_run_data_recorder.png" style="zoom:67%;" />
+<img src="assets/08_run_data_recorder.png" style="zoom:67%;" />
 
-6. 运行回测
+6. Run the backtest
 
-   <img src="assets/09_run_backtest1.png" style="zoom:67%;" />
+<img src="assets/09_run_backtest1.png" style="zoom:67%;" />
 
-   <img src="assets/10_run_backtest2.png" style="zoom:67%;" />
+<img src="assets/10_run_backtest2.png" style="zoom:67%;" />
 
-   <img src="assets/11_run_backtest3.png" style="zoom:67%;" />
-   
-   <img src="assets/12_run_backtest4.png" style="zoom:67%;" />
-   
-   <img src="assets/13_run_backtest5.png" style="zoom:67%;" />
-   
-   7. 数据回放
-   
-      <img src="assets/14_run_data_player1.png" style="zoom:67%;" />
-   
-      <img src="assets/15_run_data_player2.png" style="zoom:67%;" />
+<img src="assets/11_run_backtest3.png" style="zoom:67%;" />
 
-### **8. 项目进度**
+<img src="assets/12_run_backtest4.png" style="zoom:67%;" />
 
-| 支持 | 功能                                                         |
-| :--: | ------------------------------------------------------------ |
-|  ✅   | **行情网关**：连接vnpy中 CTP 网关，将行情以订阅方式发送出去。 |
-|  ✅   | **订单执行网关**：处理来自策略引擎的订单请求，将请求发送到 vnpy 中 CTP 网关。 |
-|  ✅   | **策略引擎**：导入策略和执行策略，将订单请求发送到订单执行网关，打印订单回报和成交回报。 |
-|  ✅   | **风控管理**：维护持仓更新，持仓限制相关警报。               |
-|  ✅   | **数据记录**：记录tick、order、trade、accounts、gateway_logs数据到本地。 |
-|  ✅   | **策略回测**：利用数据记录器记录的历史数据对策略回测。       |
-|  ✅   | **行情回放**：回放利用数据记录器记录的历史数据。             |
-|  ❎   | 国际化：支持中英文。                                         |
-|  ❎   | 可视化：策略、权益曲线、回撤等用web绘制出来。                |
-|  ❎   | 参数化配置：将初始资金、无风险利率、年化天数等参数移到配置文件或命令行参数中。 |
-|  ❎   | 性能报告：优化性能报告的计算或显示                           |
-|  ❎   | 更成熟的风控管理                                             |
-|  ❎   | 策略优化器                                                   |
+<img src="assets/13_run_backtest5.png" style="zoom:67%;" />
 
-开发中......
+ 7. Data player
 
-策略回测示例
+    <img src="assets/14_run_data_player1.png" style="zoom:67%;" />
 
-1. 对今天的数据运行回测，以最大速度
+    <img src="assets/15_run_data_player2.png" style="zoom:67%;" />
 
-   ```
-   python -m zmq_services.backtester.run_backtest
-   ```
+### **8. Project Progress**
 
-2. 对指定日期 20250409 运行回测
+| Support | Function                                                     |
+| :-----: | ------------------------------------------------------------ |
+|    ✅    | **Market Gateway**: Connect to the CTP Gateway in vnpy and send the market information as a subscription. |
+|    ✅    | **Order Execution Gateway**: Process order requests from the strategy engine and send the request to the CTP Gateway in vnpy. |
+|    ✅    | **Strategy Engine**: Import strategies and execute strategies, send order requests to the order execution gateway, print order reports and transaction reports. |
+|    ✅    | **Risk Control Management**: Maintain position updates and position limit related alarms. |
+|    ✅    | **Data Recording**: Record tick, order, trade, accounts, gateway_logs data locally. |
+|    ✅    | **Strategy Backtesting**: Backtest strategies using historical data recorded by the data recorder. |
+|    ✅    | **Market Replay**: Replay historical data recorded by the data recorder. |
+|    ❎    | Internationalization: Supports Chinese and English.          |
+|    ❎    | Visualization: Strategies, equity curves, drawdowns, etc. are drawn using the web. |
+|    ❎    | Parameterized configuration: Move parameters such as initial funds, risk-free interest rates, and annualized days to configuration files or command line parameters. |
+|    ❎    | Performance report: Optimize the calculation or display of performance reports |
+|    ❎    | More mature risk control management                          |
+|    ❎    | Strategy optimizer                                           |
 
-   ```
-   python -m zmq_services.backtester.run_backtest --date 20250409
-   ```
+Under development......
 
-3. 对指定日期 20250409 运行回测，在开发模式下
+Strategy Backtesting
 
-   ```bash
-   python -m zmq_services.backtester.run_backtest --date 20250506 --config-env dev
-   ```
+1. Run backtest on today's data, at maximum speed
 
-4. 对指定日期 20250409 运行回测，指定日志输出级别
+     ```
+     python -m zmq_services.backtester.run_backtest
+     ```
 
-   ```
-   python -m zmq_services.backtester.run_backtest --date 20250508 --log-level DEBUG
-   ```
+2. Run backtest on a specific date 20250409
 
-行情回放示例
+     ```
+     python -m zmq_services.backtester.run_backtest --date 20250409
+     ```
 
-1. 回放今天的数据，以最大速度。
+3. Run backtest on a specific date 20250409, in development mode
 
-   ```bash
-   python -m zmq_services.backtester.run_data_player
-   ```
+     ```
+     python -m zmq_services.backtester.run_backtest --date 20250506 --config-env dev
+     ```
 
-3. 回放指定日期 (例如 20250409) 的数据，以接近实时的速度 (1x)
+4. Run backtest on a specific date 20250409, specifying the log output level
 
-   ```bash
-   python -m zmq_services.backtester.run_data_player --date 20250506 --speed 1
-   ```
+     ```bash
+     python -m zmq_services.backtester.run_backtest --date 20250508 --log-level DEBUG
+     ```
 
-4. 回放指定日期的数据，以 10 倍速度
+Market playback
 
-   ```bash
-   python -m zmq_services.backtester.run_data_player --date 20250506 --speed 10
-   ```
+1. Replay today's data at maximum speed.
 
-5. 从不同路径加载数据回放
+     ```bash
+     python -m zmq_services.backtester.run_backtest
+     ```
 
-   ```bash
-   python -m zmq_services.backtester.run_data_player --date 20250506 --path /path/to/other/data
-   ```
+3. Play back data from a specified date (e.g. 20250409) at near real-time speed (1x)
 
-### **9. 更新日志**
+     ```bash
+     python -m zmq_services.backtester.run_backtest --date 20250506 --speed 1
+     ```
+
+  4. Play back the data of the specified date at 10 times the speed
+
+     ```bash
+     python -m zmq_services.backtester.run_data_player --date 20250506 --speed 10
+     ```
+
+  5. Load data from different paths for playback
+
+     ```bash
+     python -m zmq_services.backtester.run_data_player --date 20250506 --path /path/to/other/data
+     ```
+
+### **9. Update log**
 
 [CHANGELOG.md](CHANGELOG.md)
 
-### **10. 交流**
+### **10. Communication**
 
-QQ交流群：`446042777`(澄明期货研究)
+QQ exchange group: `446042777` (Chengming Futures Research)
 
-gitcode地址：https://gitcode.com/Nilotica/Nilotica
+Gitcode address: https://gitcode.com/Nilotica/Nilotica
 
-gitee地址：https://gitee.com/nilotica/Nilotica
+Gitee address: https://gitee.com/nilotica/Nilotica
 
-github地址：https://github.com/Lumosylva/Nilotica
+GitHub address: https://github.com/Lumosylva/Nilotica
 
-### **11. 免责声明**
+### **11. Disclaimer**
 
-1. **信息仅供参考**
-   本系统所提供的信息、数据、分析、建议或其他内容（以下统称为“信息”）仅供参考，不构成任何投资建议或交易指导。用户在使用本系统时，应充分认识到期货交易的高风险性，并自行承担由此产生的任何风险和后果。
-2. **不保证准确性或完整性**
-   本系统所提供的信息可能来源于公开市场数据、第三方机构或其他渠道。尽管我们尽力确保信息的准确性，但无法保证其完全无误或实时更新。用户应自行核实相关信息，并对基于该信息所做出的决策负责。
-3. **不承担任何责任**
-   用户因使用本系统或依赖本系统所提供的信息而产生的任何直接或间接损失（包括但不限于交易损失、数据丢失、系统故障等），本系统开发者或提供方均不承担任何法律责任。
-4. **系统风险与局限性**
-   本系统可能存在技术故障、数据延迟、模型误差或其他不可预见的问题。用户应充分认识到量化系统的局限性，并在使用过程中保持谨慎。本系统无法保证在所有市场条件下均能有效运行。
-5. **用户自主决策**
-   用户在使用本系统时，应基于自身的投资目标、风险承受能力和市场判断做出独立决策。本系统不对用户的交易行为或投资结果承担任何形式的责任。
-6. **遵守法律法规**
-   用户在使用本系统时，应遵守相关法律法规及交易所规则。如因用户违反法律法规或交易所规则而产生的任何法律后果，均由用户自行承担。
-7. **免责声明的修改权**
-   本免责声明的最终解释权归本系统开发者或提供方所有。我们保留随时修改或更新本免责声明的权利，恕不另行通知。
+1. **Information is for reference only**
+The information, data, analysis, advice or other content (hereinafter collectively referred to as "Information") provided by this system is for reference only and does not constitute any investment advice or trading guidance. When using this system, users should fully realize the high risk of futures trading and bear any risks and consequences arising therefrom.
+2. **NO WARRANTY OF ACCURACY OR COMPLETENESS**
+The information provided by this system may come from public market data, third-party institutions or other channels. Although we do our best to ensure the accuracy of the information, we cannot guarantee that it is completely error-free or up-to-date. Users should verify the relevant information on their own and are responsible for the decisions made based on such information.
+3. **No liability**
+The developer or provider of this system shall not bear any legal responsibility for any direct or indirect losses (including but not limited to transaction losses, data loss, system failure, etc.) caused by the user's use of this system or reliance on the information provided by this system.
+4. **System risks and limitations**
+This system may have technical failures, data delays, model errors or other unforeseen problems. Users should be fully aware of the limitations of the quantification system and exercise caution in their use. This system cannot be guaranteed to operate effectively under all market conditions.
+5. **Users make their own decisions**
+When using this system, users should make independent decisions based on their own investment objectives, risk tolerance and market judgment. This system does not assume any form of responsibility for users' trading behavior or investment results.
+6. **Comply with laws and regulations**
+When using this system, users should abide by relevant laws, regulations and exchange rules. Any legal consequences arising from the user's violation of laws, regulations or exchange rules shall be borne by the user himself.
+7. **Right to modify the Disclaimer**
+The final right of interpretation of this disclaimer belongs to the developer or provider of this system. We reserve the right to modify or update this Disclaimer at any time without prior notice.
 
-**使用本系统即表示您同意上述免责声明的所有条款。**
+**By using this system, you agree to all the terms of the above disclaimer. **
