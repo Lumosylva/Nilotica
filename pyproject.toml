@@ -52,7 +52,7 @@ dependencies = [
     "pydantic>=2.11.4",
     "polib>=1.2.0",
     "ta-lib==0.6.3",
-    "wheel==0.46.1",
+    "wheel==0.46.2",
 ]
 
 keywords = ["quant", "quantitative", "trading", "nilotica", "investment"]
