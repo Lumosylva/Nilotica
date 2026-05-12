@@ -42,7 +42,7 @@ dependencies = [
     "setuptools>=78.1.0",
     "tzdata>=2025.2",
     "pathlib>=1.0.1",
-    "pip>=25.0.1",
+    "pip>=26.1",
     "hatchling>=1.27.0",
     "babel>=2.17.0",
     "polars>=1.26.0",
@@ -174,7 +174,7 @@ dev = [
     "hatchling>=1.27.0",
     "babel>=2.17.0",
     "scipy>=1.15.2",
-    "pytest>=7.4.0",
+    "pytest>=9.0.3",
     "pytest-cov>=4.1.0",
     "black>=23.12.0",
     "mypy>=1.8.0",
@@ -213,7 +213,7 @@ scripts.build = "hatch build"
 
 [tool.hatch.envs.test]
 dependencies = [
-  "pytest>=7.4.0",
+  "pytest>=9.0.3",
   "pytest-cov>=4.1.0",
   "nilotica @ ."
 ]
